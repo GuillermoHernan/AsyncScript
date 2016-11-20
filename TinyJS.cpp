@@ -121,6 +121,7 @@
 
 #include "TinyJS.h"
 #include "TinyJS_Lexer.h"
+#include "utils.h"
 #include <assert.h>
 
 #define ASSERT(X) assert(X)
@@ -201,12 +202,6 @@ void show_allocated() {
     allocatedLinks.clear();
 }
 #endif
-
-// ----------------------------------------------------------------------------------- CSCRIPTEXCEPTION
-
-CScriptException::CScriptException(const string &exceptionText) {
-    text = exceptionText;
-}
 
 // ----------------------------------------------------------------------------------- CSCRIPTVARLINK
 
@@ -1751,3 +1746,4 @@ CScriptVarLink *CTinyJS::findInParentClasses(CScriptVar *object, const std::stri
 }
 
 #include "TinyJS_Lexer.cpp"
+#include "utils.cpp"

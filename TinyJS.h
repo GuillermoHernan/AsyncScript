@@ -81,12 +81,6 @@ enum SCRIPTVAR_FLAGS {
 /// convert the given string into a quoted string suitable for javascript
 std::string getJSString(const std::string &str);
 
-class CScriptException {
-public:
-    std::string text;
-    CScriptException(const std::string &exceptionText);
-};
-
 class CScriptVar;
 class CScriptLex;
 

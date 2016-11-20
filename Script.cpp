@@ -30,6 +30,7 @@
  * This is a simple program showing how to use TinyJS
  */
 
+#include "utils.h"
 #include "TinyJS.h"
 #include "TinyJS_Functions.h"
 #include <assert.h>
