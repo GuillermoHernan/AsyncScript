@@ -72,7 +72,7 @@ void CScriptLex::match(int expected_tk) {
         ostringstream errorString;
         errorString << "Got " << getTokenStr(tk) << " expected " << getTokenStr(expected_tk)
          << " at " << getPosition(tokenStart);
-        throw new CScriptException(errorString.str());
+        throw CScriptException(errorString.str());
     }
     getNextToken();
 }

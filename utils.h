@@ -7,6 +7,7 @@
 #pragma once
 
 #include <string>
+#include <stdexcept>
 
 bool isWhitespace(char ch);
 
@@ -24,10 +25,8 @@ std::string getJSString(const std::string &str);
 /**
  * Exceptions throw in script execution / parsing
  */
-class CScriptException {
+class CScriptException : public std::logic_error {
 public:
-    std::string text;
-    CScriptException(const std::string &exceptionText) {
-        this->text = exceptionText;
-    }
+    CScriptException(const std::string &text): logic_error(text) {}
+    CScriptException(const char *text): logic_error(text) {}
 };

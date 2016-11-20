@@ -65,8 +65,8 @@ int main(int argc, char **argv)
   try {
     js->execute("var lets_quit = 0; function quit() { lets_quit = 1; }");
     js->execute("print(\"Interactive mode... Type quit(); to exit, or print(...); to print something, or dump() to dump the symbol table!\");");
-  } catch (CScriptException *e) {
-    printf("ERROR: %s\n", e->text.c_str());
+  } catch (const CScriptException& e) {
+    printf("ERROR: %s\n", e.what());
   }
 
   while (js->evaluate("lets_quit") == "0") {
@@ -74,8 +74,8 @@ int main(int argc, char **argv)
     fgets ( buffer, sizeof(buffer), stdin );
     try {
       js->execute(buffer);
-    } catch (CScriptException *e) {
-      printf("ERROR: %s\n", e->text.c_str());
+    } catch (const CScriptException &e) {
+      printf("ERROR: %s\n", e.what());
     }
   }
   delete js;

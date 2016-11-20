@@ -218,8 +218,8 @@ bool run_test(const char *filename) {
   s.root->addChild("result", new CScriptVar("0",SCRIPTVAR_INTEGER));
   try {
     s.execute(buffer);
-  } catch (CScriptException *e) {
-    printf("ERROR: %s\n", e->text.c_str());
+  } catch (const CScriptException &e) {
+    printf("ERROR: %s\n", e.what());
   }
   bool pass = s.root->getParameter("result")->getBool();
 
