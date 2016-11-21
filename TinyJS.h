@@ -42,6 +42,8 @@
 #include <string>
 #include <vector>
 
+#include "TinyJS_Lexer.h"
+
 #ifndef TRACE
 #define TRACE printf
 #endif // TRACE
@@ -82,7 +84,9 @@ enum SCRIPTVAR_FLAGS {
 std::string getJSString(const std::string &str);
 
 class CScriptVar;
-class CScriptLex;
+//class CScriptLex;
+class CScriptToken;
+
 
 typedef void (*JSCallback)(CScriptVar *var, void *userdata);
 
@@ -191,6 +195,8 @@ protected:
     friend class CTinyJS;
 };
 
+struct SResult;
+
 class CTinyJS {
 public:
     CTinyJS();
@@ -235,32 +241,34 @@ public:
 
     CScriptVar *root;   /// root of symbol table
 private:
-    CScriptLex *l;             /// current lexer
+    //CScriptLex *l;             /// current lexer
     std::vector<CScriptVar*> scopes; /// stack of scopes when parsing
 #ifdef TINYJS_CALL_STACK
     std::vector<std::string> call_stack; /// Names of places called so we can show when erroring
 #endif
-
+    
     CScriptVar *stringClass; /// Built in string class
     CScriptVar *objectClass; /// Built in object class
     CScriptVar *arrayClass; /// Built in array class
 
     // parsing - in order of precedence
-    CScriptVarLink *functionCall(bool &execute, CScriptVarLink *function, CScriptVar *parent);
-    CScriptVarLink *factor(bool &execute);
-    CScriptVarLink *unary(bool &execute);
-    CScriptVarLink *term(bool &execute);
-    CScriptVarLink *expression(bool &execute);
-    CScriptVarLink *shift(bool &execute);
-    CScriptVarLink *condition(bool &execute);
-    CScriptVarLink *logic(bool &execute);
-    CScriptVarLink *ternary(bool &execute);
-    CScriptVarLink *base(bool &execute);
-    void block(bool &execute);
-    void statement(bool &execute);
+    SResult functionCall(bool &execute, CScriptVarLink *function, CScriptVar *parent, CScriptToken token);
+    SResult factor(bool &execute, CScriptToken token);
+    SResult unary(bool &execute, CScriptToken token);
+    SResult term(bool &execute, CScriptToken token);
+    SResult expression(bool &execute, CScriptToken token);
+    SResult shift(bool &execute, CScriptToken token);
+    SResult condition(bool &execute, CScriptToken token);
+    SResult logic(bool &execute, CScriptToken token);
+    SResult ternary(bool &execute, CScriptToken token);
+    SResult base(bool &execute, CScriptToken token);
+    CScriptToken block(bool &execute, CScriptToken token);
+    CScriptToken statement(bool &execute, CScriptToken token);
+    CScriptToken whileLoop(bool &execute, CScriptToken token);
+    CScriptToken forLoop(bool &execute, CScriptToken token);
     // parsing utility functions
-    CScriptVarLink *parseFunctionDefinition();
-    void parseFunctionArguments(CScriptVar *funcVar);
+    SResult parseFunctionDefinition(CScriptToken token);
+    CScriptToken parseFunctionArguments(CScriptVar *funcVar, CScriptToken token);
 
     CScriptVarLink *findInScopes(const std::string &childName); ///< Finds a child, looking recursively up the scopes
     /// Look up in any parent classes of the given object

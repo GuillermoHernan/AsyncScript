@@ -30,6 +30,8 @@
 
 enum LEX_TYPES {
     LEX_EOF = 0,
+    LEX_INITIAL,
+    LEX_COMMENT,
     LEX_ID = 256,
     LEX_INT,
     LEX_FLOAT,
@@ -76,44 +78,65 @@ enum LEX_TYPES {
 	LEX_R_LIST_END /* always the last entry */
 };
 
+/// To get the string representation of a token type
+std::string getTokenStr(int token);
+
 /**
- * Lexer for 'TinyJS' transforms a code string into tokens which the interpreter
- * is able to understand
+ * Javascript token. Tokens are the fragments in which input source is divided
+ * and classified before being parsed.
+ * 
+ * The lexical analysis process is implemented taking a functional approach. There
+ * is no 'lexer' object. There are functions which return the current state of the
+ * lex process as immutable 'CScriptToken' objects. 
+ * These objects are not strictly 'immutable', as they have assignment operator. But none
+ * of their public methods modify its internal state.
  */
-class CScriptLex
-{
+class CScriptToken {
 public:
-    CScriptLex(const std::string &input);
-    CScriptLex(CScriptLex *owner, int startChar, int endChar);
-    ~CScriptLex(void);
+   
+    /**
+     * The constructor doesn't make a copy of the input string, so it is important
+     * not to delete input string while there are still live 'CSriptTokens' using it.
+     * 
+     * The token created with the constructor is not parsed from input string. It is
+     * just the 'initial' token. To parse the first real token, call 'next'.
+     */
+    CScriptToken(const char* code);
 
-    char currCh, nextCh;
-    int tk; ///< The type of the token that we have
-    int tokenStart; ///< Position in the data at the beginning of the token we have here
-    int tokenEnd; ///< Position in the data at the last character of the token we have here
-    int tokenLastEnd; ///< Position in the data at the last character of the last token
-    std::string tkStr; ///< Data contained in the token we have here
+    CScriptToken(LEX_TYPES lexType, const char* code, int line, int column, int length);
 
-    void match(int expected_tk); ///< Lexical match wotsit
-    static std::string getTokenStr(int token); ///< Get the string representation of the given token
-    void reset(); ///< Reset this lex so we can start again
+    /// Reads next token from input, and returns it.
+    CScriptToken next(bool skipComments = true)const;
 
-    std::string getSubString(int pos); ///< Return a sub-string from the given position up until right now
-    CScriptLex *getSubLex(int lastPosition); ///< Return a sub-lexer from the given position up until right now
-
-    std::string getPosition(int pos=-1); ///< Return a string representing the position in lines and columns of the character pos given
-
-protected:
-    /* When we go into a loop, we use getSubLex to get a lexer for just the sub-part of the
-       relevant string. This doesn't re-allocate and copy the string, but instead copies
-       the data pointer and sets dataOwned to false, and dataStart/dataEnd to the relevant things. */
-    char *data; ///< Data string to get tokens from
-    int dataStart, dataEnd; ///< Start and end position in data string
-    bool dataOwned; ///< Do we own this data string?
-
-    int dataPos; ///< Position in data (we CAN go past the end of the string here)
-
-    void getNextCh();
-    void getNextToken(); ///< Get the text token from our text string
+    /// Checks that the current token matches the expected, and returns next
+    CScriptToken match(int expected_tk)const; 
+    
+    ///Return a string representing the position in lines and columns of the token
+    std::string getPosition()const; 
+    
+    LEX_TYPES   type()const {return m_type;}
+    bool        eof ()const {return m_type == LEX_EOF;}
+    std::string text()const;
+    const char* code()const {return m_code;}
+    
+    std::string strValue()const;
+    
+private:
+    const char* m_code;
+    LEX_TYPES   m_type;       ///<Token type.
+    int         m_line;
+    int         m_column;
+    int         m_length;
+    
+    CScriptToken nextDispatch()const;
+    
+    CScriptToken buildNextToken (LEX_TYPES lexType, const char* code, int length)const;
+    CScriptToken parseComment (const char * code)const;
+    CScriptToken parseId (const char * code)const;
+    CScriptToken parseNumber (const char * code)const;
+    CScriptToken parseString (const char * code)const;
+    CScriptToken parseOperator (const char * code)const;
+    
+    void calcLineColumn (const char* position, int *pLine, int *pColumn)const;
+    CScriptToken errorAt (const char* charPos, const char* msgFormat, ...)const;
 };
-

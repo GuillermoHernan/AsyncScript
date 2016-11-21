@@ -51,6 +51,9 @@ bool isHexadecimal(char ch) {
            ((ch>='a') && (ch<='f')) ||
            ((ch>='A') && (ch<='F'));
 }
+bool isOctal(char ch) {
+    return (ch>='0') && (ch<='7');
+}
 bool isAlpha(char ch) {
     return ((ch>='a') && (ch<='z')) || ((ch>='A') && (ch<='Z')) || ch=='_';
 }
@@ -74,6 +77,40 @@ void replace(string &str, char textFrom, const char *textTo) {
         p = str.find(textFrom, p+sLen);
     }
 }
+
+int copyWhile (char* dest, const char* src, bool (*conditionFN)(char), int maxLen){
+    int i = 0;
+    for (i = 0; src[i] && i < maxLen && conditionFN(src[i]); ++i)
+        dest[i] = src[i];
+    
+    dest[i] = 0;
+    
+    return i;
+}
+
+
+const char* skipWhitespace (const char* input) {
+    while (isWhitespace(*input))
+        ++input;
+    
+    return input;
+}
+
+const char* skipNumeric (const char* input) {
+    while (isNumeric(*input))
+        ++input;
+    
+    return input;
+}
+
+const char* skipHexadecimal (const char* input) {
+    while (isHexadecimal(*input))
+        ++input;
+    
+    return input;
+}
+
+
 
 /// convert the given string into a quoted string suitable for javascript
 std::string getJSString(const std::string &str) {

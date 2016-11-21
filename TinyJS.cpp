@@ -203,6 +203,31 @@ void show_allocated() {
 }
 #endif
 
+/**
+ * To return the result of a parse / execute operation
+ */
+struct SResult {
+    CScriptToken    token;
+    CScriptVarLink* varLink;
+    
+    SResult (CScriptToken _token, CScriptVarLink* _varLink)
+        : token(_token)
+        ,varLink (_varLink)
+    {}
+};
+
+CScriptToken ignoreResult (SResult r)
+{
+    CLEAN (r.varLink);
+    return r.token;
+}
+
+
+SResult buildVarResult (CScriptToken token, CScriptVar* var)
+{
+    return SResult (token, new CScriptVarLink(var));
+}
+
 // ----------------------------------------------------------------------------------- CSCRIPTVARLINK
 
 CScriptVarLink::CScriptVarLink(CScriptVar *var, const std::string &name) {
@@ -620,7 +645,7 @@ CScriptVar *CScriptVar::mathsOp(CScriptVar *b, int op) {
                 case LEX_LEQUAL:    return new CScriptVar(da<=db);
                 case '>':     return new CScriptVar(da>db);
                 case LEX_GEQUAL:    return new CScriptVar(da>=db);
-                default: throw CScriptException("Operation "+CScriptLex::getTokenStr(op)+" not supported on the Int datatype");
+                default: throw CScriptException("Operation "+getTokenStr(op)+" not supported on the Int datatype");
             }
         } else {
             // use doubles
@@ -637,7 +662,7 @@ CScriptVar *CScriptVar::mathsOp(CScriptVar *b, int op) {
                 case LEX_LEQUAL:    return new CScriptVar(da<=db);
                 case '>':     return new CScriptVar(da>db);
                 case LEX_GEQUAL:    return new CScriptVar(da>=db);
-                default: throw CScriptException("Operation "+CScriptLex::getTokenStr(op)+" not supported on the Double datatype");
+                default: throw CScriptException("Operation "+getTokenStr(op)+" not supported on the Double datatype");
             }
         }
     } else if (a->isArray()) {
@@ -645,14 +670,14 @@ CScriptVar *CScriptVar::mathsOp(CScriptVar *b, int op) {
       switch (op) {
            case LEX_EQUAL: return new CScriptVar(a==b);
            case LEX_NEQUAL: return new CScriptVar(a!=b);
-           default: throw CScriptException("Operation "+CScriptLex::getTokenStr(op)+" not supported on the Array datatype");
+           default: throw CScriptException("Operation "+getTokenStr(op)+" not supported on the Array datatype");
       }
     } else if (a->isObject()) {
           /* Just check pointers */
           switch (op) {
                case LEX_EQUAL: return new CScriptVar(a==b);
                case LEX_NEQUAL: return new CScriptVar(a!=b);
-               default: throw CScriptException("Operation "+CScriptLex::getTokenStr(op)+" not supported on the Object datatype");
+               default: throw CScriptException("Operation "+getTokenStr(op)+" not supported on the Object datatype");
           }
     } else {
        string da = a->getString();
@@ -666,7 +691,7 @@ CScriptVar *CScriptVar::mathsOp(CScriptVar *b, int op) {
            case LEX_LEQUAL:    return new CScriptVar(da<=db);
            case '>':     return new CScriptVar(da>db);
            case LEX_GEQUAL:    return new CScriptVar(da>=db);
-           default: throw CScriptException("Operation "+CScriptLex::getTokenStr(op)+" not supported on the string datatype");
+           default: throw CScriptException("Operation "+getTokenStr(op)+" not supported on the string datatype");
        }
     }
     ASSERT(0);
@@ -836,7 +861,7 @@ int CScriptVar::getRefs() {
 // ----------------------------------------------------------------------------------- CSCRIPT
 
 CTinyJS::CTinyJS() {
-    l = 0;
+    //l = 0;
     root = (new CScriptVar(TINYJS_BLANK_DATA, SCRIPTVAR_OBJECT))->ref();
     // Add built-in classes
     stringClass = (new CScriptVar(TINYJS_BLANK_DATA, SCRIPTVAR_OBJECT))->ref();
@@ -848,7 +873,7 @@ CTinyJS::CTinyJS() {
 }
 
 CTinyJS::~CTinyJS() {
-    ASSERT(!l);
+    //ASSERT(!l);
     scopes.clear();
     stringClass->unref();
     arrayClass->unref();
@@ -865,17 +890,22 @@ void CTinyJS::trace() {
 }
 
 void CTinyJS::execute(const string &code) {
-    CScriptLex *oldLex = l;
+    //CScriptLex *oldLex = l;
     vector<CScriptVar*> oldScopes = scopes;
-    l = new CScriptLex(code);
+    //l = new CScriptLex(code);
 #ifdef TINYJS_CALL_STACK
     call_stack.clear();
 #endif
     scopes.clear();
     scopes.push_back(root);
+    
     try {
         bool execute = true;
-        while (l->tk) statement(execute);
+        CScriptToken    token (code.c_str());
+        
+        token = token.next();
+        while (!token.eof())
+            token = statement(execute, token);
     } catch (const CScriptException &e) {
         ostringstream msg;
         msg << "Error " << e.what();
@@ -883,35 +913,41 @@ void CTinyJS::execute(const string &code) {
         for (int i=(int)call_stack.size()-1;i>=0;i--)
           msg << "\n" << i << ": " << call_stack.at(i);
 #endif
-        msg << " at " << l->getPosition();
-        delete l;
-        l = oldLex;
+        //msg << " at " << l->getPosition();
+        //delete l;
+        //l = oldLex;
 
         throw CScriptException(msg.str());
     }
-    delete l;
-    l = oldLex;
+    //delete l;
+    //l = oldLex;
     scopes = oldScopes;
 }
 
 CScriptVarLink CTinyJS::evaluateComplex(const string &code) {
-    CScriptLex *oldLex = l;
+    //CScriptLex *oldLex = l;
     vector<CScriptVar*> oldScopes = scopes;
 
-    l = new CScriptLex(code);
+    //l = new CScriptLex(code);
 #ifdef TINYJS_CALL_STACK
     call_stack.clear();
 #endif
     scopes.clear();
     scopes.push_back(root);
-    CScriptVarLink *v = 0;
+    CScriptVarLink* v = NULL;
     try {
+        CScriptToken token (code.c_str());
         bool execute = true;
+        
+        token = token.next();
         do {
           CLEAN(v);
-          v = base(execute);
-          if (l->tk!=LEX_EOF) l->match(';');
-        } while (l->tk!=LEX_EOF);
+          SResult r = base(execute, token);
+          token = r.token;
+          v = r.varLink;
+          if (!token.eof()) 
+              token = token.match(';');
+        } while (!token.eof());
     } catch (const CScriptException &e) {
       ostringstream msg;
       msg << "Error " << e.what();
@@ -919,14 +955,14 @@ CScriptVarLink CTinyJS::evaluateComplex(const string &code) {
       for (int i=(int)call_stack.size()-1;i>=0;i--)
         msg << "\n" << i << ": " << call_stack.at(i);
 #endif
-      msg << " at " << l->getPosition();
-      delete l;
-      l = oldLex;
+      //msg << " at " << l->getPosition();
+      //delete l;
+      //l = oldLex;
 
         throw CScriptException(msg.str());
     }
-    delete l;
-    l = oldLex;
+    //delete l;
+    //l = oldLex;
     scopes = oldScopes;
 
     if (v) {
@@ -942,75 +978,82 @@ string CTinyJS::evaluate(const string &code) {
     return evaluateComplex(code).var->getString();
 }
 
-void CTinyJS::parseFunctionArguments(CScriptVar *funcVar) {
-  l->match('(');
-  while (l->tk!=')') {
-      funcVar->addChildNoDup(l->tkStr);
-      l->match(LEX_ID);
-      if (l->tk!=')') l->match(',');
+CScriptToken CTinyJS::parseFunctionArguments(CScriptVar *funcVar, CScriptToken token) {
+  token = token.match('(');
+  
+  while (token.type() != ')') {
+      funcVar->addChildNoDup(token.text());
+      token = token.match(LEX_ID);
+      if (token.type() != ')')
+          token = token.match(',');
   }
-  l->match(')');
+  return token.match(')');
 }
 
 void CTinyJS::addNative(const string &funcDesc, JSCallback ptr, void *userdata) {
-    CScriptLex *oldLex = l;
-    l = new CScriptLex(funcDesc);
+    CScriptToken    token (funcDesc.c_str());
+    token = token.next();
 
     CScriptVar *base = root;
 
-    l->match(LEX_R_FUNCTION);
-    string funcName = l->tkStr;
-    l->match(LEX_ID);
+    token = token.match(LEX_R_FUNCTION);
+    string funcName = token.text();
+    token = token.match(LEX_ID);
+    
     /* Check for dots, we might want to do something like function String.substring ... */
-    while (l->tk == '.') {
-      l->match('.');
+    while (token.type() == '.') {
+      token = token.match('.');
       CScriptVarLink *link = base->findChild(funcName);
       // if it doesn't exist, make an object class
       if (!link) link = base->addChild(funcName, new CScriptVar(TINYJS_BLANK_DATA, SCRIPTVAR_OBJECT));
       base = link->var;
-      funcName = l->tkStr;
-      l->match(LEX_ID);
+      funcName = token.text();
+      token = token.match(LEX_ID);
     }
 
     CScriptVar *funcVar = new CScriptVar(TINYJS_BLANK_DATA, SCRIPTVAR_FUNCTION | SCRIPTVAR_NATIVE);
     funcVar->setCallback(ptr, userdata);
-    parseFunctionArguments(funcVar);
-    delete l;
-    l = oldLex;
+    parseFunctionArguments(funcVar, token);
 
     base->addChild(funcName, funcVar);
 }
 
-CScriptVarLink *CTinyJS::parseFunctionDefinition() {
+SResult CTinyJS::parseFunctionDefinition(CScriptToken token) {
   // actually parse a function...
-  l->match(LEX_R_FUNCTION);
-  string funcName = TINYJS_TEMP_NAME;
-  /* we can have functions without names */
-  if (l->tk==LEX_ID) {
-    funcName = l->tkStr;
-    l->match(LEX_ID);
-  }
-  CScriptVarLink *funcVar = new CScriptVarLink(new CScriptVar(TINYJS_BLANK_DATA, SCRIPTVAR_FUNCTION), funcName);
-  parseFunctionArguments(funcVar->var);
-  int funcBegin = l->tokenStart;
-  bool noexecute = false;
-  block(noexecute);
-  funcVar->var->data = l->getSubString(funcBegin);
-  return funcVar;
+    token = token.match(LEX_R_FUNCTION);
+    string funcName = TINYJS_TEMP_NAME;
+    /* we can have functions without names */
+    if (token.type()==LEX_ID) {
+      funcName = token.text();
+      token = token.match(LEX_ID);
+    }
+    CScriptVarLink *funcVar = new CScriptVarLink(new CScriptVar(TINYJS_BLANK_DATA, SCRIPTVAR_FUNCTION), funcName);
+    token = parseFunctionArguments(funcVar->var, token);
+
+    bool noexecute = false;
+    const char* blockStart = token.code();
+    token = block(noexecute, token);
+
+    //Add function code (the contents of the block)
+    //TODO: Executing functions in this way, causes line number information to be wrong
+    //(Besides being quite inefficient)
+    funcVar->var->data = string (blockStart, token.code());
+    
+    return SResult(token, funcVar);
 }
 
 /** Handle a function call (assumes we've parsed the function name and we're
  * on the start bracket). 'parent' is the object that contains this method,
- * if there was one (otherwise it's just a normnal function).
+ * if there was one (otherwise it's just a normal function).
  */
-CScriptVarLink *CTinyJS::functionCall(bool &execute, CScriptVarLink *function, CScriptVar *parent) {
+SResult CTinyJS::functionCall(bool &execute, CScriptVarLink *function, CScriptVar *parent, CScriptToken token) {
   if (execute) {
     if (!function->var->isFunction()) {
         string errorMsg = "Expecting '";
         errorMsg = errorMsg + function->name + "' to be a function";
         throw CScriptException(errorMsg.c_str());
     }
-    l->match('(');
+    token = token.match('(');
     // create a new symbol table entry for execution of this function
     CScriptVar *functionRoot = new CScriptVar(TINYJS_BLANK_DATA, SCRIPTVAR_FUNCTION);
     if (parent)
@@ -1018,21 +1061,25 @@ CScriptVarLink *CTinyJS::functionCall(bool &execute, CScriptVarLink *function, C
     // grab in all parameters
     CScriptVarLink *v = function->var->firstChild;
     while (v) {
-        CScriptVarLink *value = base(execute);
+        SResult r = base(execute, token);
+        token = r.token;
         if (execute) {
-            if (value->var->isBasic()) {
+            if (r.varLink->var->isBasic()) {
               // pass by value
-              functionRoot->addChild(v->name, value->var->deepCopy());
+              functionRoot->addChild(v->name, r.varLink->var->deepCopy());
             } else {
               // pass by reference
-              functionRoot->addChild(v->name, value->var);
+              functionRoot->addChild(v->name, r.varLink->var);
             }
         }
-        CLEAN(value);
-        if (l->tk!=')') l->match(',');
+        CLEAN(r.varLink);
+        if (token.type() != ')')
+            token = token.match(',');
+        //TODO: Looks that it doesn't support calling a function with a different number of parameters
+        //from the declaration argument list. Investigate and fix it, if needed.
         v = v->nextSibling;
     }
-    l->match(')');
+    token = token.match(')');
     // setup a return variable
     CScriptVarLink *returnVar = NULL;
     // execute function!
@@ -1040,30 +1087,20 @@ CScriptVarLink *CTinyJS::functionCall(bool &execute, CScriptVarLink *function, C
     CScriptVarLink *returnVarLink = functionRoot->addChild(TINYJS_RETURN_VAR);
     scopes.push_back(functionRoot);
 #ifdef TINYJS_CALL_STACK
-    call_stack.push_back(function->name + " from " + l->getPosition());
+    call_stack.push_back(function->name + " from " + token.getPosition());
 #endif
 
     if (function->var->isNative()) {
         ASSERT(function->var->jsCallback);
         function->var->jsCallback(functionRoot, function->var->jsCallbackUserData);
     } else {
-        /* we just want to execute the block, but something could
-         * have messed up and left us with the wrong ScriptLex, so
-         * we want to be careful here... */
-        CScriptLex *oldLex = l;
-        CScriptLex *newLex = new CScriptLex(function->var->getString());
-        l = newLex;
-        try {
-          block(execute);
-          // because return will probably have called this, and set execute to false
-          execute = true;
-        } catch (const CScriptException &e) {
-          delete newLex;
-          l = oldLex;
-          throw e;
-        }
-        delete newLex;
-        l = oldLex;
+        // Use another lexer instance for function execution
+        CScriptToken    execToken (function->var->getString().c_str());
+        execToken = execToken.next();
+
+        execToken = block(execute, execToken);
+        // because return will probably have called this, and set execute to false
+        execute = true;
     }
 #ifdef TINYJS_CALL_STACK
     if (!call_stack.empty()) call_stack.pop_back();
@@ -1074,69 +1111,74 @@ CScriptVarLink *CTinyJS::functionCall(bool &execute, CScriptVarLink *function, C
     functionRoot->removeLink(returnVarLink);
     delete functionRoot;
     if (returnVar)
-      return returnVar;
+      return SResult(token, returnVar);
     else
-      return new CScriptVarLink(new CScriptVar());
-  } else {
+      return buildVarResult(token, new CScriptVar());
+  } 
+  else {
     // function, but not executing - just parse args and be done
-    l->match('(');
-    while (l->tk != ')') {
-      CScriptVarLink *value = base(execute);
-      CLEAN(value);
-      if (l->tk!=')') l->match(',');
+    token = token.match('(');
+    while (token.type() != ')') {
+        token = ignoreResult (base(execute, token));
+
+        if (token.type()!=')') 
+            token = token.match(',');
     }
-    l->match(')');
-    if (l->tk == '{') { // TODO: why is this here?
-      block(execute);
+    token = token.match(')');
+    if (token.type() == '{') { // TODO: why is this here? --> Si no lo sabes tú... Aunque tampoco me extraña mucho.
+        token = block(execute, token);
     }
     /* function will be a blank scriptvarlink if we're not executing,
      * so just return it rather than an alloc/free */
-    return function;
+    return SResult (token, function);
   }
 }
 
-CScriptVarLink *CTinyJS::factor(bool &execute) {
-    if (l->tk=='(') {
-        l->match('(');
-        CScriptVarLink *a = base(execute);
-        l->match(')');
+
+SResult CTinyJS::factor(bool &execute, CScriptToken token) {
+    if (token.type()=='(') {
+        token = token.match('(');
+        SResult a = base(execute, token );
+        a.token = a.token.match(')');
         return a;
     }
-    if (l->tk==LEX_R_TRUE) {
-        l->match(LEX_R_TRUE);
-        return new CScriptVarLink(new CScriptVar(1));
+    if (token.type()==LEX_R_TRUE) {
+        token = token.match(LEX_R_TRUE);
+        return buildVarResult (token, new CScriptVar(1));
     }
-    if (l->tk==LEX_R_FALSE) {
-        l->match(LEX_R_FALSE);
-        return new CScriptVarLink(new CScriptVar(0));
+    if (token.type()==LEX_R_FALSE) {
+        token = token.match(LEX_R_FALSE);
+        return buildVarResult (token, new CScriptVar(0));
     }
-    if (l->tk==LEX_R_NULL) {
-        l->match(LEX_R_NULL);
-        return new CScriptVarLink(new CScriptVar(TINYJS_BLANK_DATA,SCRIPTVAR_NULL));
+    if (token.type()==LEX_R_NULL) {
+        token = token.match(LEX_R_NULL);
+        return buildVarResult (token, new CScriptVar(TINYJS_BLANK_DATA,SCRIPTVAR_NULL));
     }
-    if (l->tk==LEX_R_UNDEFINED) {
-        l->match(LEX_R_UNDEFINED);
-        return new CScriptVarLink(new CScriptVar(TINYJS_BLANK_DATA,SCRIPTVAR_UNDEFINED));
+    if (token.type()==LEX_R_UNDEFINED) {
+        token = token.match(LEX_R_UNDEFINED);
+        return buildVarResult (token, new CScriptVar(TINYJS_BLANK_DATA,SCRIPTVAR_UNDEFINED));
     }
-    if (l->tk==LEX_ID) {
-        CScriptVarLink *a = execute ? findInScopes(l->tkStr) : new CScriptVarLink(new CScriptVar());
-        //printf("0x%08X for %s at %s\n", (unsigned int)a, l->tkStr.c_str(), l->getPosition().c_str());
+    if (token.type()==LEX_ID) {
+        CScriptVarLink *a = execute ? findInScopes(token.text()) : new CScriptVarLink(new CScriptVar());
+        //printf("0x%08X for %s at %s\n", (unsigned int)a, token.type()Str.c_str(), l->getPosition().c_str());
         /* The parent if we're executing a method call */
         CScriptVar *parent = 0;
 
         if (execute && !a) {
           /* Variable doesn't exist! JavaScript says we should create it
            * (we won't add it here. This is done in the assignment operator)*/
-          a = new CScriptVarLink(new CScriptVar(), l->tkStr);
+          a = new CScriptVarLink(new CScriptVar(), token.text());
         }
-        l->match(LEX_ID);
-        while (l->tk=='(' || l->tk=='.' || l->tk=='[') {
-            if (l->tk=='(') { // ------------------------------------- Function Call
-                a = functionCall(execute, a, parent);
-            } else if (l->tk == '.') { // ------------------------------------- Record Access
-                l->match('.');
+        token = token.match(LEX_ID);
+        while (token.type()=='(' || token.type()=='.' || token.type()=='[') {
+            if (token.type()=='(') { // ------------------------------------- Function Call
+                SResult r = functionCall(execute, a, parent, token);
+                a = r.varLink;
+                token = r.token;
+            } else if (token.type() == '.') { // ------------------------------------- Record Access
+                token = token.match('.');
                 if (execute) {
-                  const string &name = l->tkStr;
+                  const string &name = token.text();
                   CScriptVarLink *child = a->var->findChild(name);
                   if (!child) child = findInParentClasses(a->var, name);
                   if (!child) {
@@ -1155,230 +1197,271 @@ CScriptVarLink *CTinyJS::factor(bool &execute) {
                   parent = a->var;
                   a = child;
                 }
-                l->match(LEX_ID);
-            } else if (l->tk == '[') { // ------------------------------------- Array Access
-                l->match('[');
-                CScriptVarLink *index = base(execute);
-                l->match(']');
+                token = token.match(LEX_ID);
+            } else if (token.type() == '[') { // ------------------------------------- Array Access
+                token = token.match('[');
+                SResult indexRes = base(execute, token);
+                token = indexRes.token.match(']');
                 if (execute) {
-                  CScriptVarLink *child = a->var->findChildOrCreate(index->var->getString());
+                  CScriptVarLink *child = a->var->findChildOrCreate(indexRes.varLink->var->getString());
                   parent = a->var;
                   a = child;
                 }
-                CLEAN(index);
+                CLEAN(indexRes.varLink);
             } else ASSERT(0);
         }
-        return a;
+        return SResult (token, a);
     }
-    if (l->tk==LEX_INT || l->tk==LEX_FLOAT) {
-        CScriptVar *a = new CScriptVar(l->tkStr,
-            ((l->tk==LEX_INT)?SCRIPTVAR_INTEGER:SCRIPTVAR_DOUBLE));
-        l->match(l->tk);
-        return new CScriptVarLink(a);
+    if (token.type()==LEX_INT || token.type()==LEX_FLOAT) {
+        CScriptVar *a = new CScriptVar(token.text(),
+            ((token.type()==LEX_INT)?SCRIPTVAR_INTEGER:SCRIPTVAR_DOUBLE));
+        token = token.next();
+        return buildVarResult(token, a);
     }
-    if (l->tk==LEX_STR) {
-        CScriptVar *a = new CScriptVar(l->tkStr, SCRIPTVAR_STRING);
-        l->match(LEX_STR);
-        return new CScriptVarLink(a);
+    if (token.type()==LEX_STR) {
+        CScriptVar *a = new CScriptVar(token.strValue(), SCRIPTVAR_STRING);
+        token = token.match(LEX_STR);
+        return buildVarResult(token, a);
     }
-    if (l->tk=='{') {
+    if (token.type()=='{') {
         CScriptVar *contents = new CScriptVar(TINYJS_BLANK_DATA, SCRIPTVAR_OBJECT);
         /* JSON-style object definition */
-        l->match('{');
-        while (l->tk != '}') {
-          string id = l->tkStr;
+        token = token.match('{');
+        while (token.type() != '}') {
+          string id;
           // we only allow strings or IDs on the left hand side of an initialisation
-          if (l->tk==LEX_STR) l->match(LEX_STR);
-          else l->match(LEX_ID);
-          l->match(':');
+          if (token.type()==LEX_STR){              
+              id = token.strValue();
+              token = token.match(LEX_STR);
+          }
+          else{
+              id = token.text();
+              token = token.match(LEX_ID);
+          }
+          token = token.match(':');
           if (execute) {
-            CScriptVarLink *a = base(execute);
-            contents->addChild(id, a->var);
-            CLEAN(a);
+            SResult r = base(execute, token);
+            contents->addChild(id, r.varLink->var);
+            token = r.token;
+            CLEAN(r.varLink);
           }
           // no need to clean here, as it will definitely be used
-          if (l->tk != '}') l->match(',');
+          if (token.type() != '}')
+              token = token.match(',');
         }
 
-        l->match('}');
-        return new CScriptVarLink(contents);
+        token = token.match('}');
+        return buildVarResult(token, contents);
     }
-    if (l->tk=='[') {
+    if (token.type()=='[') {
         CScriptVar *contents = new CScriptVar(TINYJS_BLANK_DATA, SCRIPTVAR_ARRAY);
         /* JSON-style array */
-        l->match('[');
+        token = token.match('[');
         int idx = 0;
-        while (l->tk != ']') {
+        while (token.type() != ']') {
           if (execute) {
             char idx_str[16]; // big enough for 2^32
             sprintf_s(idx_str, sizeof(idx_str), "%d",idx);
 
-            CScriptVarLink *a = base(execute);
-            contents->addChild(idx_str, a->var);
-            CLEAN(a);
+            SResult r = base(execute, token);
+            contents->addChild(idx_str, r.varLink->var);
+            token = r.token;
+            CLEAN(r.varLink);
           }
           // no need to clean here, as it will definitely be used
-          if (l->tk != ']') l->match(',');
+          if (token.type() != ']')
+              token = token.match(',');
           idx++;
         }
-        l->match(']');
-        return new CScriptVarLink(contents);
+        token = token.match(']');
+        return buildVarResult(token, contents);
     }
-    if (l->tk==LEX_R_FUNCTION) {
-      CScriptVarLink *funcVar = parseFunctionDefinition();
-        if (funcVar->name != TINYJS_TEMP_NAME)
+    if (token.type()==LEX_R_FUNCTION) {
+      SResult r = parseFunctionDefinition(token);
+        if (r.varLink->name != TINYJS_TEMP_NAME)
           TRACE("Functions not defined at statement-level are not meant to have a name");
-        return funcVar;
+        return r;
     }
-    if (l->tk==LEX_R_NEW) {
+    if (token.type()==LEX_R_NEW) {
       // new -> create a new object
-      l->match(LEX_R_NEW);
-      const string &className = l->tkStr;
+      token = token.match(LEX_R_NEW);
+      const string &className = token.text();
       if (execute) {
         CScriptVarLink *objClassOrFunc = findInScopes(className);
         if (!objClassOrFunc) {
           TRACE("%s is not a valid class name", className.c_str());
-          return new CScriptVarLink(new CScriptVar());
+          return buildVarResult(token, new CScriptVar());
         }
-        l->match(LEX_ID);
+        token = token.match(LEX_ID);
         CScriptVar *obj = new CScriptVar(TINYJS_BLANK_DATA, SCRIPTVAR_OBJECT);
-        CScriptVarLink *objLink = new CScriptVarLink(obj);
+
         if (objClassOrFunc->var->isFunction()) {
-          CLEAN(functionCall(execute, objClassOrFunc, obj));
+            SResult r = functionCall(execute, objClassOrFunc, obj, token);
+            token = r.token;
+            //CLEAN(r.varLink);
+            return r;
         } else {
           obj->addChild(TINYJS_PROTOTYPE_CLASS, objClassOrFunc->var);
-          if (l->tk == '(') {
-            l->match('(');
-            l->match(')');
+          if (token.type() == '(') {
+            token = token.match('(');
+            token = token.match(')');
           }
         }
-        return objLink;
+        return buildVarResult(token, obj);
       } else {
-        l->match(LEX_ID);
-        if (l->tk == '(') {
-          l->match('(');
-          l->match(')');
+        token = token.match(LEX_ID);
+        if (token.type() == '(') {
+          token = token.match('(');
+          token = token.match(')');
         }
       }
     }
     // Nothing we can do here... just hope it's the end...
-    l->match(LEX_EOF);
-    return 0;
+    token = token.match(LEX_EOF);
+    return SResult (token, NULL);
 }
 
-CScriptVarLink *CTinyJS::unary(bool &execute) {
-    CScriptVarLink *a;
-    if (l->tk=='!') {
-        l->match('!'); // binary not
-        a = factor(execute);
+SResult CTinyJS::unary(bool &execute, CScriptToken token) {
+    if (token.type()=='!') {
+        token = token.match('!'); // binary not
+        SResult r = factor(execute, token);
         if (execute) {
             CScriptVar zero(0);
-            CScriptVar *res = a->var->mathsOp(&zero, LEX_EQUAL);
-            CREATE_LINK(a, res);
+            CScriptVar *res = r.varLink->var->mathsOp(&zero, LEX_EQUAL);
+            CREATE_LINK(r.varLink, res);
         }
+        
+        return r;
     } else
-        a = factor(execute);
-    return a;
+        return factor(execute, token);
 }
 
-CScriptVarLink *CTinyJS::term(bool &execute) {
-    CScriptVarLink *a = unary(execute);
-    while (l->tk=='*' || l->tk=='/' || l->tk=='%') {
-        int op = l->tk;
-        l->match(l->tk);
-        CScriptVarLink *b = unary(execute);
+SResult CTinyJS::term(bool &execute, CScriptToken token) {
+    SResult r = unary(execute, token);
+    
+    token = r.token;
+    while (token.type()=='*' || token.type()=='/' || token.type()=='%') {
+        const int op = token.type();
+        token = token.next();
+        SResult innerResult = unary(execute, token);
+        token = innerResult.token;
         if (execute) {
-            CScriptVar *res = a->var->mathsOp(b->var, op);
-            CREATE_LINK(a, res);
+            CScriptVar *res = r.varLink->var->mathsOp(innerResult.varLink->var, op);
+            CREATE_LINK(r.varLink, res);
         }
-        CLEAN(b);
+        CLEAN(innerResult.varLink);
     }
-    return a;
+    
+    r.token = token;
+    return r;
 }
 
-CScriptVarLink *CTinyJS::expression(bool &execute) {
+SResult CTinyJS::expression(bool &execute, CScriptToken token) {
     bool negate = false;
-    if (l->tk=='-') {
-        l->match('-');
+    if (token.type()=='-') {
+        token = token.match('-');
         negate = true;
     }
-    CScriptVarLink *a = term(execute);
+    SResult r = term(execute, token);
+    token = r.token;
     if (negate) {
         CScriptVar zero(0);
-        CScriptVar *res = zero.mathsOp(a->var, '-');
-        CREATE_LINK(a, res);
+        CScriptVar *res = zero.mathsOp(r.varLink->var, '-');
+        CREATE_LINK(r.varLink, res);
     }
 
-    while (l->tk=='+' || l->tk=='-' ||
-        l->tk==LEX_PLUSPLUS || l->tk==LEX_MINUSMINUS) {
-        int op = l->tk;
-        l->match(l->tk);
+    while (token.type()=='+' || token.type()=='-' ||
+        token.type()==LEX_PLUSPLUS || token.type()==LEX_MINUSMINUS) {
+        const int op = token.type();
+        token = token.next();
         if (op==LEX_PLUSPLUS || op==LEX_MINUSMINUS) {
             if (execute) {
                 CScriptVar one(1);
-                CScriptVar *res = a->var->mathsOp(&one, op==LEX_PLUSPLUS ? '+' : '-');
-                CScriptVarLink *oldValue = new CScriptVarLink(a->var);
+                CScriptVar *res = r.varLink->var->mathsOp(&one, op==LEX_PLUSPLUS ? '+' : '-');
+                CScriptVarLink *oldValue = new CScriptVarLink(r.varLink->var);
                 // in-place add/subtract
-                a->replaceWith(res);
-                CLEAN(a);
-                a = oldValue;
+                r.varLink->replaceWith(res);
+                CLEAN(r.varLink);
+                r.varLink = oldValue;
             }
         } else {
-            CScriptVarLink *b = term(execute);
+            SResult rb = term(execute, token);
+            token = rb.token;
             if (execute) {
                 // not in-place, so just replace
-                CScriptVar *res = a->var->mathsOp(b->var, op);
-                CREATE_LINK(a, res);
+                CScriptVar *res = r.varLink->var->mathsOp(rb.varLink->var, op);
+                CREATE_LINK(r.varLink, res);
             }
-            CLEAN(b);
+            CLEAN(rb.varLink);
         }
     }
-    return a;
+    
+    r.token = token;
+    return r;
 }
 
-CScriptVarLink *CTinyJS::shift(bool &execute) {
-  CScriptVarLink *a = expression(execute);
-  if (l->tk==LEX_LSHIFT || l->tk==LEX_RSHIFT || l->tk==LEX_RSHIFTUNSIGNED) {
-    int op = l->tk;
-    l->match(op);
-    CScriptVarLink *b = base(execute);
-    int shift = execute ? b->var->getInt() : 0;
-    CLEAN(b);
+SResult CTinyJS::shift(bool &execute, CScriptToken token) {
+  SResult ra = expression(execute, token);
+  token = ra.token;
+  
+  if (token.type()==LEX_LSHIFT || token.type()==LEX_RSHIFT || token.type()==LEX_RSHIFTUNSIGNED) {
+    int op = token.type();
+    token = token.match(op);
+    SResult rb = base(execute, token);
+    token = rb.token;
+    int shift = execute ? rb.varLink->var->getInt() : 0;
+    CLEAN(rb.varLink);
     if (execute) {
-      if (op==LEX_LSHIFT) a->var->setInt(a->var->getInt() << shift);
-      if (op==LEX_RSHIFT) a->var->setInt(a->var->getInt() >> shift);
-      if (op==LEX_RSHIFTUNSIGNED) a->var->setInt(((unsigned int)a->var->getInt()) >> shift);
+        CScriptVarLink *a = ra.varLink;
+        
+        if (op==LEX_LSHIFT) 
+            a->var->setInt(a->var->getInt() << shift);
+        if (op==LEX_RSHIFT) 
+            a->var->setInt(a->var->getInt() >> shift);
+        if (op==LEX_RSHIFTUNSIGNED) 
+            a->var->setInt(((unsigned int)a->var->getInt()) >> shift);
     }
   }
-  return a;
+  
+  ra.token = token;
+  return ra;
 }
 
-CScriptVarLink *CTinyJS::condition(bool &execute) {
-    CScriptVarLink *a = shift(execute);
-    CScriptVarLink *b;
-    while (l->tk==LEX_EQUAL || l->tk==LEX_NEQUAL ||
-           l->tk==LEX_TYPEEQUAL || l->tk==LEX_NTYPEEQUAL ||
-           l->tk==LEX_LEQUAL || l->tk==LEX_GEQUAL ||
-           l->tk=='<' || l->tk=='>') {
-        int op = l->tk;
-        l->match(l->tk);
-        b = shift(execute);
+SResult CTinyJS::condition(bool &execute, CScriptToken token) {
+    SResult ra = shift(execute, token);
+    token = ra.token;
+    
+    while (token.type()==LEX_EQUAL || token.type()==LEX_NEQUAL ||
+           token.type()==LEX_TYPEEQUAL || token.type()==LEX_NTYPEEQUAL ||
+           token.type()==LEX_LEQUAL || token.type()==LEX_GEQUAL ||
+           token.type()=='<' || token.type()=='>') {
+        int op = token.type();
+        token = token.next();
+        
+        SResult rb = shift(execute, token);
+        token = rb.token;
+        
         if (execute) {
-            CScriptVar *res = a->var->mathsOp(b->var, op);
-            CREATE_LINK(a,res);
+            CScriptVar *res = ra.varLink->var->mathsOp(rb.varLink->var, op);
+            CREATE_LINK(ra.varLink,res);
         }
-        CLEAN(b);
+        CLEAN(rb.varLink);
     }
-    return a;
+    
+    ra.token = token;
+    return ra;
 }
 
-CScriptVarLink *CTinyJS::logic(bool &execute) {
-    CScriptVarLink *a = condition(execute);
-    CScriptVarLink *b;
-    while (l->tk=='&' || l->tk=='|' || l->tk=='^' || l->tk==LEX_ANDAND || l->tk==LEX_OROR) {
+SResult CTinyJS::logic(bool &execute, CScriptToken token) {
+    SResult ra = condition(execute, token);
+    token = ra.token;
+    
+    //TODO: Not sure if this code is correct. Mixes bitwise and logical operations
+    
+    while (token.type()=='&' || token.type()=='|' || token.type()=='^' || token.type()==LEX_ANDAND || token.type()==LEX_OROR) {
         bool noexecute = false;
-        int op = l->tk;
-        l->match(l->tk);
+        int op = token.type();
+        token = token.match(op);
         bool shortCircuit = false;
         bool boolean = false;
         // if we have short-circuit ops, then if we know the outcome
@@ -1386,262 +1469,205 @@ CScriptVarLink *CTinyJS::logic(bool &execute) {
         // we need to tell mathsOp it's an & or |
         if (op==LEX_ANDAND) {
             op = '&';
-            shortCircuit = !a->var->getBool();
+            shortCircuit = !ra.varLink->var->getBool();
             boolean = true;
         } else if (op==LEX_OROR) {
             op = '|';
-            shortCircuit = a->var->getBool();
+            shortCircuit = ra.varLink->var->getBool();
             boolean = true;
         }
-        b = condition(shortCircuit ? noexecute : execute);
+        SResult rb = condition(shortCircuit ? noexecute : execute, token);
+        token = rb.token;
+        
         if (execute && !shortCircuit) {
             if (boolean) {
-              CScriptVar *newa = new CScriptVar(a->var->getBool());
-              CScriptVar *newb = new CScriptVar(b->var->getBool());
-              CREATE_LINK(a, newa);
-              CREATE_LINK(b, newb);
+              CScriptVar *newa = new CScriptVar(ra.varLink->var->getBool());
+              CScriptVar *newb = new CScriptVar(rb.varLink->var->getBool());
+              CREATE_LINK(ra.varLink, newa);
+              CREATE_LINK(rb.varLink, newb);
             }
-            CScriptVar *res = a->var->mathsOp(b->var, op);
-            CREATE_LINK(a, res);
+            CScriptVar *res = ra.varLink->var->mathsOp(rb.varLink->var, op);
+            CREATE_LINK(ra.varLink, res);
         }
-        CLEAN(b);
+        CLEAN(rb.varLink);
     }
-    return a;
+    
+    ra.token = token;
+    return ra;
 }
 
-CScriptVarLink *CTinyJS::ternary(bool &execute) {
-  CScriptVarLink *lhs = logic(execute);
+SResult CTinyJS::ternary(bool &execute, CScriptToken token) {
+  SResult lhsRes = logic(execute, token);
+  token = lhsRes.token;
+  
   bool noexec = false;
-  if (l->tk=='?') {
-    l->match('?');
+  if (token.type()=='?') {
+    token = token.match('?');
     if (!execute) {
-      CLEAN(lhs);
-      CLEAN(base(noexec));
-      l->match(':');
-      CLEAN(base(noexec));
-    } else {
-      bool first = lhs->var->getBool();
-      CLEAN(lhs);
+        SResult    rhsRes = base(noexec, token);
+        token = rhsRes.token;
+        CLEAN(lhsRes.varLink);
+        CLEAN(rhsRes.varLink);
+        token = token.match(':');
+        
+        rhsRes = base(noexec, token);
+        token = rhsRes.token;
+        CLEAN(rhsRes.varLink);
+    }
+    else {
+      bool first = lhsRes.varLink->var->getBool();
+      CLEAN(lhsRes.varLink);
       if (first) {
-        lhs = base(execute);
-        l->match(':');
-        CLEAN(base(noexec));
+        lhsRes = base(execute, token);
+        token = lhsRes.token;
+        token = token.match(':');
+        
+        token = ignoreResult (base(noexec, token));
       } else {
-        CLEAN(base(noexec));
-        l->match(':');
-        lhs = base(execute);
+        token = ignoreResult (base(noexec, token));
+        token = token.match(':');
+        lhsRes = base(execute, token);
+        token = lhsRes.token;
       }
     }
   }
 
-  return lhs;
+  lhsRes.token = token;
+  return lhsRes;
 }
 
-CScriptVarLink *CTinyJS::base(bool &execute) {
-    CScriptVarLink *lhs = ternary(execute);
-    if (l->tk=='=' || l->tk==LEX_PLUSEQUAL || l->tk==LEX_MINUSEQUAL) {
+SResult CTinyJS::base(bool &execute, CScriptToken token) {
+    SResult lres = ternary(execute, token);
+    token = lres.token;
+    
+    if (token.type()=='=' || token.type()==LEX_PLUSEQUAL || token.type()==LEX_MINUSEQUAL) {
         /* If we're assigning to this and we don't have a parent,
          * add it to the symbol table root as per JavaScript. */
-        if (execute && !lhs->owned) {
-          if (lhs->name.length()>0) {
-            CScriptVarLink *realLhs = root->addChildNoDup(lhs->name, lhs->var);
-            CLEAN(lhs);
-            lhs = realLhs;
+        if (execute && !lres.varLink->owned) {
+          if (lres.varLink->name.length()>0) {
+            CScriptVarLink *realLhs = root->addChildNoDup(lres.varLink->name, lres.varLink->var);
+            CLEAN(lres.varLink);
+            lres.varLink = realLhs;
           } else
             TRACE("Trying to assign to an un-named type\n");
         }
 
-        int op = l->tk;
-        l->match(l->tk);
-        CScriptVarLink *rhs = base(execute);
+        int op = token.type();
+        token = token.match(token.type());
+        SResult rres = base(execute, token);
+        token = rres.token;
+        
         if (execute) {
             if (op=='=') {
-                lhs->replaceWith(rhs);
+                lres.varLink->replaceWith(rres.varLink);
             } else if (op==LEX_PLUSEQUAL) {
-                CScriptVar *res = lhs->var->mathsOp(rhs->var, '+');
-                lhs->replaceWith(res);
+                CScriptVar *res = lres.varLink->var->mathsOp(rres.varLink->var, '+');
+                lres.varLink->replaceWith(res);
             } else if (op==LEX_MINUSEQUAL) {
-                CScriptVar *res = lhs->var->mathsOp(rhs->var, '-');
-                lhs->replaceWith(res);
-            } else ASSERT(0);
+                CScriptVar *res = lres.varLink->var->mathsOp(rres.varLink->var, '-');
+                lres.varLink->replaceWith(res);
+            } else 
+                ASSERT(0);
         }
-        CLEAN(rhs);
+        CLEAN(rres.varLink);
     }
-    return lhs;
+    
+    lres.token = token;
+    return lres;
 }
 
-void CTinyJS::block(bool &execute) {
-    l->match('{');
+CScriptToken CTinyJS::block(bool &execute, CScriptToken token) {
+    token = token.match('{');
     if (execute) {
-      while (l->tk && l->tk!='}')
-        statement(execute);
-      l->match('}');
+        while (token.type() && token.type()!='}')
+            token = statement(execute, token);
+        token = token.match('}');
     } else {
       // fast skip of blocks
-      int brackets = 1;
-      while (l->tk && brackets) {
-        if (l->tk == '{') brackets++;
-        if (l->tk == '}') brackets--;
-        l->match(l->tk);
-      }
+        int brackets = 1;
+        while (token.type() && brackets) {
+            if (token.type() == '{') brackets++;
+            if (token.type() == '}') brackets--;
+            token = token.next();
+        }
     }
 
+    return token;
 }
 
-void CTinyJS::statement(bool &execute) {
-    if (l->tk==LEX_ID ||
-        l->tk==LEX_INT ||
-        l->tk==LEX_FLOAT ||
-        l->tk==LEX_STR ||
-        l->tk=='-') {
+CScriptToken CTinyJS::statement(bool &execute, CScriptToken token) {
+    if (token.type()==LEX_ID ||
+        token.type()==LEX_INT ||
+        token.type()==LEX_FLOAT ||
+        token.type()==LEX_STR ||
+        token.type()=='-') {
         /* Execute a simple statement that only contains basic arithmetic... */
-        CLEAN(base(execute));
-        l->match(';');
-    } else if (l->tk=='{') {
+        token = ignoreResult (base(execute, token));
+        //token = token.match(';');
+    } else if (token.type()=='{') {
         /* A block of code */
-        block(execute);
-    } else if (l->tk==';') {
+        token = block(execute, token);
+    } else if (token.type()==';') {
         /* Empty statement - to allow things like ;;; */
-        l->match(';');
-    } else if (l->tk==LEX_R_VAR) {
+        return token.match(';');
+    } else if (token.type()==LEX_R_VAR) {
         /* variable creation. TODO - we need a better way of parsing the left
          * hand side. Maybe just have a flag called can_create_var that we
          * set and then we parse as if we're doing a normal equals.*/
-        l->match(LEX_R_VAR);
-        while (l->tk != ';') {
+        token = token.match(LEX_R_VAR);
+        while (token.type() != ';') {
           CScriptVarLink *a = 0;
           if (execute)
-            a = scopes.back()->findChildOrCreate(l->tkStr);
-          l->match(LEX_ID);
+            a = scopes.back()->findChildOrCreate(token.text());
+          token = token.match(LEX_ID);
           // now do stuff defined with dots
-          while (l->tk == '.') {
-              l->match('.');
+          while (token.type() == '.') {
+              token = token.match('.');
               if (execute) {
                   CScriptVarLink *lastA = a;
-                  a = lastA->var->findChildOrCreate(l->tkStr);
+                  a = lastA->var->findChildOrCreate(token.text());
               }
-              l->match(LEX_ID);
+              token = token.match(LEX_ID);
           }
           // sort out initialiser
-          if (l->tk == '=') {
-              l->match('=');
-              CScriptVarLink *var = base(execute);
+          if (token.type() == '=') {
+              token = token.match('=');
+              SResult r = base(execute, token);
+              token = r.token;
               if (execute)
-                  a->replaceWith(var);
-              CLEAN(var);
+                  a->replaceWith(r.varLink);
+              CLEAN(r.varLink);
           }
-          if (l->tk != ';')
-            l->match(',');
+          if (token.type() != ';')
+            token = token.match(',');
         }       
-        l->match(';');
-    } else if (l->tk==LEX_R_IF) {
-        l->match(LEX_R_IF);
-        l->match('(');
-        CScriptVarLink *var = base(execute);
-        l->match(')');
-        bool cond = execute && var->var->getBool();
-        CLEAN(var);
+        //token = token.match(';');
+    } else if (token.type()==LEX_R_IF) {
+        token = token.match(LEX_R_IF);
+        token = token.match('(');
+        SResult r = base(execute, token);
+        token = r.token;
+        token = token.match(')');
+        bool cond = execute && r.varLink->var->getBool();
+        CLEAN(r.varLink);
         bool noexecute = false; // because we need to be abl;e to write to it
-        statement(cond ? execute : noexecute);
-        if (l->tk==LEX_R_ELSE) {
-            l->match(LEX_R_ELSE);
-            statement(cond ? noexecute : execute);
+        token = statement(cond ? execute : noexecute, token);
+        if (token.type()==LEX_R_ELSE) {
+            token = token.match(LEX_R_ELSE);
+            token = statement(cond ? noexecute : execute, token);
         }
-    } else if (l->tk==LEX_R_WHILE) {
-        // We do repetition by pulling out the string representing our statement
-        // there's definitely some opportunity for optimisation here
-        l->match(LEX_R_WHILE);
-        l->match('(');
-        int whileCondStart = l->tokenStart;
-        bool noexecute = false;
-        CScriptVarLink *cond = base(execute);
-        bool loopCond = execute && cond->var->getBool();
-        CLEAN(cond);
-        CScriptLex *whileCond = l->getSubLex(whileCondStart);
-        l->match(')');
-        int whileBodyStart = l->tokenStart;
-        statement(loopCond ? execute : noexecute);
-        CScriptLex *whileBody = l->getSubLex(whileBodyStart);
-        CScriptLex *oldLex = l;
-        int loopCount = TINYJS_LOOP_MAX_ITERATIONS;
-        while (loopCond && loopCount-->0) {
-            whileCond->reset();
-            l = whileCond;
-            cond = base(execute);
-            loopCond = execute && cond->var->getBool();
-            CLEAN(cond);
-            if (loopCond) {
-                whileBody->reset();
-                l = whileBody;
-                statement(execute);
-            }
+    } else if (token.type()==LEX_R_WHILE) {
+        token = whileLoop(execute, token);
+    } else if (token.type()==LEX_R_FOR) {
+        token = forLoop (execute, token);
+    } else if (token.type()==LEX_R_RETURN) {
+        token = token.match(LEX_R_RETURN);
+        CScriptVarLink *result = NULL;
+        if (token.type() != ';') {
+            SResult r = base (execute, token);
+            token = r.token;
+            result = r.varLink;
         }
-        l = oldLex;
-        delete whileCond;
-        delete whileBody;
-
-        if (loopCount<=0) {
-            root->trace();
-            TRACE("WHILE Loop exceeded %d iterations at %s\n", TINYJS_LOOP_MAX_ITERATIONS, l->getPosition().c_str());
-            throw CScriptException("LOOP_ERROR");
-        }
-    } else if (l->tk==LEX_R_FOR) {
-        l->match(LEX_R_FOR);
-        l->match('(');
-        statement(execute); // initialisation
-        //l->match(';');
-        int forCondStart = l->tokenStart;
-        bool noexecute = false;
-        CScriptVarLink *cond = base(execute); // condition
-        bool loopCond = execute && cond->var->getBool();
-        CLEAN(cond);
-        CScriptLex *forCond = l->getSubLex(forCondStart);
-        l->match(';');
-        int forIterStart = l->tokenStart;
-        CLEAN(base(noexecute)); // iterator
-        CScriptLex *forIter = l->getSubLex(forIterStart);
-        l->match(')');
-        int forBodyStart = l->tokenStart;
-        statement(loopCond ? execute : noexecute);
-        CScriptLex *forBody = l->getSubLex(forBodyStart);
-        CScriptLex *oldLex = l;
-        if (loopCond) {
-            forIter->reset();
-            l = forIter;
-            CLEAN(base(execute));
-        }
-        int loopCount = TINYJS_LOOP_MAX_ITERATIONS;
-        while (execute && loopCond && loopCount-->0) {
-            forCond->reset();
-            l = forCond;
-            cond = base(execute);
-            loopCond = cond->var->getBool();
-            CLEAN(cond);
-            if (execute && loopCond) {
-                forBody->reset();
-                l = forBody;
-                statement(execute);
-            }
-            if (execute && loopCond) {
-                forIter->reset();
-                l = forIter;
-                CLEAN(base(execute));
-            }
-        }
-        l = oldLex;
-        delete forCond;
-        delete forIter;
-        delete forBody;
-        if (loopCount<=0) {
-            root->trace();
-            TRACE("FOR Loop exceeded %d iterations at %s\n", TINYJS_LOOP_MAX_ITERATIONS, l->getPosition().c_str());
-            throw CScriptException("LOOP_ERROR");
-        }
-    } else if (l->tk==LEX_R_RETURN) {
-        l->match(LEX_R_RETURN);
-        CScriptVarLink *result = 0;
-        if (l->tk != ';')
-          result = base(execute);
         if (execute) {
           CScriptVarLink *resultVar = scopes.back()->findChild(TINYJS_RETURN_VAR);
           if (resultVar)
@@ -1651,17 +1677,102 @@ void CTinyJS::statement(bool &execute) {
           execute = false;
         }
         CLEAN(result);
-        l->match(';');
-    } else if (l->tk==LEX_R_FUNCTION) {
-        CScriptVarLink *funcVar = parseFunctionDefinition();
+        token = token.match(';');
+    } else if (token.type()==LEX_R_FUNCTION) {
+        SResult r = parseFunctionDefinition(token);
+        token = r.token;
+        
         if (execute) {
-          if (funcVar->name == TINYJS_TEMP_NAME)
+          if (r.varLink->name == TINYJS_TEMP_NAME)
             TRACE("Functions defined at statement-level are meant to have a name\n");
           else
-            scopes.back()->addChildNoDup(funcVar->name, funcVar->var);
+            scopes.back()->addChildNoDup(r.varLink->name, r.varLink->var);
         }
-        CLEAN(funcVar);
-    } else l->match(LEX_EOF);
+        CLEAN(r.varLink);
+    } else token = token.match(LEX_EOF);
+    
+    if (token.type() == ';')
+        return statement (execute, token);
+    else    
+        return token;
+}
+
+/**
+ * While loop parsing / execution
+ * @param execute
+ * @param token
+ * @return 
+ */
+CScriptToken CTinyJS::whileLoop(bool &execute, CScriptToken token)
+{
+    token = token.match(LEX_R_WHILE);
+    token = token.match('(');
+    
+    CScriptToken    condition = token;
+    bool            conditionValue = true;
+    
+    while (conditionValue) {
+        token = condition;      //Go back to evaluate condition
+        
+        SResult     c = base (execute, token);
+        token = c.token;
+        
+        conditionValue = execute && c.varLink->var->getBool();
+        CLEAN (c.varLink);
+        
+        token = token.match(')');
+
+        bool    bodyExec = conditionValue;
+        token = statement(bodyExec, token);
+    }
+    
+    return token;
+}
+
+/**
+ * 'for' loop parsing / execution
+ * @param execute
+ * @param token
+ * @return 
+ */
+CScriptToken CTinyJS::forLoop(bool &execute, CScriptToken token)
+{
+    bool noExec = false;
+    
+    //First part: find for loop parts
+    token = token.match(LEX_R_FOR);
+
+    const CScriptToken init = token.match('(');
+    
+    const CScriptToken condition = statement (noExec, init);
+    token = ignoreResult(base (noExec, condition));
+    
+    const CScriptToken increment = token.match(';');
+    token = statement (noExec, increment);
+    
+    const CScriptToken body = token.match(')');
+    const CScriptToken nextToken = statement(noExec, body);
+    
+    //Second part: execute if requested
+    if (execute) {
+        bool conditionValue = true;
+        
+        statement(execute, init);
+        
+        while (conditionValue) {
+            SResult r = base (execute, condition);
+            
+            conditionValue = r.varLink->var->getBool();
+            CLEAN (r.varLink);
+            
+            if (conditionValue) {
+                statement (execute, body);
+                statement (execute, increment);
+            }            
+        }        
+    }//if (execute)
+    
+    return nextToken;
 }
 
 /// Get the given variable specified by a path (var1.var2.etc), or return 0

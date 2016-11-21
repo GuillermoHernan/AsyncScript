@@ -37,3 +37,6 @@ run_tests
 
 #NetBeans configuration
 nbproject/**
+
+#Generated tests results
+tests/*.fail.js
