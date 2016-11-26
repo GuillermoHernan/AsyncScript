@@ -304,7 +304,7 @@ Ref<JSValue> JSObject::get(const std::string& name)const
  * @param value
  * @return 
  */
-Ref<JSValue> JSObject::set(const std::string& name, Ref<JSValue> value)
+Ref<JSValue> JSObject::set(const std::string& name, Ref<JSValue> value, bool forceLocal)
 {
     if (value->isUndefined())
     {
@@ -410,7 +410,7 @@ Ref<JSValue> JSArray::get(const std::string& name)const
  * @param value
  * @return 
  */
-Ref<JSValue> JSArray::set(const std::string& name, Ref<JSValue> value)
+Ref<JSValue> JSArray::set(const std::string& name, Ref<JSValue> value, bool forceLocal)
 {
     if (name == "length")
     {
@@ -589,7 +589,7 @@ Ref<JSValue> BlockScope::get(const std::string& name)const
  * @param value     Symbol value.
  * @return Symbol value.
  */
-Ref<JSValue> BlockScope::set(const std::string& name, Ref<JSValue> value)
+Ref<JSValue> BlockScope::set(const std::string& name, Ref<JSValue> value, bool forceLocal)
 {
     if (value->isUndefined())
     {
@@ -602,6 +602,8 @@ Ref<JSValue> BlockScope::set(const std::string& name, Ref<JSValue> value)
         m_symbols[name] = value; //Present at current scope
     else if (!get(name)->isUndefined())
         m_symbols[name] = value; //Symbol does not exist, create it at this scope.
+    else if (forceLocal)
+        m_symbols[name] = value;
     else
         return m_pParent->set(name, value); //Set at parent scope
 
@@ -696,8 +698,11 @@ Ref<JSValue> FunctionScope::get(const std::string& name)const
  * @param value
  * @return 
  */
-Ref<JSValue> FunctionScope::set(const std::string& name, Ref<JSValue> value)
+Ref<JSValue> FunctionScope::set(const std::string& name, Ref<JSValue> value, bool forceLocal)
 {
+    //It should not be called with 'forceLocal'
+    ASSERT (!forceLocal);
+    
     if (name == "this" || name == "arguments")
         throw CScriptException("Invalid left hand side in assignment");
     else if (m_symbols.find(name) != m_symbols.end())

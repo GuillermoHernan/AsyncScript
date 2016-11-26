@@ -919,7 +919,7 @@ CScriptToken CTinyJS::statement(bool &execute, CScriptToken token, IScope* pScop
                     value = r.value;
             }
 
-            pScope->set(varName, value);
+            pScope->set(varName, value, true);
 
             if (token.type() != ';')
                 token = token.match(',');

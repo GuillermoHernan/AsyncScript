@@ -295,7 +295,7 @@ public:
 struct IScope
 {
     virtual Ref<JSValue> get(const std::string& name)const = 0;
-    virtual Ref<JSValue> set(const std::string& name, Ref<JSValue> value) = 0;
+    virtual Ref<JSValue> set(const std::string& name, Ref<JSValue> value, bool forceLocal=false) = 0;
     virtual IScope* getFunctionScope() = 0;
     
 protected:
@@ -516,7 +516,7 @@ public:
     // IScope
     /////////////////////////////////////////
     virtual Ref<JSValue> get(const std::string& name)const;
-    virtual Ref<JSValue> set(const std::string& name, Ref<JSValue> value);
+    virtual Ref<JSValue> set(const std::string& name, Ref<JSValue> value, bool forceLocal=false);
 
     virtual IScope* getFunctionScope()
     {
@@ -600,7 +600,7 @@ public:
     // IScope
     /////////////////////////////////////////
     virtual Ref<JSValue> get(const std::string& name)const;
-    virtual Ref<JSValue> set(const std::string& name, Ref<JSValue> value);
+    virtual Ref<JSValue> set(const std::string& name, Ref<JSValue> value, bool forceLocal=false);
 
     // JSValue
     /////////////////////////////////////////
@@ -725,7 +725,7 @@ public:
     }
 
     virtual Ref<JSValue> get(const std::string& name)const;
-    virtual Ref<JSValue> set(const std::string& name, Ref<JSValue> value);
+    virtual Ref<JSValue> set(const std::string& name, Ref<JSValue> value, bool forceLocal=false);
     virtual IScope* getFunctionScope();
 
 private:
@@ -763,7 +763,7 @@ public:
     }
 
     virtual Ref<JSValue> get(const std::string& name)const;
-    virtual Ref<JSValue> set(const std::string& name, Ref<JSValue> value);
+    virtual Ref<JSValue> set(const std::string& name, Ref<JSValue> value, bool forceLocal=false);
 
     virtual IScope* getFunctionScope()
     {
