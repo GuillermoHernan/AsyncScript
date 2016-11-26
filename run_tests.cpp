@@ -215,13 +215,13 @@ bool run_test(const char *filename) {
   CTinyJS s;
   registerFunctions(&s);
   registerMathFunctions(&s);
-  s.root->addChild("result", new CScriptVar("0",SCRIPTVAR_INTEGER));
+  s.setGlobal("result", jsInt(0));
   try {
     s.execute(buffer);
   } catch (const CScriptException &e) {
     printf("ERROR: %s\n", e.what());
   }
-  bool pass = s.root->getParameter("result")->getBool();
+  bool pass = s.getGlobal("result")->toBoolean();
 
   if (pass)
     printf("PASS\n");
@@ -230,10 +230,9 @@ bool run_test(const char *filename) {
     sprintf(fn, "%s.fail.js", filename);
     FILE *f = fopen(fn, "wt");
     if (f) {
-      std::ostringstream symbols;
-      s.root->getJSON(symbols);
-      fprintf(f, "%s", symbols.str().c_str());
-      fclose(f);
+        std::string symbols = s.dumpJSONSymbols();
+        fprintf(f, "%s", symbols.c_str());
+        fclose(f);
     }
 
     printf("FAIL - symbols written to %s\n", fn);

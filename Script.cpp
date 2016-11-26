@@ -42,13 +42,16 @@
 //const char *code = "{ var b = 1; for (var i=0;i<4;i=i+1) b = b * 2; }";
 const char *code = "function myfunc(x, y) { return x + y; } var a = myfunc(1,2); print(a);";
 
-void js_print(CScriptVar *v, void *userdata) {
-    printf("> %s\n", v->getParameter("text")->getString().c_str());
+Ref<JSValue> js_print(FunctionScope* pScope) {
+    printf("> %s\n", pScope->get("text")->toString().c_str());
+    return undefined();
 }
 
-void js_dump(CScriptVar *v, void *userdata) {
-    CTinyJS *js = (CTinyJS*)userdata;
-    js->root->trace(">  ");
+Ref<JSValue> js_dump(FunctionScope* pScope) {
+    JSObject*       globals = (JSObject*)pScope->getGlobals();
+
+    printf("> %s\n", globals->getJSON().c_str());
+    return undefined();
 }
 
 

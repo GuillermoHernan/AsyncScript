@@ -8,6 +8,12 @@
 
 #include <string>
 #include <stdexcept>
+#include <sstream>
+#include <stdarg.h>
+
+#include "TinyJS_Lexer.h"
+
+struct ScriptPosition;
 
 bool isWhitespace(char ch);
 
@@ -37,3 +43,20 @@ public:
     CScriptException(const std::string &text): logic_error(text) {}
     CScriptException(const char *text): logic_error(text) {}
 };
+
+//Exception helper functions
+void error (const char* msgFormat, ...);
+void errorAt (const ScriptPosition& position, const char* msgFormat, ...);
+void errorAt_v (const ScriptPosition& position, const char* msgFormat, va_list args);
+
+//Remove if compiling with c++ 2011 or later
+template <class T>
+std::string to_string (const T &x)
+{
+    std::ostringstream  output;
+    
+    output << x;
+    return output.str();
+}
+
+double getNaN();

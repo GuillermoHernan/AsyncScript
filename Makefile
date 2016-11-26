@@ -5,7 +5,11 @@ LDFLAGS=-g -rdynamic
 SOURCES=  \
 TinyJS.cpp \
 TinyJS_Functions.cpp \
-TinyJS_MathFunctions.cpp
+TinyJS_MathFunctions.cpp \
+TinyJS_Lexer.cpp \
+utils.cpp \
+JsVars.cpp \
+jsOperators.cpp
 
 OBJECTS=$(SOURCES:.cpp=.o)
 

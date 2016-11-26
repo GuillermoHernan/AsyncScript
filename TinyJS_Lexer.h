@@ -82,6 +82,27 @@ enum LEX_TYPES {
 std::string getTokenStr(int token);
 
 /**
+ * Indicates a position inside a script file
+ */
+struct ScriptPosition
+{
+    int line;
+    int column;
+
+    ScriptPosition() :
+    line(-1), column(-1)
+    {
+    }
+
+    ScriptPosition(int l, int c) :
+    line(l), column(c)
+    {
+    }
+
+    std::string toString()const;
+};
+
+/**
  * Javascript token. Tokens are the fragments in which input source is divided
  * and classified before being parsed.
  * 
@@ -103,7 +124,7 @@ public:
      */
     CScriptToken(const char* code);
 
-    CScriptToken(LEX_TYPES lexType, const char* code, int line, int column, int length);
+    CScriptToken(LEX_TYPES lexType, const char* code, const ScriptPosition& position, int length);
 
     /// Reads next token from input, and returns it.
     CScriptToken next(bool skipComments = true)const;
@@ -112,7 +133,10 @@ public:
     CScriptToken match(int expected_tk)const; 
     
     ///Return a string representing the position in lines and columns of the token
-    std::string getPosition()const; 
+    const ScriptPosition& getPosition()const
+    {
+        return m_position;
+    }
     
     LEX_TYPES   type()const {return m_type;}
     bool        eof ()const {return m_type == LEX_EOF;}
@@ -120,13 +144,12 @@ public:
     const char* code()const {return m_code;}
     
     std::string strValue()const;
-    
+
 private:
-    const char* m_code;
-    LEX_TYPES   m_type;       ///<Token type.
-    int         m_line;
-    int         m_column;
-    int         m_length;
+    const char*     m_code;
+    LEX_TYPES       m_type;       ///<Token type.
+    ScriptPosition  m_position;
+    int             m_length;
     
     CScriptToken nextDispatch()const;
     
@@ -137,6 +160,6 @@ private:
     CScriptToken parseString (const char * code)const;
     CScriptToken parseOperator (const char * code)const;
     
-    void calcLineColumn (const char* position, int *pLine, int *pColumn)const;
+    ScriptPosition calcPosition (const char* code)const;
     CScriptToken errorAt (const char* charPos, const char* msgFormat, ...)const;
 };

@@ -6,34 +6,16 @@
 #include "TinyJS_Lexer.h"
 #include "utils.h"
 
-#include <assert.h>
+#include "OS_support.h"
+
 #include <map>
-
-#define ASSERT(X) assert(X)
-
 #include <string>
 #include <string.h>
 #include <sstream>
 #include <cstdlib>
 #include <stdio.h>
-#include <stdarg.h>
 
 using namespace std;
-
-#ifdef _WIN32
-#ifdef _DEBUG
-   #ifndef DBG_NEW
-      #define DBG_NEW new ( _NORMAL_BLOCK , __FILE__ , __LINE__ )
-      #define new DBG_NEW
-   #endif
-#endif
-#endif
-
-#ifdef __GNUC__
-#define vsprintf_s vsnprintf
-#define sprintf_s snprintf
-#define _strdup strdup
-#endif
 
 string getTokenStr(int token) {
     if (token>32 && token<128) {
@@ -90,6 +72,14 @@ string getTokenStr(int token) {
     return msg.str();
 }
 
+std::string ScriptPosition::toString()const
+{
+    char buffer [128];
+
+    sprintf_s(buffer, "(line: %d, col: %d): ", this->line, this->column);
+    return string(buffer);
+}
+
 
 /**
  * The constructor doesn't make a copy of the input string, so it is important
@@ -100,28 +90,17 @@ string getTokenStr(int token) {
  */
 CScriptToken::CScriptToken(const char* code) : m_code (code)
         ,m_type (LEX_INITIAL)
-        ,m_line (1)
-        ,m_column(1)
-        ,m_length(0)
+        ,m_position(1,1)
 {    
 }
 
-CScriptToken::CScriptToken(LEX_TYPES lexType, const char* code, int line, int column, int length)
+CScriptToken::CScriptToken(LEX_TYPES lexType, const char* code, const ScriptPosition& position, int length)
     : m_code (code)
     ,m_type (lexType)
-    ,m_line (line)
-    ,m_column(column)
+    ,m_position(position)
     ,m_length(length)
 {
 }
-
-std::string CScriptToken::getPosition()const {
-    char buffer [128];
-
-    sprintf(buffer, "(line: %d, col: %d): ", m_line, m_column);
-    return string(buffer);
-}
-
 
 /**
  * Returns full token text
@@ -189,12 +168,7 @@ std::string CScriptToken::strValue()const {
  */
 CScriptToken CScriptToken::buildNextToken (LEX_TYPES lexType, const char* code, int length)const
 {
-    int line;
-    int column;
-    
-    calcLineColumn (code, &line, &column);
-    
-    return CScriptToken (lexType, code, line, column, length);
+    return CScriptToken (lexType, code, calcPosition(code), length);
 }
 
 /**
@@ -244,7 +218,7 @@ CScriptToken CScriptToken::match(int expected_tk)const {
     if ( type() != expected_tk) {
         ostringstream errorString;
         errorString << "Got '" << text() << "' expected " << getTokenStr(expected_tk);
-        return errorAt (m_code, errorString.str().c_str());
+        return errorAt (m_code, "%s", errorString.str().c_str());
     }
     else
         return next();
@@ -440,6 +414,7 @@ CScriptToken CScriptToken::parseOperator (const char * code)const
     return buildNextToken((LEX_TYPES)*code, code, 1);
 }
 
+
 /**
  * Generates an error message located at the given position
  * @param code      Pointer to the code location where the error occurs. 
@@ -449,49 +424,42 @@ CScriptToken CScriptToken::parseOperator (const char * code)const
  */
 CScriptToken CScriptToken::errorAt (const char* code, const char* msgFormat, ...)const
 {
-    char buffer [1024];
-    string message;
     va_list aptr;
-    int line, column;
-
-    calcLineColumn(code, &line, &column);
-    sprintf(buffer, "(line: %d, col: %d): ", line, column);
-    message = buffer;
-
+    
     va_start(aptr, msgFormat);
-    vsprintf(buffer, msgFormat, aptr);
-    message += buffer;
+    ::errorAt_v(getPosition(), msgFormat, aptr);
     va_end(aptr);
-
-    throw CScriptException(message);
+    
+    return *this;
 }
 
 /**
  * Calculates a line and column position, from a code pointer.
  * Uses the 'CScriptToken' information as a base from which to perform the 
  * calculations
- * @param position  Pointer to the text for which the position is going to be 
+ * @param codePos  Pointer to the text for which the position is going to be 
  * calculated. It MUST BE a pointer to the same text as 'm_code' pointer, and be
  * greater than it.
- * @param pLine     (output) Calculated line
- * @param pColumn   (output) Calculated column.
  */
-void CScriptToken::calcLineColumn (const char* position, int *pLine, int *pColumn)const
+ScriptPosition CScriptToken::calcPosition (const char* codePos)const
 {
-    ASSERT (position >= m_code);
+    ASSERT (codePos >= m_code);
 
-    int             line = m_line, col = m_column;
+    int             line = m_position.line, col = m_position.column;
     const char*     code;
     
-    for ( code = m_code; *code != 0 && code < position; ++code, ++col) {
+    for ( code = m_code; *code != 0 && code < codePos; ++code, ++col) {
         if (*code == '\n') {
             ++line;
             col = 0;
         }
     }
     
-    ASSERT (position == code);
+    ASSERT (codePos == code);
     
-    *pLine = line;
-    *pColumn = col;
+    ScriptPosition  pos;
+    pos.line = line;
+    pos.column = col;
+    
+    return pos;
 }

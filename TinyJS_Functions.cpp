@@ -35,140 +35,154 @@
 
 using namespace std;
 // ----------------------------------------------- Actual Functions
-void scTrace(CScriptVar *c, void *userdata) {
+
+//TODO: Reactivate
+/*void scTrace(CScriptVar *c, void *userdata) {
     CTinyJS *js = (CTinyJS*)userdata;
     js->root->trace();
 }
 
-void scObjectDump(CScriptVar *c, void *) {
-    c->getParameter("this")->trace("> ");
+void scObjectDump(FunctionScope* pScope) {
+    pScope->get("this")->trace("> ");
 }
 
-void scObjectClone(CScriptVar *c, void *) {
-    CScriptVar *obj = c->getParameter("this");
+void scObjectClone(FunctionScope* pScope) {
+    CScriptVar *obj = pScope->get("this");
     c->getReturnVar()->copyValue(obj);
+}*/
+
+Ref<JSValue> scMathRand(FunctionScope* pScope){
+    return jsDouble (double(rand())/RAND_MAX);
 }
 
-void scMathRand(CScriptVar *c, void *) {
-    c->getReturnVar()->setDouble((double)rand()/RAND_MAX);
+
+Ref<JSValue> scMathRandInt(FunctionScope* pScope){
+    const int min = pScope->get("min")->toInt32();
+    const int max = pScope->get("max")->toInt32();
+    const int val = min + (int)(rand()%(1+max-min));
+    return jsInt(val);
 }
 
-void scMathRandInt(CScriptVar *c, void *) {
-    int min = c->getParameter("min")->getInt();
-    int max = c->getParameter("max")->getInt();
-    int val = min + (int)(rand()%(1+max-min));
-    c->getReturnVar()->setInt(val);
-}
-
-void scCharToInt(CScriptVar *c, void *) {
-    string str = c->getParameter("ch")->getString();;
+Ref<JSValue> scCharToInt(FunctionScope* pScope){
+    string str = pScope->get("ch")->toString();
     int val = 0;
     if (str.length()>0)
         val = (int)str.c_str()[0];
-    c->getReturnVar()->setInt(val);
+    return jsInt(val);
 }
 
-void scStringIndexOf(CScriptVar *c, void *) {
-    string str = c->getParameter("this")->getString();
-    string search = c->getParameter("search")->getString();
+Ref<JSValue> scStringIndexOf(FunctionScope* pScope){
+    string str = pScope->get("this")->toString();
+    string search = pScope->get("search")->toString();
     size_t p = str.find(search);
     int val = (p==string::npos) ? -1 : p;
-    c->getReturnVar()->setInt(val);
+    return jsInt(val);
 }
 
-void scStringSubstring(CScriptVar *c, void *) {
-    string str = c->getParameter("this")->getString();
-    int lo = c->getParameter("lo")->getInt();
-    int hi = c->getParameter("hi")->getInt();
+Ref<JSValue> scStringSubstring(FunctionScope* pScope){
+    string str = pScope->get("this")->toString();
+    int lo = pScope->get("lo")->toInt32();
+    int hi = pScope->get("hi")->toInt32();
 
     int l = hi-lo;
     if (l>0 && lo>=0 && lo+l<=(int)str.length())
-      c->getReturnVar()->setString(str.substr(lo, l));
+      return jsString(str.substr(lo, l));
     else
-      c->getReturnVar()->setString("");
+      return jsString("");
 }
 
-void scStringCharAt(CScriptVar *c, void *) {
-    string str = c->getParameter("this")->getString();
-    int p = c->getParameter("pos")->getInt();
+Ref<JSValue> scStringCharAt(FunctionScope* pScope) {
+    string str = pScope->get("this")->toString();
+    int p = pScope->get("pos")->toInt32();
     if (p>=0 && p<(int)str.length())
-      c->getReturnVar()->setString(str.substr(p, 1));
+      return jsString(str.substr(p, 1));
     else
-      c->getReturnVar()->setString("");
+      return jsString("");
 }
 
-void scStringCharCodeAt(CScriptVar *c, void *) {
-    string str = c->getParameter("this")->getString();
-    int p = c->getParameter("pos")->getInt();
+Ref<JSValue> scStringCharCodeAt(FunctionScope* pScope) {
+    string str = pScope->get("this")->toString();
+    int p = pScope->get("pos")->toInt32();
     if (p>=0 && p<(int)str.length())
-      c->getReturnVar()->setInt(str.at(p));
+      return jsInt(str.at(p));
     else
-      c->getReturnVar()->setInt(0);
+      return jsInt(0);
 }
 
-void scStringSplit(CScriptVar *c, void *) {
-    string str = c->getParameter("this")->getString();
-    string sep = c->getParameter("separator")->getString();
-    CScriptVar *result = c->getReturnVar();
-    result->setArray();
-    int length = 0;
+Ref<JSValue> scStringSplit(FunctionScope* pScope) {
+    string str = pScope->get("this")->toString();
+    string sep = pScope->get("separator")->toString();
+    Ref<JSArray>    result = JSArray::create();
 
     size_t pos = str.find(sep);
     while (pos != string::npos) {
-      result->setArrayIndex(length++, new CScriptVar(str.substr(0,pos)));
-      str = str.substr(pos+1);
-      pos = str.find(sep);
+        result->push( jsString(str.substr(0,pos)));
+        str = str.substr(pos+1);
+        pos = str.find(sep);
     }
 
     if (str.size()>0)
-      result->setArrayIndex(length++, new CScriptVar(str));
+        result->push( jsString(str) );
+    
+    return result;
 }
 
-void scStringFromCharCode(CScriptVar *c, void *) {
+Ref<JSValue> scStringFromCharCode(FunctionScope* pScope) {
     char str[2];
-    str[0] = c->getParameter("char")->getInt();
+    str[0] = pScope->get("char")->toInt32();
     str[1] = 0;
-    c->getReturnVar()->setString(str);
+    return jsString(str);
 }
 
-void scIntegerParseInt(CScriptVar *c, void *) {
-    string str = c->getParameter("str")->getString();
+Ref<JSValue> scIntegerParseInt(FunctionScope* pScope) {
+    string str = pScope->get("str")->toString();
     int val = strtol(str.c_str(),0,0);
-    c->getReturnVar()->setInt(val);
+    return jsInt(val);
 }
 
-void scIntegerValueOf(CScriptVar *c, void *) {
-    string str = c->getParameter("str")->getString();
+Ref<JSValue> scIntegerValueOf(FunctionScope* pScope) {
+    string str = pScope->get("str")->toString();
 
     int val = 0;
     if (str.length()==1)
       val = str[0];
-    c->getReturnVar()->setInt(val);
+    return jsInt(val);
 }
 
-void scJSONStringify(CScriptVar *c, void *) {
-    std::ostringstream result;
-    c->getParameter("obj")->getJSON(result);
-    c->getReturnVar()->setString(result.str());
+Ref<JSValue> scJSONStringify(FunctionScope* pScope) {
+    std::string result;
+    result = pScope->get("obj")->getJSON();
+    return jsString(result);
 }
 
-void scExec(CScriptVar *c, void *data) {
-    CTinyJS *tinyJS = (CTinyJS *)data;
-    std::string str = c->getParameter("jsCode")->getString();
-    tinyJS->execute(str);
+Ref<JSValue> scExec(FunctionScope* pScope) {
+    //TODO: Is it meant to share globals?
+    CTinyJS tinyJS;
+    std::string str = pScope->get("jsCode")->toString();
+    tinyJS.execute(str);
+    
+    return undefined();
 }
 
-void scEval(CScriptVar *c, void *data) {
-    CTinyJS *tinyJS = (CTinyJS *)data;
-    std::string str = c->getParameter("jsCode")->getString();
-    c->setReturnVar(tinyJS->evaluateComplex(str).var);
+Ref<JSValue> scEval(FunctionScope* pScope) {
+    //TODO: Is it meant to share globals?
+    CTinyJS tinyJS;
+    std::string str = pScope->get("jsCode")->toString();
+    
+    return tinyJS.evaluateComplex(str);
 }
 
-void scArrayContains(CScriptVar *c, void *data) {
-  CScriptVar *obj = c->getParameter("obj");
-  CScriptVarLink *v = c->getParameter("this")->firstChild;
+//TODO: Reactivate, but replacing them by standard javascript functions
 
-  bool contains = false;
+/*Ref<JSValue> scArrayContains(FunctionScope* pScope) {
+  Ref<JSValue>  obj = pScope->get("obj");
+  Ref<JSValue>  arr = pScope->get("this");
+  
+  if (!arr->isArray())
+      return jsFalse();
+
+  Ref<JSArray>  v = arr.staticCast();
+
   while (v) {
       if (v->var->equals(obj)) {
         contains = true;
@@ -177,15 +191,15 @@ void scArrayContains(CScriptVar *c, void *data) {
       v = v->nextSibling;
   }
 
-  c->getReturnVar()->setInt(contains);
+  return jsFalse();
 }
 
-void scArrayRemove(CScriptVar *c, void *data) {
-  CScriptVar *obj = c->getParameter("obj");
+Ref<JSValue> scArrayRemove(FunctionScope* pScope) {
+  CScriptVar *obj = pScope->get("obj");
   vector<int> removedIndices;
   CScriptVarLink *v;
   // remove
-  v = c->getParameter("this")->firstChild;
+  v = pScope->get("this")->firstChild;
   while (v) {
       if (v->var->equals(obj)) {
         removedIndices.push_back(v->getIntName());
@@ -193,7 +207,7 @@ void scArrayRemove(CScriptVar *c, void *data) {
       v = v->nextSibling;
   }
   // renumber
-  v = c->getParameter("this")->firstChild;
+  v = pScope->get("this")->firstChild;
   while (v) {
       int n = v->getIntName();
       int newn = n;
@@ -206,27 +220,27 @@ void scArrayRemove(CScriptVar *c, void *data) {
   }
 }
 
-void scArrayJoin(CScriptVar *c, void *data) {
-  string sep = c->getParameter("separator")->getString();
-  CScriptVar *arr = c->getParameter("this");
+Ref<JSValue>scArrayJoin(FunctionScope* pScope) {
+  string sep = pScope->get("separator")->toString();
+  CScriptVar *arr = pScope->get("this");
 
   ostringstream sstr;
   int l = arr->getArrayLength();
   for (int i=0;i<l;i++) {
     if (i>0) sstr << sep;
-    sstr << arr->getArrayIndex(i)->getString();
+    sstr << arr->getArrayIndex(i)->toString();
   }
 
-  c->getReturnVar()->setString(sstr.str());
-}
+  return jsString(sstr.str());
+}*/
 
 // ----------------------------------------------- Register Functions
 void registerFunctions(CTinyJS *tinyJS) {
     tinyJS->addNative("function exec(jsCode)", scExec, tinyJS); // execute the given code
     tinyJS->addNative("function eval(jsCode)", scEval, tinyJS); // execute the given string (an expression) and return the result
-    tinyJS->addNative("function trace()", scTrace, tinyJS);
-    tinyJS->addNative("function Object.dump()", scObjectDump, 0);
-    tinyJS->addNative("function Object.clone()", scObjectClone, 0);
+//    tinyJS->addNative("function trace()", scTrace, tinyJS);
+//    tinyJS->addNative("function Object.dump()", scObjectDump, 0);
+//    tinyJS->addNative("function Object.clone()", scObjectClone, 0);
     tinyJS->addNative("function Math.rand()", scMathRand, 0);
     tinyJS->addNative("function Math.randInt(min, max)", scMathRandInt, 0);
     tinyJS->addNative("function charToInt(ch)", scCharToInt, 0); //  convert a character to an int - get its value
@@ -240,8 +254,8 @@ void registerFunctions(CTinyJS *tinyJS) {
     tinyJS->addNative("function Integer.valueOf(str)", scIntegerValueOf, 0); // value of a single character
     tinyJS->addNative("function JSON.stringify(obj, replacer)", scJSONStringify, 0); // convert to JSON. replacer is ignored at the moment
     // JSON.parse is left out as you can (unsafely!) use eval instead
-    tinyJS->addNative("function Array.contains(obj)", scArrayContains, 0);
-    tinyJS->addNative("function Array.remove(obj)", scArrayRemove, 0);
-    tinyJS->addNative("function Array.join(separator)", scArrayJoin, 0);
+//    tinyJS->addNative("function Array.contains(obj)", scArrayContains, 0);
+//    tinyJS->addNative("function Array.remove(obj)", scArrayRemove, 0);
+//    tinyJS->addNative("function Array.join(separator)", scArrayJoin, 0);
 }
 

@@ -5,10 +5,8 @@
  */
 
 #include "utils.h"
-
-#include <assert.h>
-
-#define ASSERT(X) assert(X)
+#include "OS_support.h"
+#include "TinyJS_Lexer.h"
 
 #include <string>
 #include <string.h>
@@ -17,21 +15,6 @@
 #include <stdio.h>
 
 using namespace std;
-
-#ifdef _WIN32
-#ifdef _DEBUG
-   #ifndef DBG_NEW
-      #define DBG_NEW new ( _NORMAL_BLOCK , __FILE__ , __LINE__ )
-      #define new DBG_NEW
-   #endif
-#endif
-#endif
-
-#ifdef __GNUC__
-#define vsprintf_s vsnprintf
-#define sprintf_s snprintf
-#define _strdup strdup
-#endif
 
 // ----------------------------------------------------------------------------------- Utils
 bool isWhitespace(char ch) {
@@ -128,8 +111,8 @@ std::string getJSString(const std::string &str) {
         default: {
           int nCh = ((int)nStr[i]) &0xFF;
           if (nCh<32 || nCh>127) {
-            char buffer[5];
-            sprintf_s(buffer, 5, "\\x%02X", nCh);
+            char buffer[16];
+            sprintf_s(buffer, "\\x%02X", nCh);
             replaceWith = buffer;
           } else replace=false;
         }
@@ -152,3 +135,68 @@ bool isAlphaNum(const std::string &str) {
         return false;
     return true;
 }
+
+
+std::string generateErrorMessage (const ScriptPosition* pPos, const char* msgFormat, va_list args)
+{
+    char buffer [2048];
+    string message;
+
+    if (pPos)
+    {
+        sprintf_s(buffer, "(line: %d, col: %d): ", pPos->line, pPos->column);
+        message = buffer;
+    }
+
+    vsprintf_s(buffer, msgFormat, args);
+    message += buffer;
+
+    return message;
+}
+
+/**
+ * Generates an exception, with the error message
+ * @param msgFormat 'printf-like' format string
+ * @param ...       Optional message parameters
+ */
+void error (const char* msgFormat, ...)
+{
+    va_list aptr;
+    
+    va_start(aptr, msgFormat);
+    const std::string message = generateErrorMessage(NULL, msgFormat, aptr);
+    va_end(aptr);
+    
+    throw CScriptException(message);
+}
+
+
+/**
+ * Generates an error message located at the given position
+ * @param code      Pointer to the code location where the error occurs. 
+ * It is used to calculate line and column for the error message
+ * @param msgFormat 'printf-like' format string
+ * @param ...       Optional message parameters
+ */
+void errorAt (const ScriptPosition& position, const char* msgFormat, ...)
+{
+    va_list aptr;
+
+    va_start(aptr, msgFormat);
+    const std::string message = generateErrorMessage(&position, msgFormat, aptr);
+    va_end(aptr);
+    
+    throw CScriptException(message);
+}
+
+void errorAt_v (const ScriptPosition& position, const char* msgFormat, va_list args)
+{
+    const std::string message = generateErrorMessage(&position, msgFormat, args);
+    
+    throw CScriptException(message);
+}
+
+/*
+void error (const char* msgFormat, ...);
+void errorAt (const ScriptPosition& position, const char* msgFormat, ...);
+*/

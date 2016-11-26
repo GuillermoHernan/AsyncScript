@@ -43,6 +43,7 @@
 #include <vector>
 
 #include "TinyJS_Lexer.h"
+#include "JsVars.h"
 
 #ifndef TRACE
 #define TRACE printf
@@ -50,7 +51,7 @@
 
 
 const int TINYJS_LOOP_MAX_ITERATIONS = 8192;
-
+/*
 enum SCRIPTVAR_FLAGS {
     SCRIPTVAR_UNDEFINED   = 0,
     SCRIPTVAR_FUNCTION    = 1,
@@ -73,23 +74,21 @@ enum SCRIPTVAR_FLAGS {
                             SCRIPTVAR_ARRAY |
                             SCRIPTVAR_NULL,
 
-};
+};*/
 
-#define TINYJS_RETURN_VAR "return"
-#define TINYJS_PROTOTYPE_CLASS "prototype"
-#define TINYJS_TEMP_NAME ""
-#define TINYJS_BLANK_DATA ""
+//#define TINYJS_RETURN_VAR "return"
+//#define TINYJS_PROTOTYPE_CLASS "prototype"
+//#define TINYJS_TEMP_NAME ""
+//#define TINYJS_BLANK_DATA ""
 
 /// convert the given string into a quoted string suitable for javascript
 std::string getJSString(const std::string &str);
 
-class CScriptVar;
-//class CScriptLex;
+//class CScriptVar;
 class CScriptToken;
 
 
-typedef void (*JSCallback)(CScriptVar *var, void *userdata);
-
+#if 0
 class CScriptVarLink
 {
 public:
@@ -194,7 +193,7 @@ protected:
 
     friend class CTinyJS;
 };
-
+#endif
 struct SResult;
 
 class CTinyJS {
@@ -208,7 +207,7 @@ public:
      * 'undefined' variable type. CScriptVarLink is returned as this will
      * automatically unref the result as it goes out of scope. If you want to
      * keep it, you must use ref() and unref() */
-    CScriptVarLink evaluateComplex(const std::string &code);
+    Ref<JSValue> evaluateComplex(const std::string &code);
     /** Evaluate the given code and return a string. If nothing to return, will return
      * 'undefined' */
     std::string evaluate(const std::string &code);
@@ -227,52 +226,58 @@ public:
            tinyJS->addNative("function String.substring(lo, hi)", scSubstring, 0);
        \endcode
     */
-    void addNative(const std::string &funcDesc, JSCallback ptr, void *userdata);
+    void addNative(const std::string &funcDesc, JSNativeFn ptr, void *userdata);
+    
+    Ref<JSValue>    getGlobal(const std::string& name)const;
+    Ref<JSValue>    setGlobal(const std::string& name, Ref<JSValue> value);
+    
+    std::string     dumpJSONSymbols ();
 
     /// Get the given variable specified by a path (var1.var2.etc), or return 0
-    CScriptVar *getScriptVariable(const std::string &path);
+    //CScriptVar *getScriptVariable(const std::string &path);
     /// Get the value of the given variable, or return 0
-    const std::string *getVariable(const std::string &path);
+    //const std::string *getVariable(const std::string &path);
     /// set the value of the given variable, return trur if it exists and gets set
-    bool setVariable(const std::string &path, const std::string &varData);
+    //bool setVariable(const std::string &path, const std::string &varData);
 
     /// Send all variables to stdout
     void trace();
 
-    CScriptVar *root;   /// root of symbol table
+    //CScriptVar *root;   /// root of symbol table
 private:
+    Ref<JSObject>   m_globals;
     //CScriptLex *l;             /// current lexer
-    std::vector<CScriptVar*> scopes; /// stack of scopes when parsing
+    //std::vector<CScriptVar*> scopes; /// stack of scopes when parsing
 #ifdef TINYJS_CALL_STACK
     std::vector<std::string> call_stack; /// Names of places called so we can show when erroring
 #endif
     
-    CScriptVar *stringClass; /// Built in string class
-    CScriptVar *objectClass; /// Built in object class
-    CScriptVar *arrayClass; /// Built in array class
+//    CScriptVar *stringClass; /// Built in string class
+//    CScriptVar *objectClass; /// Built in object class
+//    CScriptVar *arrayClass; /// Built in array class
 
     // parsing - in order of precedence
-    SResult functionCall(bool &execute, CScriptVarLink *function, CScriptVar *parent, CScriptToken token);
-    SResult factor(bool &execute, CScriptToken token);
-    SResult unary(bool &execute, CScriptToken token);
-    SResult term(bool &execute, CScriptToken token);
-    SResult expression(bool &execute, CScriptToken token);
-    SResult shift(bool &execute, CScriptToken token);
-    SResult condition(bool &execute, CScriptToken token);
-    SResult logic(bool &execute, CScriptToken token);
-    SResult ternary(bool &execute, CScriptToken token);
-    SResult base(bool &execute, CScriptToken token);
-    CScriptToken block(bool &execute, CScriptToken token);
-    CScriptToken statement(bool &execute, CScriptToken token);
-    CScriptToken whileLoop(bool &execute, CScriptToken token);
-    CScriptToken forLoop(bool &execute, CScriptToken token);
+    SResult functionCall(bool &execute, Ref<JSValue> function, Ref<JSValue> parent, CScriptToken token, IScope* pScope);
+    SResult factor(bool &execute, CScriptToken token, IScope* pScope);
+    SResult unary(bool &execute, CScriptToken token, IScope* pScope);
+    SResult term(bool &execute, CScriptToken token, IScope* pScope);
+    SResult expression(bool &execute, CScriptToken token, IScope* pScope);
+    SResult shift(bool &execute, CScriptToken token, IScope* pScope);
+    SResult condition(bool &execute, CScriptToken token, IScope* pScope);
+    SResult logic(bool &execute, CScriptToken token, IScope* pScope);
+    SResult ternary(bool &execute, CScriptToken token, IScope* pScope);
+    SResult base(bool &execute, CScriptToken token, IScope* pScope);
+    CScriptToken block(bool &execute, CScriptToken token, IScope* pScope);
+    CScriptToken statement(bool &execute, CScriptToken token, IScope* pScope);
+    CScriptToken whileLoop(bool &execute, CScriptToken token, IScope* pScope);
+    CScriptToken forLoop(bool &execute, CScriptToken token, IScope* pScope);
     // parsing utility functions
-    SResult parseFunctionDefinition(CScriptToken token);
-    CScriptToken parseFunctionArguments(CScriptVar *funcVar, CScriptToken token);
+    SResult parseFunctionDefinition(CScriptToken token, IScope* pScope);
+    CScriptToken parseFunctionArguments(JSFunction *function, CScriptToken token);
 
-    CScriptVarLink *findInScopes(const std::string &childName); ///< Finds a child, looking recursively up the scopes
-    /// Look up in any parent classes of the given object
-    CScriptVarLink *findInParentClasses(CScriptVar *object, const std::string &name);
+//    CScriptVarLink *findInScopes(const std::string &childName); ///< Finds a child, looking recursively up the scopes
+//    /// Look up in any parent classes of the given object
+    Ref<JSValue>    findInParentClasses(Ref<JSValue> object, const std::string &name);
 };
 
 #endif
