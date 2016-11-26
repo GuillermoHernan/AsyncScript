@@ -229,6 +229,9 @@ Ref<JSValue> createConstant(CScriptToken token);
 
 Ref<JSObject> getObject(IScope* pScope, const std::string& name);
 
+Ref<JSValue> dereference (Ref<JSValue> value);
+
+
 //////////////////////////////////////////
 
 /**
@@ -438,6 +441,11 @@ public:
     static Ref<JSReference> create(IScope* pScope, const std::string& name);
 
     Ref<JSValue> set(Ref<JSValue> value);
+    
+    Ref<JSValue> get()const
+    {
+        return target();
+    }
 
     virtual std::string toString()const
     {

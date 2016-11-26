@@ -315,6 +315,8 @@ SResult CTinyJS::functionCall(bool &execute, Ref<JSValue> fnValue, Ref<JSValue> 
 {
     if (execute)
     {
+        fnValue = dereference (fnValue);
+        
         if (!fnValue->isFunction())
         {
             errorAt(token.getPosition(), "Function expected, found '%s'", fnValue->getTypeName().c_str());

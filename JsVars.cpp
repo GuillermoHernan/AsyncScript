@@ -160,6 +160,22 @@ Ref<JSObject> getObject(IScope* pScope, const std::string& name)
         return Ref<JSObject>();
 }
 
+/**
+ * Checks if an object is a reference. If it is, returns is target.
+ * If it is not, returns the same value.
+ * 
+ * @param value
+ * @return 
+ */
+Ref<JSValue> dereference (Ref<JSValue> value)
+{
+    if (!value->isReference())
+        return value;
+    else
+        return value.staticCast<JSReference>()->get();
+}
+
+
 
 // JSNumber
 //
