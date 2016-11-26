@@ -137,7 +137,10 @@ private:
 
 Ref<JSValue> createConstant(CScriptToken token)
 {
-    return JSNumberConstant::create(token.text());
+    if (token.type() == LEX_STR)
+        return JSString::create(token.strValue());
+    else
+        return JSNumberConstant::create(token.text());
 }
 
 /**
