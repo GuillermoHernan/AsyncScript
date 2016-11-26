@@ -603,7 +603,7 @@ Ref<JSValue> BlockScope::set(const std::string& name, Ref<JSValue> value, bool f
     }
     else if (m_symbols.find(name) != m_symbols.end())
         m_symbols[name] = value; //Present at current scope
-    else if (!get(name)->isUndefined())
+    else if (get(name)->isUndefined())
         m_symbols[name] = value; //Symbol does not exist, create it at this scope.
     else if (forceLocal)
         m_symbols[name] = value;
