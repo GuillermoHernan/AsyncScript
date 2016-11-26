@@ -306,6 +306,8 @@ Ref<JSValue> JSObject::get(const std::string& name)const
  */
 Ref<JSValue> JSObject::set(const std::string& name, Ref<JSValue> value, bool forceLocal)
 {
+    value = dereference(value);
+
     if (value->isUndefined())
     {
         //'undefined' means not present in the object. So it is deleted.
@@ -412,6 +414,8 @@ Ref<JSValue> JSArray::get(const std::string& name)const
  */
 Ref<JSValue> JSArray::set(const std::string& name, Ref<JSValue> value, bool forceLocal)
 {
+    value = dereference(value);
+    
     if (name == "length")
     {
         setLength(value);
@@ -591,6 +595,8 @@ Ref<JSValue> BlockScope::get(const std::string& name)const
  */
 Ref<JSValue> BlockScope::set(const std::string& name, Ref<JSValue> value, bool forceLocal)
 {
+    value = dereference(value);
+
     if (value->isUndefined())
     {
         if (m_pParent != NULL)
@@ -702,6 +708,8 @@ Ref<JSValue> FunctionScope::set(const std::string& name, Ref<JSValue> value, boo
 {
     //It should not be called with 'forceLocal'
     ASSERT (!forceLocal);
+    
+    value = dereference(value);
     
     if (name == "this" || name == "arguments")
         throw CScriptException("Invalid left hand side in assignment");
