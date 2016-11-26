@@ -606,6 +606,7 @@ SResult CTinyJS::unary(bool &execute, CScriptToken token, IScope* pScope)
 SResult CTinyJS::term(bool &execute, CScriptToken token, IScope* pScope)
 {
     SResult ra = unary(execute, token, pScope);
+    Ref<JSValue> result = ra.value;
 
     token = ra.token;
     while (token.type() == '*' || token.type() == '/' || token.type() == '%')
@@ -615,14 +616,10 @@ SResult CTinyJS::term(bool &execute, CScriptToken token, IScope* pScope)
         SResult rb = unary(execute, token, pScope);
         token = rb.token;
         if (execute)
-        {
-            Ref<JSValue> result = jsOperator(op, ra.value, rb.value);
-            return SResult(token, result);
-        }
+            result = jsOperator(op, result, rb.value);
     }
 
-    ra.token = token;
-    return ra;
+    return SResult(token, result);
 }
 
 SResult CTinyJS::expression(bool &execute, CScriptToken token, IScope* pScope)
