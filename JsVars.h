@@ -322,7 +322,7 @@ public:
  * as a 64 floating point value.
  * Javascript numbers are immutable. Once created, they cannot be modified.
  */
-class JSNumber : public JSValueBase<VT_NUMBER>
+class JSNumber : public JSPrimitive<VT_NUMBER>
 {
 public:
     static Ref<JSNumber> create(double value);
@@ -358,7 +358,7 @@ private:
  * Javascript string class.
  * Javascript strings are immutable. Once created, they cannot be modified.
  */
-class JSString : public JSValueBase<VT_STRING>
+class JSString : public JSPrimitive<VT_STRING>
 {
 public:
     static Ref<JSString> create(const std::string& value);
@@ -395,7 +395,7 @@ private:
  * Javascript booleans class.
  * Javascript booleans are immutable. Once created, they cannot be modified.
  */
-class JSBool : public JSValueBase<VT_BOOL>
+class JSBool : public JSPrimitive<VT_BOOL>
 {
 public:
     friend Ref<JSBool> jsTrue();
