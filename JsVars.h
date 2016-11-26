@@ -435,6 +435,7 @@ private:
  * @note The reference must be strictly temporary, as it depends on the pointer to 
  * the scope, which will be invalid when it goes out of scope.
  */
+//TODO: The current references system is problematic. Re-think it.
 class JSReference : public JSValue
 {
 public:
