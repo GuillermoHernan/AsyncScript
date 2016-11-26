@@ -417,7 +417,7 @@ SResult CTinyJS::factor(bool &execute, CScriptToken token, IScope* pScope)
     }
     if (token.type() == LEX_ID)
     {
-        Ref<JSValue> a;
+        Ref<JSValue> a = undefined();
 
         if (execute)
             a = JSReference::create(pScope, token.text());
@@ -425,7 +425,7 @@ SResult CTinyJS::factor(bool &execute, CScriptToken token, IScope* pScope)
         /* The parent if we're executing a method call */
         Ref<JSValue> parent;
 
-        if (execute && a.isNull())
+        if (execute && a->isUndefined())
         {
             /* Variable doesn't exist! JavaScript says we should create it
              * (we won't add it here. This is done in the assignment operator)*/
@@ -991,7 +991,8 @@ CScriptToken CTinyJS::statement(bool &execute, CScriptToken token, IScope* pScop
                 pScope->set(name, r.value);
         }
     }
-    else token = token.match(LEX_EOF);
+    else 
+        token = token.match(LEX_EOF);
 
     if (token.type() == ';')
         return statement(execute, token, pScope);
@@ -1084,7 +1085,7 @@ CScriptToken CTinyJS::forLoop(bool &execute, CScriptToken token, IScope* pScope)
 Ref<JSValue> CTinyJS::findInParentClasses(Ref<JSValue> object, const std::string &name)
 {
     //TODO: Refactor
-    return jsNull();
+    return undefined();
 
     /*// Look for links to actual parent classes
     CScriptVarLink *parentClass = object->findChild(TINYJS_PROTOTYPE_CLASS);
