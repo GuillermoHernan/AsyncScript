@@ -959,7 +959,7 @@ CScriptToken CTinyJS::statement(bool &execute, CScriptToken token, IScope* pScop
         {
             SResult r = base(execute, token, pScope);
             token = r.token;
-            result = r.value;
+            result = dereference(r.value);
         }
         if (execute)
         {
