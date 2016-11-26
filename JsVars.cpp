@@ -194,10 +194,7 @@ Ref<JSNumber> JSNumber::create(double value)
 std::string JSNumber::toString()const
 {
     //TODO: Review the standard. Find about number to string conversion formats.
-    ostringstream output;
-
-    output << m_value;
-    return output.str();
+    return to_string(m_value);
 }
 
 // JSString
