@@ -38,6 +38,14 @@ public:
             ptr->addref();
     }
 
+    Ref(const Ref<ObjType>& src)
+    {
+        m_ptr = src.getPointer();
+
+        if (m_ptr != NULL)
+            m_ptr->addref();
+    }
+
     template <class SrcType>
     Ref(const Ref<SrcType>& src)
     {
@@ -53,18 +61,25 @@ public:
             m_ptr->release();
     }
 
-    template <class SrcType>
-    Ref<ObjType> & operator=(const Ref<SrcType>& src)
+    Ref<ObjType> & operator=(const Ref<ObjType>& src)
     {
+        ObjType*  srcPtr = src.getPointer();
+
+        if (srcPtr != NULL)
+            srcPtr->addref();
+        
         if (m_ptr != NULL)
             m_ptr->release();
 
-        m_ptr = src.getPointer();
-
-        if (m_ptr != NULL)
-            m_ptr->addref();
-
+        m_ptr = srcPtr;
+        
         return *this;
+    }
+
+    template <class SrcType>
+    Ref<ObjType> & operator=(const Ref<SrcType>& src)
+    {
+        return this->operator =(src.staticCast<ObjType>());
     }
 
     bool isNull()const
@@ -279,6 +294,9 @@ struct IScope
     virtual Ref<JSValue> get(const std::string& name)const = 0;
     virtual Ref<JSValue> set(const std::string& name, Ref<JSValue> value) = 0;
     virtual IScope* getFunctionScope() = 0;
+    
+protected:
+    virtual ~IScope(){};
 };
 
 /**
