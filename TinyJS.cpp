@@ -631,6 +631,7 @@ SResult CTinyJS::expression(bool &execute, CScriptToken token, IScope* pScope)
         token = token.match('-');
         negate = true;
     }
+    const CScriptToken    firstTerm = token;
     SResult r = term(execute, token, pScope);
     token = r.token;
     if (negate)
@@ -645,16 +646,23 @@ SResult CTinyJS::expression(bool &execute, CScriptToken token, IScope* pScope)
         token = token.next();
         if (op == LEX_PLUSPLUS || op == LEX_MINUSMINUS)
         {
-            //TODO: rethink how to handle it. It should support prefix and postfix operators
-            //            if (execute) {
-            //                CScriptVar one(1);
-            //                CScriptVar *res = r.varLink->var->mathsOp(&one, op==LEX_PLUSPLUS ? '+' : '-');
-            //                CScriptVarLink *oldValue = new CScriptVarLink(r.varLink->var);
-            //                // in-place add/subtract
-            //                r.varLink->replaceWith(res);
-            //                CLEAN(r.varLink);
-            //                r.varLink = oldValue;
-            //            }
+            //TODO: Missing implementation of prefix operators
+            if (execute)
+            {
+                if (!r.value->isReference())
+                    errorAt(firstTerm.getPosition(), "Invalid left-hand side expression in postfix operation");
+                
+                Ref<JSReference>    ref = r.value.staticCast<JSReference>();
+                
+                const double prevValue = ref->toDouble();
+                
+                if (op == LEX_PLUSPLUS)
+                    ref->set(jsDouble( prevValue + 1));
+                else
+                    ref->set(jsDouble( prevValue - 1));
+                
+                r.value = jsDouble(prevValue);
+            }
         }
         else
         {
