@@ -17,54 +17,57 @@
 
 using namespace std;
 
-string getTokenStr(int token) {
-    if (token>32 && token<128) {
+string getTokenStr(int token)
+{
+    if (token > 32 && token < 128)
+    {
         char buf[4] = "' '";
-        buf[1] = (char)token;
+        buf[1] = (char) token;
         return buf;
     }
-    switch (token) {
-        case LEX_EOF : return "EOF";
-        case LEX_ID : return "ID";
-        case LEX_INT : return "INT";
-        case LEX_FLOAT : return "FLOAT";
-        case LEX_STR : return "STRING";
-        case LEX_EQUAL : return "==";
-        case LEX_TYPEEQUAL : return "===";
-        case LEX_NEQUAL : return "!=";
-        case LEX_NTYPEEQUAL : return "!==";
-        case LEX_LEQUAL : return "<=";
-        case LEX_LSHIFT : return "<<";
-        case LEX_LSHIFTEQUAL : return "<<=";
-        case LEX_GEQUAL : return ">=";
-        case LEX_RSHIFT : return ">>";
-        case LEX_RSHIFTUNSIGNED : return ">>";
-        case LEX_RSHIFTEQUAL : return ">>=";
-        case LEX_PLUSEQUAL : return "+=";
-        case LEX_MINUSEQUAL : return "-=";
-        case LEX_PLUSPLUS : return "++";
-        case LEX_MINUSMINUS : return "--";
-        case LEX_ANDEQUAL : return "&=";
-        case LEX_ANDAND : return "&&";
-        case LEX_OREQUAL : return "|=";
-        case LEX_OROR : return "||";
-        case LEX_XOREQUAL : return "^=";
-                // reserved words
-        case LEX_R_IF : return "if";
-        case LEX_R_ELSE : return "else";
-        case LEX_R_DO : return "do";
-        case LEX_R_WHILE : return "while";
-        case LEX_R_FOR : return "for";
-        case LEX_R_BREAK : return "break";
-        case LEX_R_CONTINUE : return "continue";
-        case LEX_R_FUNCTION : return "function";
-        case LEX_R_RETURN : return "return";
-        case LEX_R_VAR : return "var";
-        case LEX_R_TRUE : return "true";
-        case LEX_R_FALSE : return "false";
-        case LEX_R_NULL : return "null";
-        case LEX_R_UNDEFINED : return "undefined";
-        case LEX_R_NEW : return "new";
+    switch (token)
+    {
+    case LEX_EOF: return "EOF";
+    case LEX_ID: return "ID";
+    case LEX_INT: return "INT";
+    case LEX_FLOAT: return "FLOAT";
+    case LEX_STR: return "STRING";
+    case LEX_EQUAL: return "==";
+    case LEX_TYPEEQUAL: return "===";
+    case LEX_NEQUAL: return "!=";
+    case LEX_NTYPEEQUAL: return "!==";
+    case LEX_LEQUAL: return "<=";
+    case LEX_LSHIFT: return "<<";
+    case LEX_LSHIFTEQUAL: return "<<=";
+    case LEX_GEQUAL: return ">=";
+    case LEX_RSHIFT: return ">>";
+    case LEX_RSHIFTUNSIGNED: return ">>";
+    case LEX_RSHIFTEQUAL: return ">>=";
+    case LEX_PLUSEQUAL: return "+=";
+    case LEX_MINUSEQUAL: return "-=";
+    case LEX_PLUSPLUS: return "++";
+    case LEX_MINUSMINUS: return "--";
+    case LEX_ANDEQUAL: return "&=";
+    case LEX_ANDAND: return "&&";
+    case LEX_OREQUAL: return "|=";
+    case LEX_OROR: return "||";
+    case LEX_XOREQUAL: return "^=";
+        // reserved words
+    case LEX_R_IF: return "if";
+    case LEX_R_ELSE: return "else";
+    case LEX_R_DO: return "do";
+    case LEX_R_WHILE: return "while";
+    case LEX_R_FOR: return "for";
+    case LEX_R_BREAK: return "break";
+    case LEX_R_CONTINUE: return "continue";
+    case LEX_R_FUNCTION: return "function";
+    case LEX_R_RETURN: return "return";
+    case LEX_R_VAR: return "var";
+    case LEX_R_TRUE: return "true";
+    case LEX_R_FALSE: return "false";
+    case LEX_R_NULL: return "null";
+    case LEX_R_UNDEFINED: return "undefined";
+    case LEX_R_NEW: return "new";
     }
 
     ostringstream msg;
@@ -80,7 +83,6 @@ std::string ScriptPosition::toString()const
     return string(buffer);
 }
 
-
 /**
  * The constructor doesn't make a copy of the input string, so it is important
  * not to delete input string while there are still live 'CSriptTokens' using it.
@@ -88,17 +90,17 @@ std::string ScriptPosition::toString()const
  * The token created with the constructor is not parsed from input string. It is
  * just the 'initial' token. To parse the first real token, call 'next'.
  */
-CScriptToken::CScriptToken(const char* code) : m_code (code)
-        ,m_type (LEX_INITIAL)
-        ,m_position(1,1)
-{    
+CScriptToken::CScriptToken(const char* code) : m_code(code)
+, m_type(LEX_INITIAL)
+, m_position(1, 1)
+{
 }
 
 CScriptToken::CScriptToken(LEX_TYPES lexType, const char* code, const ScriptPosition& position, int length)
-    : m_code (code)
-    ,m_type (lexType)
-    ,m_position(position)
-    ,m_length(length)
+: m_code(code)
+, m_type(lexType)
+, m_position(position)
+, m_length(length)
 {
 }
 
@@ -106,8 +108,9 @@ CScriptToken::CScriptToken(LEX_TYPES lexType, const char* code, const ScriptPosi
  * Returns full token text
  * @return 
  */
-std::string CScriptToken::text()const{
-    return string (m_code, m_code + m_length);
+std::string CScriptToken::text()const
+{
+    return string(m_code, m_code + m_length);
 }
 
 /**
@@ -115,49 +118,60 @@ std::string CScriptToken::text()const{
  * initial and final quotes.
  * @return 
  */
-std::string CScriptToken::strValue()const {
-    ASSERT (type() == LEX_STR);
-    
-    string  result;
-    int     i;
-    
+std::string CScriptToken::strValue()const
+{
+    ASSERT(type() == LEX_STR);
+
+    string result;
+    int i;
+
     result.reserve(m_length);
-    
-    for (i = 1; i < m_length-1; ++i) {
-        const char  c = m_code[i];
-        char        buf[8];
-    
+
+    for (i = 1; i < m_length - 1; ++i)
+    {
+        const char c = m_code[i];
+        char buf[8];
+
         if (c != '\\')
-            result.push_back (c);
-        else {
+            result.push_back(c);
+        else
+        {
             //TODO: Support for Unicode escape sequences.
             ++i;
-            switch (m_code[i]) {
-            case 'b':   result.push_back('\b'); break;
-            case 'f':   result.push_back('\f'); break;
-            case 'n':   result.push_back('\n'); break;
-            case 'r':   result.push_back('\r'); break;
-            case 't':   result.push_back('\t'); break;
-            case 'v':   result.push_back('\v'); break;
-            case '\'':   result.push_back('\''); break;
-            case '\"':   result.push_back('\"'); break;
+            switch (m_code[i])
+            {
+            case 'b': result.push_back('\b');
+                break;
+            case 'f': result.push_back('\f');
+                break;
+            case 'n': result.push_back('\n');
+                break;
+            case 'r': result.push_back('\r');
+                break;
+            case 't': result.push_back('\t');
+                break;
+            case 'v': result.push_back('\v');
+                break;
+            case '\'': result.push_back('\'');
+                break;
+            case '\"': result.push_back('\"');
+                break;
             case 'x':
-                copyWhile (buf, m_code+1, isHexadecimal, 2);
-                result.push_back ((char)strtol(buf,0,16));
+                copyWhile(buf, m_code + 1, isHexadecimal, 2);
+                result.push_back((char) strtol(buf, 0, 16));
                 break;
             default:
-                copyWhile (buf, m_code+1, isOctal, 3);
+                copyWhile(buf, m_code + 1, isOctal, 3);
                 if (buf[0] != 0)
-                    result.push_back ((char)strtol(buf,0,8));
-                else                
+                    result.push_back((char) strtol(buf, 0, 8));
+                else
                     result.push_back(m_code[i]);
             }//switch
         }
     }//for 
-    
+
     return result;
 }
-
 
 /**
  * Creates a token, next to the current one, with the specified type
@@ -166,9 +180,9 @@ std::string CScriptToken::strValue()const {
  * @param length
  * @return 
  */
-CScriptToken CScriptToken::buildNextToken (LEX_TYPES lexType, const char* code, int length)const
+CScriptToken CScriptToken::buildNextToken(LEX_TYPES lexType, const char* code, int length)const
 {
-    return CScriptToken (lexType, code, calcPosition(code), length);
+    return CScriptToken(lexType, code, calcPosition(code), length);
 }
 
 /**
@@ -176,12 +190,10 @@ CScriptToken CScriptToken::buildNextToken (LEX_TYPES lexType, const char* code, 
  * @param skipComments  To indicate if 'comment' tokens must be skipped
  * @return Next token
  */
-CScriptToken CScriptToken::next(bool skipComments)const {
-    CScriptToken    result = nextDispatch();
+CScriptToken CScriptToken::next(bool skipComments)const
+{
+    CScriptToken result = nextDispatch();
 
-//    if (result.text() == "result")
-//        printf ("Token: %s -->%s\n", result.text().c_str(), result.m_code);
-    
     if (skipComments && result.type() == LEX_COMMENT)
         return result.next(true);
     else
@@ -189,13 +201,14 @@ CScriptToken CScriptToken::next(bool skipComments)const {
 }
 
 /// Reads next token from input, and returns it.
+
 CScriptToken CScriptToken::nextDispatch()const
 {
     const char* currCh = skipWhitespace(m_code + m_length);
-    
+
     if (*currCh == '/')
     {
-        CScriptToken comment = parseComment (currCh);
+        CScriptToken comment = parseComment(currCh);
         if (comment.type() != LEX_COMMENT)
             return parseOperator(currCh);
         else
@@ -210,46 +223,47 @@ CScriptToken CScriptToken::nextDispatch()const
     else if (*currCh != 0)
         return parseOperator(currCh);
     else
-        return buildNextToken (LEX_EOF, currCh, 0);
+        return buildNextToken(LEX_EOF, currCh, 0);
 }
 
-
-CScriptToken CScriptToken::match(int expected_tk)const {
-    if ( type() != expected_tk) {
+CScriptToken CScriptToken::match(int expected_tk)const
+{
+    if (type() != expected_tk)
+    {
         ostringstream errorString;
         errorString << "Got '" << text() << "' expected " << getTokenStr(expected_tk);
-        return errorAt (m_code, "%s", errorString.str().c_str());
+        return errorAt(m_code, "%s", errorString.str().c_str());
     }
     else
         return next();
 }
-
 
 /**
  * Parses commentaries. Both single line and multi-line
  * @param code Pointer to comment code start.
  * @return 
  */
-CScriptToken CScriptToken::parseComment (const char * const code)const
+CScriptToken CScriptToken::parseComment(const char * const code)const
 {
     const char* end = code + 2;
-    
+
     if (code[1] == '/')
-    {        
+    {
         while (*end && *end != '\n')
             ++end;
-    }else if (code[1] == '*')
+    }
+    else if (code[1] == '*')
     {
-        while (*end && (end[0]!='*' || end[1] != '/'))
+        while (*end && (end[0] != '*' || end[1] != '/'))
             ++end;
-        
+
         if (*end == 0)
-            errorAt (code, "Unclosed multi-line comment");
+            errorAt(code, "Unclosed multi-line comment");
         else
             end += 2;
     }
     else
-        return CScriptToken("");    //Not a commentary
+        return CScriptToken(""); //Not a commentary
 
     return buildNextToken(LEX_COMMENT, code, end - code);
 }
@@ -259,12 +273,12 @@ CScriptToken CScriptToken::parseComment (const char * const code)const
  * @param code Pointer to identifier start.
  * @return An identifier token or a keyword token
  */
-CScriptToken CScriptToken::parseId (const char * code)const
+CScriptToken CScriptToken::parseId(const char * code)const
 {
     typedef map<string, LEX_TYPES> KEYWORD_MAP;
-    static KEYWORD_MAP   keywords;
-    
-    if (keywords.size() == 0) 
+    static KEYWORD_MAP keywords;
+
+    if (keywords.size() == 0)
     {
         keywords["if"] = LEX_R_IF;
         keywords["else"] = LEX_R_ELSE;
@@ -282,18 +296,18 @@ CScriptToken CScriptToken::parseId (const char * code)const
         keywords["undefined"] = LEX_R_UNDEFINED;
         keywords["new"] = LEX_R_NEW;
     }
-    
-    const char* end = code+1;
+
+    const char* end = code + 1;
     while (isAlpha(*end) || isNumeric(*end))
         ++end;
-    
-    KEYWORD_MAP::const_iterator     itKw = keywords.find(string(code, end));
-    LEX_TYPES                       type = LEX_ID;
+
+    KEYWORD_MAP::const_iterator itKw = keywords.find(string(code, end));
+    LEX_TYPES type = LEX_ID;
 
     if (itKw != keywords.end())
         type = itKw->second;
-    
-    return buildNextToken (type, code, end - code);    
+
+    return buildNextToken(type, code, end - code);
 }
 
 /**
@@ -301,29 +315,33 @@ CScriptToken CScriptToken::parseId (const char * code)const
  * @param code Pointer to number text start.
  * @return An integer or float token.
  */
-CScriptToken CScriptToken::parseNumber (const char * code)const
+CScriptToken CScriptToken::parseNumber(const char * code)const
 {
-    const char *    end = code;
-    LEX_TYPES       type = LEX_INT;
-    
-    if (code[0] == '0' && tolower(code[1]) == 'x') {
+    const char * end = code;
+    LEX_TYPES type = LEX_INT;
+
+    if (code[0] == '0' && tolower(code[1]) == 'x')
+    {
         //Hexadecimal
-        end = skipHexadecimal(code+2);
+        end = skipHexadecimal(code + 2);
     }
-    else {
+    else
+    {
         //Decimal integers or floats.
         end = skipNumeric(code);
-        
-        if (*end == '.') {
+
+        if (*end == '.')
+        {
             type = LEX_FLOAT;
 
             end = skipNumeric(end + 1);
         }
 
         // do fancy e-style floating point
-        if (tolower(*end) == 'e') {
+        if (tolower(*end) == 'e')
+        {
             type = LEX_FLOAT;
-            
+
             if (end[1] == '+' || end[1] == '-')
                 ++end;
 
@@ -331,7 +349,7 @@ CScriptToken CScriptToken::parseNumber (const char * code)const
         }
     }
 
-    return buildNextToken (type, code, end - code);    
+    return buildNextToken(type, code, end - code);
 }
 
 /**
@@ -339,31 +357,33 @@ CScriptToken CScriptToken::parseNumber (const char * code)const
  * @param code Pointer to string constant start
  * @return A string token
  */
-CScriptToken CScriptToken::parseString (const char * code)const
+CScriptToken CScriptToken::parseString(const char * code)const
 {
-    const char  openChar = *code;
+    const char openChar = *code;
     const char* end;
-    
-    for (end = code + 1; *end != openChar; ++end) {
+
+    for (end = code + 1; *end != openChar; ++end)
+    {
         const char c = end[0];
         if (c == '\\' && end[1] != 0)
             ++end;
         else if (c == '\n' || c == '\r')
             errorAt(end, "New line in string constant");
-        else if ( c == 0 )
+        else if (c == 0)
             errorAt(end, "End of file in string constant");
     }
 
-    return buildNextToken (LEX_STR, code, (end - code) + 1);
+    return buildNextToken(LEX_STR, code, (end - code) + 1);
 }
 
 /**
  * Structure to define available operators
  */
-struct SOperatorDef {
-    const char *        text;
-    const LEX_TYPES     code;
-    const int           len;
+struct SOperatorDef
+{
+    const char * text;
+    const LEX_TYPES code;
+    const int len;
 };
 
 /**
@@ -394,7 +414,7 @@ const SOperatorDef s_operators [] = {
     {"&&", LEX_ANDAND, 2},
     {"++", LEX_PLUSPLUS, 2},
     {"--", LEX_MINUSMINUS, 2},
-    {"", LEX_EOF, 0},                 //End record must have zero length
+    {"", LEX_EOF, 0}, //End record must have zero length
 };
 
 /**
@@ -402,18 +422,18 @@ const SOperatorDef s_operators [] = {
  * @param code Pointer to the operator text
  * @return The appropriate token type for the operator
  */
-CScriptToken CScriptToken::parseOperator (const char * code)const
+CScriptToken CScriptToken::parseOperator(const char * code)const
 {
     //First, try multi-char operators
-    for (int i=0; s_operators[i].len > 0; ++i){
-        if (strncmp (code, s_operators[i].text, s_operators[i].len) == 0)
+    for (int i = 0; s_operators[i].len > 0; ++i)
+    {
+        if (strncmp(code, s_operators[i].text, s_operators[i].len) == 0)
             return buildNextToken(s_operators[i].code, code, s_operators[i].len);
     }
-        
-    //Take it as a single char operator
-    return buildNextToken((LEX_TYPES)*code, code, 1);
-}
 
+    //Take it as a single char operator
+    return buildNextToken((LEX_TYPES) * code, code, 1);
+}
 
 /**
  * Generates an error message located at the given position
@@ -422,14 +442,14 @@ CScriptToken CScriptToken::parseOperator (const char * code)const
  * @param msgFormat 'printf-like' format string
  * @param ...       Optional message parameters
  */
-CScriptToken CScriptToken::errorAt (const char* code, const char* msgFormat, ...)const
+CScriptToken CScriptToken::errorAt(const char* code, const char* msgFormat, ...)const
 {
     va_list aptr;
-    
+
     va_start(aptr, msgFormat);
     ::errorAt_v(getPosition(), msgFormat, aptr);
     va_end(aptr);
-    
+
     return *this;
 }
 
@@ -441,25 +461,27 @@ CScriptToken CScriptToken::errorAt (const char* code, const char* msgFormat, ...
  * calculated. It MUST BE a pointer to the same text as 'm_code' pointer, and be
  * greater than it.
  */
-ScriptPosition CScriptToken::calcPosition (const char* codePos)const
+ScriptPosition CScriptToken::calcPosition(const char* codePos)const
 {
-    ASSERT (codePos >= m_code);
+    ASSERT(codePos >= m_code);
 
-    int             line = m_position.line, col = m_position.column;
-    const char*     code;
-    
-    for ( code = m_code; *code != 0 && code < codePos; ++code, ++col) {
-        if (*code == '\n') {
+    int line = m_position.line, col = m_position.column;
+    const char* code;
+
+    for (code = m_code; *code != 0 && code < codePos; ++code, ++col)
+    {
+        if (*code == '\n')
+        {
             ++line;
             col = 0;
         }
     }
-    
-    ASSERT (codePos == code);
-    
-    ScriptPosition  pos;
+
+    ASSERT(codePos == code);
+
+    ScriptPosition pos;
     pos.line = line;
     pos.column = col;
-    
+
     return pos;
 }

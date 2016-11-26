@@ -134,8 +134,8 @@ public:
     virtual int toInt32()const = 0;
     virtual double toDouble()const = 0;
 
-    virtual Ref<JSValue> memberAccess(const std::string& name)= 0;
-    virtual Ref<JSValue> arrayAccess(Ref<JSValue> index)= 0;
+    virtual Ref<JSValue> memberAccess(const std::string& name) = 0;
+    virtual Ref<JSValue> arrayAccess(Ref<JSValue> index) = 0;
 
     virtual std::string getJSON() = 0;
 
@@ -172,11 +172,11 @@ public:
     {
         return getType() <= VT_NULL;
     }
-    
+
     bool isPrimitive()const
     {
         const JSValueTypes t = this->getType();
-        
+
         return (t > VT_NULL && t < VT_OBJECT);
     }
 
@@ -353,7 +353,7 @@ public:
     {
         return m_text;
     }
-        
+
     virtual std::string getJSON()
     {
         return std::string("\"") + m_text + "\"";
@@ -401,6 +401,7 @@ public:
     }
 
 private:
+
     JSBool(bool b) : m_value(b)
     {
     }
@@ -499,6 +500,7 @@ public:
 
     // JSValue
     /////////////////////////////////////////
+
     virtual std::string toString()const
     {
         return "[object Object]";
@@ -543,14 +545,15 @@ public:
     /////////////////////////////////////////
 
 protected:
+
     JSObject()
     {
     }
-    
+
 private:
-    typedef std::map <std::string, Ref<JSValue> >   MembersMap;
-    
-    MembersMap  m_members;
+    typedef std::map <std::string, Ref<JSValue> > MembersMap;
+
+    MembersMap m_members;
 };
 
 /**
@@ -680,7 +683,6 @@ private:
     ParametersList m_params;
 };
 
-
 /**
  * Name scope for a block of code.
  * It is also used for the global scope.
@@ -701,10 +703,10 @@ public:
     virtual IScope* getFunctionScope();
 
 private:
-    IScope*         m_pParent;
-    
-    typedef std::map<std::string, Ref<JSValue> >    SymbolMap;
-    SymbolMap       m_symbols;
+    IScope* m_pParent;
+
+    typedef std::map<std::string, Ref<JSValue> > SymbolMap;
+    SymbolMap m_symbols;
 };
 
 /**
@@ -721,14 +723,14 @@ public:
     {
         m_this = value;
     }
-    
+
     int addParam(Ref<JSValue> value);
 
     Ref<JSValue> getResult()const
     {
         return m_result;
     }
-    
+
     void setResult(Ref<JSValue> value)
     {
         m_result = value;
@@ -741,19 +743,19 @@ public:
     {
         return this;
     }
-    
+
     IScope* getGlobals()const
     {
         return m_globals;
     }
-    
+
 private:
-    typedef std::map <std::string, Ref<JSValue> >   SymbolsMap;
-    
-    SymbolsMap      m_symbols;
+    typedef std::map <std::string, Ref<JSValue> > SymbolsMap;
+
+    SymbolsMap m_symbols;
     Ref<JSFunction> m_function;
-    Ref<JSArray>    m_arguments;
-    Ref<JSValue>    m_this;
-    Ref<JSValue>    m_result;
-    IScope*         m_globals;    
+    Ref<JSArray> m_arguments;
+    Ref<JSValue> m_this;
+    Ref<JSValue> m_result;
+    IScope* m_globals;
 };

@@ -42,50 +42,58 @@
 //const char *code = "{ var b = 1; for (var i=0;i<4;i=i+1) b = b * 2; }";
 const char *code = "function myfunc(x, y) { return x + y; } var a = myfunc(1,2); print(a);";
 
-Ref<JSValue> js_print(FunctionScope* pScope) {
+Ref<JSValue> js_print(FunctionScope* pScope)
+{
     printf("> %s\n", pScope->get("text")->toString().c_str());
     return undefined();
 }
 
-Ref<JSValue> js_dump(FunctionScope* pScope) {
-    JSObject*       globals = (JSObject*)pScope->getGlobals();
+Ref<JSValue> js_dump(FunctionScope* pScope)
+{
+    JSObject* globals = (JSObject*) pScope->getGlobals();
 
     printf("> %s\n", globals->getJSON().c_str());
     return undefined();
 }
 
-
 int main(int argc, char **argv)
 {
-  CTinyJS *js = new CTinyJS();
-  /* add the functions from TinyJS_Functions.cpp */
-  registerFunctions(js);
-  /* Add a native function */
-  js->addNative("function print(text)", &js_print, 0);
-  js->addNative("function dump()", &js_dump, js);
-  /* Execute out bit of code - we could call 'evaluate' here if
-     we wanted something returned */
-  try {
-    js->execute("var lets_quit = 0; function quit() { lets_quit = 1; }");
-    js->execute("print(\"Interactive mode... Type quit(); to exit, or print(...); to print something, or dump() to dump the symbol table!\");");
-  } catch (const CScriptException& e) {
-    printf("ERROR: %s\n", e.what());
-  }
-
-  while (js->evaluate("lets_quit") == "0") {
-    char buffer[2048];
-    fgets ( buffer, sizeof(buffer), stdin );
-    try {
-      js->execute(buffer);
-    } catch (const CScriptException &e) {
-      printf("ERROR: %s\n", e.what());
+    CTinyJS *js = new CTinyJS();
+    /* add the functions from TinyJS_Functions.cpp */
+    registerFunctions(js);
+    /* Add a native function */
+    js->addNative("function print(text)", &js_print, 0);
+    js->addNative("function dump()", &js_dump, js);
+    /* Execute out bit of code - we could call 'evaluate' here if
+       we wanted something returned */
+    try
+    {
+        js->execute("var lets_quit = 0; function quit() { lets_quit = 1; }");
+        js->execute("print(\"Interactive mode... Type quit(); to exit, or print(...); to print something, or dump() to dump the symbol table!\");");
     }
-  }
-  delete js;
+    catch (const CScriptException& e)
+    {
+        printf("ERROR: %s\n", e.what());
+    }
+
+    while (js->evaluate("lets_quit") == "0")
+    {
+        char buffer[2048];
+        fgets(buffer, sizeof (buffer), stdin);
+        try
+        {
+            js->execute(buffer);
+        }
+        catch (const CScriptException &e)
+        {
+            printf("ERROR: %s\n", e.what());
+        }
+    }
+    delete js;
 #ifdef _WIN32
 #ifdef _DEBUG
-  _CrtDumpMemoryLeaks();
+    _CrtDumpMemoryLeaks();
 #endif
 #endif
-  return 0;
+    return 0;
 }

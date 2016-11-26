@@ -149,8 +149,8 @@ Ref<JSValue> createConstant(CScriptToken token)
  */
 Ref<JSObject> getObject(IScope* pScope, const std::string& name)
 {
-    Ref<JSValue>    value = pScope->get(name);
-    
+    Ref<JSValue> value = pScope->get(name);
+
     if (value->isObject())
         return value.staticCast<JSObject>();
     else
@@ -175,8 +175,8 @@ Ref<JSNumber> JSNumber::create(double value)
 std::string JSNumber::toString()const
 {
     //TODO: Review the standard. Find about number to string conversion formats.
-    ostringstream   output;
-    
+    ostringstream output;
+
     output << m_value;
     return output.str();
 }
@@ -272,8 +272,8 @@ Ref<JSObject> JSObject::create()
 Ref<JSValue> JSObject::get(const std::string& name)const
 {
     MembersMap::const_iterator it = m_members.find(name);
-    
-    if (it != m_members.end() )
+
+    if (it != m_members.end())
         return it->second;
     else
         return undefined();
@@ -294,11 +294,10 @@ Ref<JSValue> JSObject::set(const std::string& name, Ref<JSValue> value)
     }
     else
         m_members[name] = value;
-    
-    return value;
-    
-}
 
+    return value;
+
+}
 
 /**
  * Member access. Returns a reference, in order to be able to modify the object.
@@ -316,31 +315,31 @@ Ref<JSValue> JSObject::memberAccess(const std::string& name)
  */
 std::string JSObject::getJSON()
 {
-    ostringstream               output;
-    MembersMap::const_iterator  it;
-    bool                        first = true;
-    
+    ostringstream output;
+    MembersMap::const_iterator it;
+    bool first = true;
+
     //{"x":2}
     output << "{";
-    
+
     for (it = m_members.begin(); it != m_members.end(); ++it)
     {
-        string  childJSON = it->second->getJSON();
-        
+        string childJSON = it->second->getJSON();
+
         if (!childJSON.empty())
         {
             if (!first)
                 output << ", ";
             else
                 first = false;
-            
+
             output << "\"" << it->first << "\":";
             output << childJSON;
         }
     }
-    
+
     output << "}";
-    
+
     return output.str();
 }
 
@@ -420,17 +419,17 @@ Ref<JSValue> JSArray::set(const std::string& name, Ref<JSValue> value)
 std::string JSArray::toString()const
 {
     //TODO: This is basically 'String.join()' implementation. We should share code.
-    
+
     ostringstream output;
     for (size_t i = 0; i < m_length; ++i)
     {
         ostringstream indexStr;
-        
+
         if (i > 0)
             output << ',';
-        
+
         indexStr << i;
-        
+
         output << this->get(indexStr.str())->toString();
     }
 
@@ -471,11 +470,11 @@ std::string JSArray::getJSON()
 void JSArray::setLength(Ref<JSValue> value)
 {
     //TODO: Not fully standard compliant
-    const size_t length = (size_t)value->toInt32();
-    
+    const size_t length = (size_t) value->toInt32();
+
     for (size_t i = length; i < m_length; ++i)
         this->set(to_string(i), undefined());
-    
+
     m_length = length;
 }
 
@@ -549,8 +548,8 @@ std::string JSFunction::toString()const
 Ref<JSValue> BlockScope::get(const std::string& name)const
 {
     SymbolMap::const_iterator it = m_symbols.find(name);
-    
-    if (it != m_symbols.end() )
+
+    if (it != m_symbols.end())
         return it->second;
     else if (m_pParent != NULL)
         return m_pParent->get(name);
@@ -576,17 +575,17 @@ Ref<JSValue> BlockScope::set(const std::string& name, Ref<JSValue> value)
     if (value->isUndefined())
     {
         if (m_pParent != NULL)
-            m_symbols[name] = value;    //The symbol will be 'undefined' while this scope is active.
+            m_symbols[name] = value; //The symbol will be 'undefined' while this scope is active.
         else
-            m_symbols.erase(name);      //At global scope, we can delete it.
+            m_symbols.erase(name); //At global scope, we can delete it.
     }
     else if (m_symbols.find(name) != m_symbols.end())
-        m_symbols[name] = value;        //Present at current scope
-    else if (!get (name)->isUndefined())
-        m_symbols[name] = value;        //Symbol does not exist, create it at this scope.
+        m_symbols[name] = value; //Present at current scope
+    else if (!get(name)->isUndefined())
+        m_symbols[name] = value; //Symbol does not exist, create it at this scope.
     else
-        return m_pParent->set(name, value);    //Set at parent scope
-    
+        return m_pParent->set(name, value); //Set at parent scope
+
     return value;
 }
 
@@ -612,10 +611,10 @@ IScope* BlockScope::getFunctionScope()
  * @param globals
  * @param targetFn
  */
-FunctionScope::FunctionScope(IScope* globals, Ref<JSFunction> targetFn):
-    m_function (targetFn),
-    m_globals (globals)
-{            
+FunctionScope::FunctionScope(IScope* globals, Ref<JSFunction> targetFn) :
+m_function(targetFn),
+m_globals(globals)
+{
     m_this = undefined();
     m_result = undefined();
     m_arguments = JSArray::create();
@@ -628,19 +627,19 @@ FunctionScope::FunctionScope(IScope* globals, Ref<JSFunction> targetFn):
  */
 int FunctionScope::addParam(Ref<JSValue> value)
 {
-    JSFunction::ParametersList  paramsDef = m_function->getParams();
-    const size_t                index = m_arguments->length();
-    
+    JSFunction::ParametersList paramsDef = m_function->getParams();
+    const size_t index = m_arguments->length();
+
     if (index < paramsDef.size())
     {
         const std::string &name = paramsDef[index];
-        
+
         m_symbols[name] = value;
-        m_arguments->push ( JSReference::create(this, name) );
+        m_arguments->push(JSReference::create(this, name));
     }
     else
-        m_arguments->push ( value );
-    
+        m_arguments->push(value);
+
     return m_arguments->length();
 }
 
@@ -661,7 +660,7 @@ Ref<JSValue> FunctionScope::get(const std::string& name)const
     else
     {
         SymbolsMap::const_iterator it = m_symbols.find(name);
-        
+
         if (it != m_symbols.end())
             return it->second;
         else if (m_globals != NULL)
@@ -685,7 +684,7 @@ Ref<JSValue> FunctionScope::set(const std::string& name, Ref<JSValue> value)
     else if (m_symbols.find(name) != m_symbols.end())
         m_symbols[name] = value;
     else if (!get(name)->isUndefined())
-        return m_globals->set (name, value);
+        return m_globals->set(name, value);
 
     return value;
 }

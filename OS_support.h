@@ -16,10 +16,10 @@
 
 #ifdef _WIN32
 #ifdef _DEBUG
-   #ifndef DBG_NEW
-      #define DBG_NEW new ( _NORMAL_BLOCK , __FILE__ , __LINE__ )
-      #define new DBG_NEW
-   #endif
+#ifndef DBG_NEW
+#define DBG_NEW new ( _NORMAL_BLOCK , __FILE__ , __LINE__ )
+#define new DBG_NEW
+#endif
 #endif
 #endif
 
@@ -33,7 +33,7 @@ template <size_t size>
 int vsprintf_s(char (&buffer)[size], const char* format, va_list args)
 {
     const int result = vsnprintf(buffer, size, format, args);
-    
+
     return result;
 }
 
@@ -43,9 +43,9 @@ int sprintf_s(char (&buffer)[size], const char* format, ...)
     va_list aptr;
 
     va_start(aptr, format);
-    const int result = vsprintf_s (buffer, format, aptr);
+    const int result = vsprintf_s(buffer, format, aptr);
     va_end(aptr);
-    
+
     return result;
 }
 #endif

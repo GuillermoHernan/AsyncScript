@@ -28,7 +28,8 @@
 
 #pragma once
 
-enum LEX_TYPES {
+enum LEX_TYPES
+{
     LEX_EOF = 0,
     LEX_INITIAL,
     LEX_COMMENT,
@@ -75,7 +76,7 @@ enum LEX_TYPES {
     LEX_R_UNDEFINED,
     LEX_R_NEW,
 
-	LEX_R_LIST_END /* always the last entry */
+    LEX_R_LIST_END /* always the last entry */
 };
 
 /// To get the string representation of a token type
@@ -112,9 +113,10 @@ struct ScriptPosition
  * These objects are not strictly 'immutable', as they have assignment operator. But none
  * of their public methods modify its internal state.
  */
-class CScriptToken {
+class CScriptToken
+{
 public:
-   
+
     /**
      * The constructor doesn't make a copy of the input string, so it is important
      * not to delete input string while there are still live 'CSriptTokens' using it.
@@ -130,36 +132,48 @@ public:
     CScriptToken next(bool skipComments = true)const;
 
     /// Checks that the current token matches the expected, and returns next
-    CScriptToken match(int expected_tk)const; 
-    
+    CScriptToken match(int expected_tk)const;
+
     ///Return a string representing the position in lines and columns of the token
+
     const ScriptPosition& getPosition()const
     {
         return m_position;
     }
-    
-    LEX_TYPES   type()const {return m_type;}
-    bool        eof ()const {return m_type == LEX_EOF;}
+
+    LEX_TYPES type()const
+    {
+        return m_type;
+    }
+
+    bool eof()const
+    {
+        return m_type == LEX_EOF;
+    }
     std::string text()const;
-    const char* code()const {return m_code;}
-    
+
+    const char* code()const
+    {
+        return m_code;
+    }
+
     std::string strValue()const;
 
 private:
-    const char*     m_code;
-    LEX_TYPES       m_type;       ///<Token type.
-    ScriptPosition  m_position;
-    int             m_length;
-    
+    const char* m_code;
+    LEX_TYPES m_type; ///<Token type.
+    ScriptPosition m_position;
+    int m_length;
+
     CScriptToken nextDispatch()const;
-    
-    CScriptToken buildNextToken (LEX_TYPES lexType, const char* code, int length)const;
-    CScriptToken parseComment (const char * code)const;
-    CScriptToken parseId (const char * code)const;
-    CScriptToken parseNumber (const char * code)const;
-    CScriptToken parseString (const char * code)const;
-    CScriptToken parseOperator (const char * code)const;
-    
-    ScriptPosition calcPosition (const char* code)const;
-    CScriptToken errorAt (const char* charPos, const char* msgFormat, ...)const;
+
+    CScriptToken buildNextToken(LEX_TYPES lexType, const char* code, int length)const;
+    CScriptToken parseComment(const char * code)const;
+    CScriptToken parseId(const char * code)const;
+    CScriptToken parseNumber(const char * code)const;
+    CScriptToken parseString(const char * code)const;
+    CScriptToken parseOperator(const char * code)const;
+
+    ScriptPosition calcPosition(const char* code)const;
+    CScriptToken errorAt(const char* charPos, const char* msgFormat, ...)const;
 };
