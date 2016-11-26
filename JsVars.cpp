@@ -137,7 +137,7 @@ private:
 
 Ref<JSValue> createConstant(CScriptToken token)
 {
-    return JSNumberConstant::create(token.strValue());
+    return JSNumberConstant::create(token.text());
 }
 
 /**
