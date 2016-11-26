@@ -620,7 +620,7 @@ SResult CTinyJS::term(bool &execute, CScriptToken token, IScope* pScope)
     }
 
     ra.token = token;
-    return SResult(token, undefined());
+    return ra;
 }
 
 SResult CTinyJS::expression(bool &execute, CScriptToken token, IScope* pScope)
