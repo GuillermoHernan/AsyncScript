@@ -48,6 +48,15 @@ bool isOctal(char ch)
     return (ch >= '0') && (ch <= '7');
 }
 
+bool isOctal(const std::string& str)
+{
+    for (size_t i = 0; i < str.size(); ++i)
+        if (!isOctal(str[i]))
+            return false;
+    
+    return true;
+}
+
 bool isAlpha(char ch)
 {
     return ((ch >= 'a') && (ch <= 'z')) || ((ch >= 'A') && (ch <= 'Z')) || ch == '_';

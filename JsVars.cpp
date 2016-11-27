@@ -115,9 +115,18 @@ public:
 
     static Ref<JSNumberConstant> create(const std::string& text)
     {
-        const double value = strtod(text.c_str(), NULL);
+        if (text.size() > 0 && text[0] == '0' && isOctal(text))
+        {
+            const unsigned value = strtoul(text.c_str()+1, NULL, 8);
+            
+            return refFromNew(new JSNumberConstant(value, text));
+        }
+        else
+        {
+            const double value = strtod(text.c_str(), NULL);
 
-        return refFromNew(new JSNumberConstant(value, text));
+            return refFromNew(new JSNumberConstant(value, text));
+        }
     }
 
     virtual std::string toString()const

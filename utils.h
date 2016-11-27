@@ -21,6 +21,7 @@ bool isNumeric(char ch);
 bool isNumber(const std::string &str);
 bool isHexadecimal(char ch);
 bool isOctal(char ch);
+bool isOctal(const std::string& str);
 bool isAlpha(char ch);
 bool isAlphaNum(const std::string &str);
 bool isIDString(const char *s);
