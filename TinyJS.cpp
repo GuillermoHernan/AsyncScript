@@ -261,7 +261,7 @@ void CTinyJS::addNative(const string &funcDesc, JSNativeFn ptr, void *userdata)
  */
 Ref<JSValue> CTinyJS::getGlobal(const std::string& name)const
 {
-    return m_globals->get_tmpn(name);
+    return m_globals->get(name);
 }
 
 /**
@@ -420,7 +420,7 @@ SResult CTinyJS::factor(bool &execute, CScriptToken token, IScope* pScope)
         const string    name = token.text();
         Ref<JSValue>    a = undefined();
 
-        if (execute && !pScope->get_tmpn(name).isNull())
+        if (execute && !pScope->get(name).isNull())
             a = JSReference::create(pScope, name);
 
         /* The parent if we're executing a method call */
@@ -557,7 +557,7 @@ SResult CTinyJS::factor(bool &execute, CScriptToken token, IScope* pScope)
         token = token.match(LEX_R_NEW);
         string className = token.text();
 
-        Ref<JSValue> constructor = pScope->get_tmpn(className);
+        Ref<JSValue> constructor = pScope->get(className);
         if (constructor.isNull())
         {
             errorAt(token.getPosition(), "%s is not a valid class name", className.c_str());

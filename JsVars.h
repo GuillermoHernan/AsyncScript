@@ -302,7 +302,7 @@ struct IScope
      * @param name Symbol name
      * @return The requested value or a NULL pointer if not found.
      */
-    virtual Ref<JSValue> get_tmpn(const std::string& name)const = 0;
+    virtual Ref<JSValue> get(const std::string& name)const = 0;
     virtual Ref<JSValue> set(const std::string& name, Ref<JSValue> value, bool forceLocal=false) = 0;
     virtual IScope* getFunctionScope() = 0;
     
@@ -510,7 +510,7 @@ private:
 
     Ref<JSValue> target()const
     {
-        return null2undef(m_pScope->get_tmpn(m_name));
+        return null2undef(m_pScope->get(m_name));
     }
 };
 
@@ -524,7 +524,7 @@ public:
 
     // IScope
     /////////////////////////////////////////
-    virtual Ref<JSValue> get_tmpn(const std::string& name)const;
+    virtual Ref<JSValue> get(const std::string& name)const;
     virtual Ref<JSValue> set(const std::string& name, Ref<JSValue> value, bool forceLocal=false);
 
     virtual IScope* getFunctionScope()
@@ -608,7 +608,7 @@ public:
 
     // IScope
     /////////////////////////////////////////
-    virtual Ref<JSValue> get_tmpn(const std::string& name)const;
+    virtual Ref<JSValue> get(const std::string& name)const;
     virtual Ref<JSValue> set(const std::string& name, Ref<JSValue> value, bool forceLocal=false);
 
     // JSValue
@@ -733,7 +733,7 @@ public:
     {
     }
 
-    virtual Ref<JSValue> get_tmpn(const std::string& name)const;
+    virtual Ref<JSValue> get(const std::string& name)const;
     virtual Ref<JSValue> set(const std::string& name, Ref<JSValue> value, bool forceLocal=false);
     virtual IScope* getFunctionScope();
 
@@ -778,7 +778,7 @@ public:
         m_result = value;
     }
 
-    virtual Ref<JSValue> get_tmpn(const std::string& name)const;
+    virtual Ref<JSValue> get(const std::string& name)const;
     virtual Ref<JSValue> set(const std::string& name, Ref<JSValue> value, bool forceLocal=false);
 
     virtual IScope* getFunctionScope()

@@ -185,7 +185,7 @@ Ref<JSValue> createConstant(CScriptToken token)
  */
 Ref<JSObject> getObject(IScope* pScope, const std::string& name)
 {
-    Ref<JSValue> value = pScope->get_tmpn(name);
+    Ref<JSValue> value = pScope->get(name);
     
     if (!value.isNull())
     {
@@ -340,7 +340,7 @@ Ref<JSObject> JSObject::create()
  * Gets the value of a member.
  * @return 
  */
-Ref<JSValue> JSObject::get_tmpn(const std::string& name)const
+Ref<JSValue> JSObject::get(const std::string& name)const
 {
     MembersMap::const_iterator it = m_members.find(name);
 
@@ -448,12 +448,12 @@ size_t JSArray::push(Ref<JSValue> value)
  * @param exception
  * @return 
  */
-Ref<JSValue> JSArray::get_tmpn(const std::string& name)const
+Ref<JSValue> JSArray::get(const std::string& name)const
 {
     if (name == "length")
         return jsInt(m_length);
     else
-        return JSObject::get_tmpn(name);
+        return JSObject::get(name);
 }
 
 /**
@@ -501,7 +501,7 @@ std::string JSArray::toString()const
         if (i > 0)
             output << ',';
 
-        const Ref<JSValue>  val = this->get_tmpn(to_string(i));
+        const Ref<JSValue>  val = this->get(to_string(i));
         
         if (!val.isNull())
             output << val->toString();
@@ -619,14 +619,14 @@ std::string JSFunction::toString()const
  * @param name  Symbol name
  * @return Value for the symbol or 'undefined'
  */
-Ref<JSValue> BlockScope::get_tmpn(const std::string& name)const
+Ref<JSValue> BlockScope::get(const std::string& name)const
 {
     SymbolMap::const_iterator it = m_symbols.find(name);
 
     if (it != m_symbols.end())
         return it->second;
     else if (m_pParent != NULL)
-        return m_pParent->get_tmpn(name);
+        return m_pParent->get(name);
     else
         return Ref<JSValue>();
 }
@@ -657,7 +657,7 @@ Ref<JSValue> BlockScope::set(const std::string& name, Ref<JSValue> value, bool f
     }
     else if (m_symbols.find(name) != m_symbols.end())
         m_symbols[name] = value; //Present at current scope
-    else if (get_tmpn(name).isNull())
+    else if (get(name).isNull())
         m_symbols[name] = value; //Symbol does not exist, create it at this scope.
     else if (forceLocal)
         m_symbols[name] = value;
@@ -748,7 +748,7 @@ Ref<JSValue> FunctionScope::getParam(const std::string& name)const
  * @param name Symbol name
  * @return The symbol value or 'undefined'.
  */
-Ref<JSValue> FunctionScope::get_tmpn(const std::string& name)const
+Ref<JSValue> FunctionScope::get(const std::string& name)const
 {
     if (name == "this")
         return m_this;
@@ -761,7 +761,7 @@ Ref<JSValue> FunctionScope::get_tmpn(const std::string& name)const
         if (it != m_params.end())
             return it->second;
         else if (m_globals != NULL)
-            return m_globals->get_tmpn(name);
+            return m_globals->get(name);
         else
             return Ref<JSValue>();
     }
@@ -785,7 +785,7 @@ Ref<JSValue> FunctionScope::set(const std::string& name, Ref<JSValue> value, boo
         throw CScriptException("Invalid left hand side in assignment");
     else if (m_params.find(name) != m_params.end())
         m_params[name] = value;
-    else if (!get_tmpn(name).isNull())
+    else if (!get(name).isNull())
         return m_globals->set(name, value);
 
     return value;
