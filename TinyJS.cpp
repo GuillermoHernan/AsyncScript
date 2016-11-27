@@ -450,17 +450,12 @@ SResult CTinyJS::factor(bool &execute, CScriptToken token, IScope* pScope)
                 if (execute)
                 {
                     string name = token.text();
-
-                    //TODO: member access should return a 'JSReference'. Think of a better way.
-                    Ref<JSValue> child = a->memberAccess(name);
-
-                    if (child.isNull())
-                        child = findInParentClasses(a, name);
-
-                    //TODO: 'findInParentClasses' does nothing
-
+                    
+                    if (!a->isObject())
+                        errorAt (token.getPosition(), "Illegal left hand side of member access operator");
+                    
                     parent = a;
-                    a = child;
+                    a = JSReference::create(castTo<JSObject>(a).getPointer(), name);
                 }
                 token = token.match(LEX_ID);
             }
@@ -574,9 +569,8 @@ SResult CTinyJS::factor(bool &execute, CScriptToken token, IScope* pScope)
             
             //TODO: Support 'new' invoke without neither parameters, nor parenthesis.
             SResult r = functionCall(execute, constructor, obj, token, pScope);
-            token = r.token;
-
-            return r;
+            
+            return SResult(r.token, obj);
         }
         else
         {
