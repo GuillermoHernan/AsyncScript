@@ -226,7 +226,12 @@ int JSString::toInt32()const
  */
 double JSString::toDouble()const
 {
-    return strtod(m_text.c_str(), NULL);
+    const double result = strtod(m_text.c_str(), NULL);
+    
+    if (result == 0 && !isNumber(m_text))
+        return getNaN();
+    else
+        return result;
 }
 
 
