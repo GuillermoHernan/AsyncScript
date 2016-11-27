@@ -295,35 +295,35 @@ void registerMathFunctions(CTinyJS *tinyJS)
 {
 
     // --- Math and Trigonometry functions ---
-    tinyJS->addNative("function Math.abs(a)", scMathAbs, 0);
-    tinyJS->addNative("function Math.round(a)", scMathRound, 0);
-    tinyJS->addNative("function Math.min(a,b)", scMathMin, 0);
-    tinyJS->addNative("function Math.max(a,b)", scMathMax, 0);
-    tinyJS->addNative("function Math.range(x,a,b)", scMathRange, 0);
-    tinyJS->addNative("function Math.sign(a)", scMathSign, 0);
+    tinyJS->addNative("function Math.abs(a)", scMathAbs);
+    tinyJS->addNative("function Math.round(a)", scMathRound);
+    tinyJS->addNative("function Math.min(a,b)", scMathMin);
+    tinyJS->addNative("function Math.max(a,b)", scMathMax);
+    tinyJS->addNative("function Math.range(x,a,b)", scMathRange);
+    tinyJS->addNative("function Math.sign(a)", scMathSign);
 
-    tinyJS->addNative("function Math.PI()", scMathPI, 0);
-    tinyJS->addNative("function Math.toDegrees(a)", scMathToDegrees, 0);
-    tinyJS->addNative("function Math.toRadians(a)", scMathToRadians, 0);
-    tinyJS->addNative("function Math.sin(a)", scMathSin, 0);
-    tinyJS->addNative("function Math.asin(a)", scMathASin, 0);
-    tinyJS->addNative("function Math.cos(a)", scMathCos, 0);
-    tinyJS->addNative("function Math.acos(a)", scMathACos, 0);
-    tinyJS->addNative("function Math.tan(a)", scMathTan, 0);
-    tinyJS->addNative("function Math.atan(a)", scMathATan, 0);
-    tinyJS->addNative("function Math.sinh(a)", scMathSinh, 0);
-    tinyJS->addNative("function Math.asinh(a)", scMathASinh, 0);
-    tinyJS->addNative("function Math.cosh(a)", scMathCosh, 0);
-    tinyJS->addNative("function Math.acosh(a)", scMathACosh, 0);
-    tinyJS->addNative("function Math.tanh(a)", scMathTanh, 0);
-    tinyJS->addNative("function Math.atanh(a)", scMathATanh, 0);
+    tinyJS->addNative("function Math.PI()", scMathPI);
+    tinyJS->addNative("function Math.toDegrees(a)", scMathToDegrees);
+    tinyJS->addNative("function Math.toRadians(a)", scMathToRadians);
+    tinyJS->addNative("function Math.sin(a)", scMathSin);
+    tinyJS->addNative("function Math.asin(a)", scMathASin);
+    tinyJS->addNative("function Math.cos(a)", scMathCos);
+    tinyJS->addNative("function Math.acos(a)", scMathACos);
+    tinyJS->addNative("function Math.tan(a)", scMathTan);
+    tinyJS->addNative("function Math.atan(a)", scMathATan);
+    tinyJS->addNative("function Math.sinh(a)", scMathSinh);
+    tinyJS->addNative("function Math.asinh(a)", scMathASinh);
+    tinyJS->addNative("function Math.cosh(a)", scMathCosh);
+    tinyJS->addNative("function Math.acosh(a)", scMathACosh);
+    tinyJS->addNative("function Math.tanh(a)", scMathTanh);
+    tinyJS->addNative("function Math.atanh(a)", scMathATanh);
 
-    tinyJS->addNative("function Math.E()", scMathE, 0);
-    tinyJS->addNative("function Math.log(a)", scMathLog, 0);
-    tinyJS->addNative("function Math.log10(a)", scMathLog10, 0);
-    tinyJS->addNative("function Math.exp(a)", scMathExp, 0);
-    tinyJS->addNative("function Math.pow(a,b)", scMathPow, 0);
+    tinyJS->addNative("function Math.E()", scMathE);
+    tinyJS->addNative("function Math.log(a)", scMathLog);
+    tinyJS->addNative("function Math.log10(a)", scMathLog10);
+    tinyJS->addNative("function Math.exp(a)", scMathExp);
+    tinyJS->addNative("function Math.pow(a,b)", scMathPow);
 
-    tinyJS->addNative("function Math.sqr(a)", scMathSqr, 0);
-    tinyJS->addNative("function Math.sqrt(a)", scMathSqrt, 0);
+    tinyJS->addNative("function Math.sqr(a)", scMathSqr);
+    tinyJS->addNative("function Math.sqrt(a)", scMathSqrt);
 }

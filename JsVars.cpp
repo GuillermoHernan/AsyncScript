@@ -15,6 +15,13 @@
 
 using namespace std;
 
+//Default prototypes
+Ref<JSObject>   JSObject::DefaultPrototype;
+Ref<JSObject>   JSString::DefaultPrototype;
+Ref<JSObject>   JSArray::DefaultPrototype;
+Ref<JSObject>   JSFunction::DefaultPrototype;
+//Ref<JSObject>   JSObject::DefaultPrototype;
+
 /**
  * Creates a reference for a pointer just returned from 'new' operator
  * @param ptr
@@ -225,6 +232,21 @@ Ref<JSValue> null2undef (Ref<JSValue> value)
         return value;
 }
 
+/**
+ * Checks if the object has any kind of 'null' states: internal NULL pointer,
+ * Javascript null, Javascript undefined.
+ * @param value
+ * @return 
+ */
+bool nullCheck (Ref<JSValue> value)
+{
+    if (value.isNull())
+        return true;
+    else
+        return value->isNull();
+}
+
+
 
 
 
@@ -331,9 +353,9 @@ Ref<JSValue> JSReference::set(Ref<JSValue> value)
  * Creates an empty JSON object
  * @return 
  */
-Ref<JSObject> JSObject::create()
+Ref<JSObject> JSObject::create(Ref<JSObject> prototype)
 {
-    return refFromNew(new JSObject);
+    return refFromNew(new JSObject(prototype));
 }
 
 /**
@@ -346,6 +368,8 @@ Ref<JSValue> JSObject::get(const std::string& name)const
 
     if (it != m_members.end())
         return it->second;
+    else if (!nullCheck(m_prototype))
+        return m_prototype->get (name);
     else
         return Ref<JSValue>();
 }
@@ -358,6 +382,9 @@ Ref<JSValue> JSObject::get(const std::string& name)const
  */
 Ref<JSValue> JSObject::set(const std::string& name, Ref<JSValue> value, bool forceLocal)
 {
+    if (m_frozen)
+        return get(name);
+    
     value = dereference(value);
 
     if (value->isUndefined())

@@ -62,8 +62,8 @@ int main(int argc, char **argv)
     /* add the functions from TinyJS_Functions.cpp */
     registerFunctions(js);
     /* Add a native function */
-    js->addNative("function print(text)", &js_print, 0);
-    js->addNative("function dump()", &js_dump, js);
+    js->addNative("function print(text)", &js_print);
+    js->addNative("function dump()", &js_dump);
     /* Execute out bit of code - we could call 'evaluate' here if
        we wanted something returned */
     try

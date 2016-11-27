@@ -68,7 +68,7 @@ public:
     std::string evaluate(const std::string &code);
 
     /// add a native function to be called from TinyJS
-    void addNative(const std::string &funcDesc, JSNativeFn ptr, void *userdata);
+    Ref<JSFunction> addNative(const std::string &funcDesc, JSNativeFn ptr);
 
     Ref<JSValue> getGlobal(const std::string& name)const;
     Ref<JSValue> setGlobal(const std::string& name, Ref<JSValue> value);

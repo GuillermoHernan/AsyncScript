@@ -120,7 +120,7 @@ struct SResult
     }
 };
 
-CTinyJS::CTinyJS() : m_globals(JSObject::create())
+CTinyJS::CTinyJS() : m_globals(JSObject::create(Ref<JSObject>()))
 {
 }
 
@@ -219,7 +219,7 @@ CScriptToken CTinyJS::parseFunctionArguments(JSFunction *function, CScriptToken 
     return token.match(')');
 }
 
-void CTinyJS::addNative(const string &funcDesc, JSNativeFn ptr, void *userdata)
+Ref<JSFunction> CTinyJS::addNative(const string &funcDesc, JSNativeFn ptr)
 {
     CScriptToken token(funcDesc.c_str());
     token = token.next();
@@ -239,7 +239,7 @@ void CTinyJS::addNative(const string &funcDesc, JSNativeFn ptr, void *userdata)
         // if it doesn't exist, make an object class
         if (child.isNull())
         {
-            child = JSObject::create();
+            child = JSObject::create( JSObject::DefaultPrototype );
             scope->set(funcName, child);
         }
 
@@ -252,6 +252,8 @@ void CTinyJS::addNative(const string &funcDesc, JSNativeFn ptr, void *userdata)
     parseFunctionArguments(function.getPointer(), token);
 
     scope->set(funcName, function);
+    
+    return function;
 }
 
 /**
@@ -488,8 +490,7 @@ SResult CTinyJS::factor(bool &execute, CScriptToken token, IScope* pScope)
     }
     if (token.type() == '{')
     {
-        //CScriptVar *contents = new CScriptVar(TINYJS_BLANK_DATA, SCRIPTVAR_OBJECT);
-        Ref<JSObject> contents = JSObject::create();
+        Ref<JSObject> contents = JSObject::create( JSObject::DefaultPrototype );
 
         /* JSON-style object definition */
         token = token.match('{');
@@ -566,10 +567,11 @@ SResult CTinyJS::factor(bool &execute, CScriptToken token, IScope* pScope)
         //TODO: Doesn't support a constructor member of an object. IE: 'a = new Text.Parser'
         token = token.match(LEX_ID);
 
-        Ref<JSObject> obj = JSObject::create();
-
         if (constructor->isFunction())
         {
+            const Ref<JSFunction>   fn = castTo<JSFunction> (constructor);
+            const Ref<JSObject>     obj = JSObject::create( castTo<JSObject> (fn->get("prototype"))  );
+            
             //TODO: Support 'new' invoke without neither parameters, nor parenthesis.
             SResult r = functionCall(execute, constructor, obj, token, pScope);
             token = r.token;
@@ -578,9 +580,9 @@ SResult CTinyJS::factor(bool &execute, CScriptToken token, IScope* pScope)
         }
         else
         {
-            errorAt(token.getPosition(), "'%s' is not a constructor", token.text().c_str());
+            errorAt(token.getPosition(), "'%s' is not a constructor function", token.text().c_str());
+            return SResult(token, undefined());
         }
-        return SResult(token, obj);
     }
     // Nothing we can do here... just hope it's the end...
     token = token.match(LEX_EOF);

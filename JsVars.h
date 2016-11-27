@@ -231,6 +231,17 @@ Ref<JSObject> getObject(IScope* pScope, const std::string& name);
 
 Ref<JSValue> dereference (Ref<JSValue> value);
 Ref<JSValue> null2undef (Ref<JSValue> value);
+bool nullCheck (Ref<JSValue> value);
+
+template <class DestType, class SrcType> 
+Ref<DestType> castTo (Ref<SrcType> value)
+{
+    if (nullCheck(value))
+        return Ref<DestType>();
+    else
+        return Ref<DestType>( static_cast<DestType*> ( dereference(value).getPointer() ) );
+}
+
 
 
 //////////////////////////////////////////
@@ -362,42 +373,6 @@ private:
     const double m_value;
 };
 
-/**
- * Javascript string class.
- * Javascript strings are immutable. Once created, they cannot be modified.
- */
-class JSString : public JSPrimitive<VT_STRING>
-{
-public:
-    static Ref<JSString> create(const std::string& value);
-
-    virtual bool toBoolean()const
-    {
-        return !m_text.empty();
-    }
-    virtual int toInt32()const; //TODO: What is the best option??
-    virtual double toDouble()const;
-
-    virtual std::string toString()const
-    {
-        return m_text;
-    }
-
-    virtual std::string getJSON()
-    {
-        return std::string("\"") + m_text + "\"";
-    }
-
-protected:
-
-    JSString(const std::string& text) : m_text(text)
-    {
-    }
-
-private:
-    const std::string m_text;
-
-};
 
 /**
  * Javascript booleans class.
@@ -520,7 +495,22 @@ private:
 class JSObject : public JSValue, public IScope
 {
 public:
-    static Ref<JSObject> create();
+    static Ref<JSObject> create(Ref<JSObject> prototype);
+    
+    Ref<JSObject> getPrototype()const
+    {
+        return m_prototype;
+    }
+    
+    Ref<JSObject> setPrototype(Ref<JSObject> value)
+    {
+        return m_prototype = value;
+    }
+    
+    void freeze()
+    {
+        m_frozen = true;
+    }
 
     // IScope
     /////////////////////////////////////////
@@ -579,16 +569,67 @@ public:
     }
     /////////////////////////////////////////
 
+    ///'JSObject' default prototype
+    static Ref<JSObject> DefaultPrototype;
+
 protected:
 
-    JSObject()
+    JSObject(Ref<JSObject> prototype) : m_prototype (prototype), m_frozen(false)
     {
     }
 
 private:
     typedef std::map <std::string, Ref<JSValue> > MembersMap;
 
-    MembersMap m_members;
+    MembersMap      m_members;
+    Ref<JSObject>   m_prototype;
+    bool            m_frozen;
+};
+
+/**
+ * Javascript string class.
+ * Javascript strings are immutable. Once created, they cannot be modified.
+ */
+class JSString : public JSObject
+{
+public:
+    static Ref<JSString> create(const std::string& value);
+
+    virtual bool toBoolean()const
+    {
+        return !m_text.empty();
+    }
+    virtual int toInt32()const;
+    virtual double toDouble()const;
+
+    virtual std::string toString()const
+    {
+        return m_text;
+    }
+
+    virtual std::string getJSON()
+    {
+        return std::string("\"") + m_text + "\"";
+    }
+
+    virtual JSValueTypes getType()const
+    {
+        return VT_STRING;
+    }
+
+    /// 'JSString' default prototype.
+    static Ref<JSObject> DefaultPrototype;
+
+protected:
+
+    JSString(const std::string& text) : JSObject(DefaultPrototype), m_text(text)
+    {
+        freeze();
+    }
+
+private:
+    const std::string m_text;
+
 };
 
 /**
@@ -623,9 +664,13 @@ public:
     }
     /////////////////////////////////////////
 
+
+    /// 'JSArray' default prototype.
+    static Ref<JSObject> DefaultPrototype;
+    
 private:
 
-    JSArray() : m_length(0)
+    JSArray() : JSObject(DefaultPrototype), m_length(0)
     {
     }
 
@@ -703,9 +748,14 @@ public:
     }
     /////////////////////////////////////////
 
+    
+    /// 'JSFunction' default prototype.
+    static Ref<JSObject> DefaultPrototype;
+
 private:
 
     JSFunction(const std::string& name, JSNativeFn pNative) :
+    JSObject(DefaultPrototype),
     m_name(name),
     m_code(""),
     m_pNative(pNative)
