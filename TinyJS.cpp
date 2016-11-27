@@ -816,7 +816,7 @@ SResult CTinyJS::base(bool &execute, CScriptToken token, IScope* pScope)
 
     if (token.type() == '=' || token.type() == LEX_PLUSEQUAL || token.type() == LEX_MINUSEQUAL)
     {
-        if (lres.value->isNull() && execute)
+        if (!lres.value->isReference() && lres.value->isNull() && execute)
             lres.value = createGlobal (startToken, pScope);
         
         const CScriptToken opToken = token;
