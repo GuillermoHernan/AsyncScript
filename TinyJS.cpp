@@ -732,7 +732,6 @@ SResult CTinyJS::logic(bool &execute, CScriptToken token, IScope* pScope)
 
     while (token.type() == '&' || token.type() == '|' || token.type() == '^' || token.type() == LEX_ANDAND || token.type() == LEX_OROR)
     {
-        bool noexecute = false;
         int op = token.type();
         token = token.match(op);
         bool shortCircuit = false;
@@ -742,15 +741,14 @@ SResult CTinyJS::logic(bool &execute, CScriptToken token, IScope* pScope)
         // we need to tell mathsOp it's an & or |
         if (op == LEX_ANDAND)
         {
-            op = '&';
             shortCircuit = !ra.value->toBoolean();
         }
         else if (op == LEX_OROR)
         {
-            op = '|';
             shortCircuit = ra.value->toBoolean();
         }
-        SResult rb = condition(shortCircuit ? noexecute : execute, token, pScope);
+        bool    executeB = execute && !shortCircuit;
+        SResult rb = condition(executeB, token, pScope);
         token = rb.token;
 
         if (execute && !shortCircuit)
@@ -810,11 +808,15 @@ SResult CTinyJS::ternary(bool &execute, CScriptToken token, IScope* pScope)
 SResult CTinyJS::base(bool &execute, CScriptToken token, IScope* pScope)
 {
     //TODO: Ternary operator is an invalid left hand side...
+    const CScriptToken startToken = token;
     SResult lres = ternary(execute, token, pScope);
     token = lres.token;
 
     if (token.type() == '=' || token.type() == LEX_PLUSEQUAL || token.type() == LEX_MINUSEQUAL)
     {
+        if (lres.value->isNull() && execute)
+            lres.value = createGlobal (startToken, pScope);
+        
         const CScriptToken opToken = token;
         const int op = opToken.type();
         token = token.next();
@@ -1105,4 +1107,22 @@ Ref<JSValue> CTinyJS::findInParentClasses(Ref<JSValue> object, const std::string
 
     return 0;*/
 }
+
+/**
+ * Creates a global variable with the name currently at token position
+ * @param token
+ * @param pScope
+ * @return 
+ */
+Ref<JSValue> CTinyJS::createGlobal (CScriptToken token, IScope* pScope)
+{
+    if (token.type() != LEX_ID)
+        errorAt(token.getPosition(), "Invalid left hand side in assignment");
+    
+    const string name = token.text();
+    
+    m_globals->set(name, jsNull());
+    return JSReference::create(m_globals.getPointer(), name);    
+}
+
 

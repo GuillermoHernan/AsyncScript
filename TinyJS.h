@@ -102,6 +102,7 @@ private:
     CScriptToken parseFunctionArguments(JSFunction *function, CScriptToken token);
 
     Ref<JSValue> findInParentClasses(Ref<JSValue> object, const std::string &name);
+    Ref<JSValue> createGlobal (CScriptToken token, IScope* pScope);
 };
 
 #endif
