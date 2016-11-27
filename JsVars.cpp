@@ -409,11 +409,23 @@ Ref<JSValue> JSObject::memberAccess(const std::string& name)
     return JSReference::create(this, name);
 }
 
+std::string indentText(int indent)
+{
+    std::string result;
+    
+    result.reserve(indent * 2);
+    
+    for (int i=0; i < indent; ++i)
+        result += "  ";
+    
+    return result;
+}
+
 /**
  * Generates a JSON representation of the object
  * @return JSON string
  */
-std::string JSObject::getJSON()
+std::string JSObject::getJSON(int indent)
 {
     ostringstream output;
     MembersMap::const_iterator it;
@@ -424,21 +436,24 @@ std::string JSObject::getJSON()
 
     for (it = m_members.begin(); it != m_members.end(); ++it)
     {
-        string childJSON = it->second->getJSON();
+        string childJSON = it->second->getJSON(indent+1);
 
         if (!childJSON.empty())
         {
             if (!first)
-                output << ", ";
+                output << ",";
             else
                 first = false;
 
-            output << "\"" << it->first << "\":";
+            output << "\n" << indentText(indent+1) << "\"" << it->first << "\":";
             output << childJSON;
         }
     }
 
-    output << "}";
+    if (!first)
+        output << "\n" << indentText(indent) << "}";
+    else
+        output << "}";
 
     return output.str();
 }
@@ -541,7 +556,7 @@ std::string JSArray::toString()const
  * Writes a JSON representation of the array to the output
  * @param output
  */
-std::string JSArray::getJSON()
+std::string JSArray::getJSON(int indent)
 {
     std::ostringstream output;
 
@@ -552,7 +567,7 @@ std::string JSArray::getJSON()
         if (i > 0)
             output << ',';
 
-        const std::string childJSON = this->arrayAccess(jsInt(i))->getJSON();
+        const std::string childJSON = this->arrayAccess(jsInt(i))->getJSON(indent);
 
         if (childJSON.empty())
             output << "null";

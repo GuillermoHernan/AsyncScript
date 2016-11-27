@@ -152,7 +152,7 @@ public:
     virtual Ref<JSValue> memberAccess(const std::string& name) = 0;
     virtual Ref<JSValue> arrayAccess(Ref<JSValue> index) = 0;
 
-    virtual std::string getJSON() = 0;
+    virtual std::string getJSON(int indent) = 0;
 
 
     virtual bool isReference()const = 0;
@@ -285,7 +285,7 @@ public:
         return memberAccess(index->toString());
     }
 
-    virtual std::string getJSON()
+    virtual std::string getJSON(int indent)
     {
         return "";
     }
@@ -329,7 +329,7 @@ class JSPrimitive : public JSValueBase<V_TYPE>
 {
 public:
 
-    virtual std::string getJSON()
+    virtual std::string getJSON(int indent)
     {
         return this->toString();
     }
@@ -462,9 +462,9 @@ public:
 
     }
 
-    virtual std::string getJSON()
+    virtual std::string getJSON(int indent)
     {
-        return target()->getJSON();
+        return target()->getJSON(indent);
     }
 
     virtual bool isReference()const
@@ -556,7 +556,7 @@ public:
             throw CScriptException("Invalid array index");
     }
 
-    virtual std::string getJSON();
+    virtual std::string getJSON(int indent);
 
     virtual bool isReference()const
     {
@@ -607,7 +607,7 @@ public:
         return m_text;
     }
 
-    virtual std::string getJSON()
+    virtual std::string getJSON(int indent)
     {
         return std::string("\"") + m_text + "\"";
     }
@@ -656,7 +656,7 @@ public:
     /////////////////////////////////////////
     virtual std::string toString()const;
 
-    virtual std::string getJSON();
+    virtual std::string getJSON(int indent);
 
     virtual JSValueTypes getType()const
     {
@@ -737,10 +737,12 @@ public:
     /////////////////////////////////////////
     virtual std::string toString()const;
 
-    virtual std::string getJSON()
-    {
-        return "";
-    }
+    //TODO: adding functions to the JSON yields invalid JSON. But it is a valuable
+    //debug information. Add some kind of flag to enable / disable it.
+//    virtual std::string getJSON(int indent)
+//    {
+//        return "";
+//    }
 
     virtual JSValueTypes getType()const
     {

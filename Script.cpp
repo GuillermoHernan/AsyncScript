@@ -52,7 +52,7 @@ Ref<JSValue> js_dump(FunctionScope* pScope)
 {
     JSObject* globals = (JSObject*) pScope->getGlobals();
 
-    printf("> %s\n", globals->getJSON().c_str());
+    printf("> %s\n", globals->getJSON(0).c_str());
     return undefined();
 }
 

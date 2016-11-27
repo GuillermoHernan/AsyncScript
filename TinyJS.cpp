@@ -283,7 +283,7 @@ Ref<JSValue> CTinyJS::setGlobal(const std::string& name, Ref<JSValue> value)
  */
 string CTinyJS::dumpJSONSymbols()
 {
-    return m_globals->getJSON();
+    return m_globals->getJSON(0);
 }
 
 SResult CTinyJS::parseFunctionDefinition(CScriptToken token, IScope* pScope)

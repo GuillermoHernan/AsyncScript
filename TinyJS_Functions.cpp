@@ -166,7 +166,7 @@ Ref<JSValue> scIntegerValueOf(FunctionScope* pScope)
 Ref<JSValue> scJSONStringify(FunctionScope* pScope)
 {
     std::string result;
-    result = pScope->getParam("obj")->getJSON();
+    result = pScope->getParam("obj")->getJSON(0);
     return jsString(result);
 }
 
