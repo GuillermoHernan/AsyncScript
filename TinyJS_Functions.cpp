@@ -146,6 +146,8 @@ Ref<JSValue> scStringFromCharCode(FunctionScope* pScope)
 
 Ref<JSValue> scIntegerParseInt(FunctionScope* pScope)
 {
+    //TODO: Make it more standard compliant (octal support, return NaN if fails...)
+    //We can reuse the code which parses numeric constants.
     string str = pScope->getParam("str")->toString();
     int val = strtol(str.c_str(), 0, 0);
     return jsInt(val);
@@ -267,7 +269,7 @@ void registerFunctions(CTinyJS *tinyJS)
     tinyJS->addNative("function String.charCodeAt(pos)", scStringCharCodeAt, 0);
     tinyJS->addNative("function String.fromCharCode(char)", scStringFromCharCode, 0);
     tinyJS->addNative("function String.split(separator)", scStringSplit, 0);
-    tinyJS->addNative("function Integer.parseInt(str)", scIntegerParseInt, 0); // string to int
+    tinyJS->addNative("function parseInt(str)", scIntegerParseInt, 0); // string to int
     tinyJS->addNative("function Integer.valueOf(str)", scIntegerValueOf, 0); // value of a single character
     tinyJS->addNative("function JSON.stringify(obj, replacer)", scJSONStringify, 0); // convert to JSON. replacer is ignored at the moment
     // JSON.parse is left out as you can (unsafely!) use eval instead
