@@ -178,9 +178,6 @@ Ref<JSValue> shiftOp(int type, Ref<JSValue> opA, Ref<JSValue> opB)
  */
 Ref<JSValue> logicOp(int type, Ref<JSValue> opA, Ref<JSValue> opB)
 {
-    //TODO: Review if it is really handled by this function, because at this
-    //level short-circuited evaluations cannot be supported. The operands are
-    //already evaluated.
     const bool valA = opA->toBoolean();
     const bool valB = opB->toBoolean();
 
