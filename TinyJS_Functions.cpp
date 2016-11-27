@@ -311,13 +311,12 @@ void createDefaultPrototypes (CTinyJS *tinyJS)
     
     JSArray::DefaultPrototype = createClass("Array()", objProto, arrayConstructor, tinyJS);
     JSString::DefaultPrototype = createClass("String(obj)", objProto, stringConstructor, tinyJS);
-    
-    
-    
 }
 
 void registerFunctions(CTinyJS *tinyJS)
 {
+    createDefaultPrototypes (tinyJS);
+    
     tinyJS->addNative("function exec(jsCode)", scExec); // execute the given code
     tinyJS->addNative("function eval(jsCode)", scEval); // execute the given string (an expression) and return the result
     //    tinyJS->addNative("function trace()", scTrace);
