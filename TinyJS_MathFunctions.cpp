@@ -41,8 +41,8 @@ using namespace std;
 
 #define F_RNG(a,min,max)    ((a)<(min) ? min : ((a)>(max) ? max : a ))
 
-#define scGetInt(a)         ( pScope->get(a)->toInt32() )
-#define scGetDouble(a)      ( pScope->get(a)->toDouble() )  
+#define scGetInt(a)         ( pScope->getParam(a)->toInt32() )
+#define scGetDouble(a)      ( pScope->getParam(a)->toDouble() )  
 
 #ifdef _MSC_VER
 namespace
@@ -78,7 +78,7 @@ namespace
 
 Ref<JSValue> scMathAbs(FunctionScope* pScope)
 {
-    return jsDouble(fabs(pScope->get("a")->toDouble()));
+    return jsDouble(fabs(pScope->getParam("a")->toDouble()));
 }
 
 //Math.round(a) - returns nearest round of given value

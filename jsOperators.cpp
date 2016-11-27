@@ -84,7 +84,7 @@ Ref<JSValue> addOp(Ref<JSValue> opA, Ref<JSValue> opB)
     const JSValueTypes typeA = opA->getType();
     const JSValueTypes typeB = opB->getType();
 
-    if (typeA >= VT_STRING && typeB >= VT_STRING)
+    if (typeA >= VT_STRING || typeB >= VT_STRING)
         return jsString(opA->toString() + opB->toString());
     else
         return jsDouble(opA->toDouble() + opB->toDouble());

@@ -44,7 +44,7 @@ const char *code = "function myfunc(x, y) { return x + y; } var a = myfunc(1,2);
 
 Ref<JSValue> js_print(FunctionScope* pScope)
 {
-    printf("> %s\n", pScope->get("text")->toString().c_str());
+    printf("> %s\n", pScope->getParam("text")->toString().c_str());
     return undefined();
 }
 

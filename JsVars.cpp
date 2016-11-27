@@ -54,18 +54,42 @@ std::string getTypeName(JSValueTypes vType)
 }
 
 /**
+ * Class for 'undefined' values.
+ */
+class JSUndefined: public JSValueBase<VT_UNDEFINED>
+{
+public:
+    virtual std::string toString()const
+    {
+        return "undefined";
+    }
+};
+
+/**
+ * Class for 'null' values.
+ */
+class JSNull: public JSValueBase<VT_NULL>
+{
+public:
+    virtual std::string toString()const
+    {
+        return "null";
+    }
+};
+
+/**
  * Gets the 'undefined value.
  * @return 
  */
 Ref<JSValue> undefined()
 {
-    static Ref<JSValue> value = refFromNew(new JSValueBase<VT_UNDEFINED>());
+    static Ref<JSValue> value = refFromNew(new JSUndefined);
     return value;
 }
 
 Ref<JSValue> jsNull()
 {
-    static Ref<JSValue> value = refFromNew(new JSValueBase<VT_NULL>());
+    static Ref<JSValue> value = refFromNew(new JSNull);
     return value;
 }
 
@@ -161,12 +185,15 @@ Ref<JSValue> createConstant(CScriptToken token)
  */
 Ref<JSObject> getObject(IScope* pScope, const std::string& name)
 {
-    Ref<JSValue> value = pScope->get(name);
+    Ref<JSValue> value = pScope->get_tmpn(name);
+    
+    if (!value.isNull())
+    {
+        if (value->isObject())
+            return value.staticCast<JSObject>();
+    }
 
-    if (value->isObject())
-        return value.staticCast<JSObject>();
-    else
-        return Ref<JSObject>();
+    return Ref<JSObject>();
 }
 
 /**
@@ -183,6 +210,21 @@ Ref<JSValue> dereference (Ref<JSValue> value)
     else
         return value.staticCast<JSReference>()->get();
 }
+
+/**
+ * Transforms a NULL pointer into an undefined value. If not undefined,
+ * just returns the input value.
+ * @param value input value to check
+ * @return 
+ */
+Ref<JSValue> null2undef (Ref<JSValue> value)
+{
+    if (value.isNull())
+        return undefined();
+    else
+        return value;
+}
+
 
 
 
@@ -296,17 +338,16 @@ Ref<JSObject> JSObject::create()
 
 /**
  * Gets the value of a member.
- * If not found, it returns 'undefined'
  * @return 
  */
-Ref<JSValue> JSObject::get(const std::string& name)const
+Ref<JSValue> JSObject::get_tmpn(const std::string& name)const
 {
     MembersMap::const_iterator it = m_members.find(name);
 
     if (it != m_members.end())
         return it->second;
     else
-        return undefined();
+        return Ref<JSValue>();
 }
 
 /**
@@ -407,12 +448,12 @@ size_t JSArray::push(Ref<JSValue> value)
  * @param exception
  * @return 
  */
-Ref<JSValue> JSArray::get(const std::string& name)const
+Ref<JSValue> JSArray::get_tmpn(const std::string& name)const
 {
     if (name == "length")
         return jsInt(m_length);
     else
-        return JSObject::get(name);
+        return JSObject::get_tmpn(name);
 }
 
 /**
@@ -457,14 +498,13 @@ std::string JSArray::toString()const
     ostringstream output;
     for (size_t i = 0; i < m_length; ++i)
     {
-        ostringstream indexStr;
-
         if (i > 0)
             output << ',';
 
-        indexStr << i;
-
-        output << this->get(indexStr.str())->toString();
+        const Ref<JSValue>  val = this->get_tmpn(to_string(i));
+        
+        if (!val.isNull())
+            output << val->toString();
     }
 
     return output.str();
@@ -579,16 +619,16 @@ std::string JSFunction::toString()const
  * @param name  Symbol name
  * @return Value for the symbol or 'undefined'
  */
-Ref<JSValue> BlockScope::get(const std::string& name)const
+Ref<JSValue> BlockScope::get_tmpn(const std::string& name)const
 {
     SymbolMap::const_iterator it = m_symbols.find(name);
 
     if (it != m_symbols.end())
         return it->second;
     else if (m_pParent != NULL)
-        return m_pParent->get(name);
+        return m_pParent->get_tmpn(name);
     else
-        return undefined();
+        return Ref<JSValue>();
 }
 
 /**
@@ -617,7 +657,7 @@ Ref<JSValue> BlockScope::set(const std::string& name, Ref<JSValue> value, bool f
     }
     else if (m_symbols.find(name) != m_symbols.end())
         m_symbols[name] = value; //Present at current scope
-    else if (get(name)->isUndefined())
+    else if (get_tmpn(name).isNull())
         m_symbols[name] = value; //Symbol does not exist, create it at this scope.
     else if (forceLocal)
         m_symbols[name] = value;
@@ -672,7 +712,7 @@ int FunctionScope::addParam(Ref<JSValue> value)
     {
         const std::string &name = paramsDef[index];
 
-        m_symbols[name] = value;
+        m_params[name] = value;
         m_arguments->push(JSReference::create(this, name));
     }
     else
@@ -682,6 +722,25 @@ int FunctionScope::addParam(Ref<JSValue> value)
 }
 
 /**
+ * Gets a parameter by name.
+ * Just looks into the parameter list. Doesn't look into any other scope.
+ * For a broader scope search, use 'get'
+ * 
+ * @param name parameter name
+ * @return Parameter value or 'undefined' if not found
+ */
+Ref<JSValue> FunctionScope::getParam(const std::string& name)const
+{
+    SymbolsMap::const_iterator it = m_params.find(name);
+    
+    if (it != m_params.end())
+        return it->second;
+    else
+        return undefined();            
+}
+
+
+/**
  * Gets a value from function scope. It looks for:
  * - this pointer
  * - Function arguments
@@ -689,7 +748,7 @@ int FunctionScope::addParam(Ref<JSValue> value)
  * @param name Symbol name
  * @return The symbol value or 'undefined'.
  */
-Ref<JSValue> FunctionScope::get(const std::string& name)const
+Ref<JSValue> FunctionScope::get_tmpn(const std::string& name)const
 {
     if (name == "this")
         return m_this;
@@ -697,14 +756,14 @@ Ref<JSValue> FunctionScope::get(const std::string& name)const
         return m_arguments;
     else
     {
-        SymbolsMap::const_iterator it = m_symbols.find(name);
+        SymbolsMap::const_iterator it = m_params.find(name);
 
-        if (it != m_symbols.end())
+        if (it != m_params.end())
             return it->second;
         else if (m_globals != NULL)
-            return m_globals->get(name);
+            return m_globals->get_tmpn(name);
         else
-            return undefined();
+            return Ref<JSValue>();
     }
 }
 
@@ -724,9 +783,9 @@ Ref<JSValue> FunctionScope::set(const std::string& name, Ref<JSValue> value, boo
     
     if (name == "this" || name == "arguments")
         throw CScriptException("Invalid left hand side in assignment");
-    else if (m_symbols.find(name) != m_symbols.end())
-        m_symbols[name] = value;
-    else if (!get(name)->isUndefined())
+    else if (m_params.find(name) != m_params.end())
+        m_params[name] = value;
+    else if (!get_tmpn(name).isNull())
         return m_globals->set(name, value);
 
     return value;

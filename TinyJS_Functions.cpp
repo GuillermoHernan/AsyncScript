@@ -44,11 +44,11 @@ using namespace std;
 }
 
 void scObjectDump(FunctionScope* pScope) {
-    pScope->get("this")->trace("> ");
+    pScope->getThis()->trace("> ");
 }
 
 void scObjectClone(FunctionScope* pScope) {
-    CScriptVar *obj = pScope->get("this");
+    CScriptVar *obj = pScope->getThis();
     c->getReturnVar()->copyValue(obj);
 }*/
 
@@ -59,15 +59,15 @@ Ref<JSValue> scMathRand(FunctionScope* pScope)
 
 Ref<JSValue> scMathRandInt(FunctionScope* pScope)
 {
-    const int min = pScope->get("min")->toInt32();
-    const int max = pScope->get("max")->toInt32();
+    const int min = pScope->getParam("min")->toInt32();
+    const int max = pScope->getParam("max")->toInt32();
     const int val = min + (int) (rand() % (1 + max - min));
     return jsInt(val);
 }
 
 Ref<JSValue> scCharToInt(FunctionScope* pScope)
 {
-    string str = pScope->get("ch")->toString();
+    string str = pScope->getParam("ch")->toString();
     int val = 0;
     if (str.length() > 0)
         val = (int) str.c_str()[0];
@@ -76,8 +76,8 @@ Ref<JSValue> scCharToInt(FunctionScope* pScope)
 
 Ref<JSValue> scStringIndexOf(FunctionScope* pScope)
 {
-    string str = pScope->get("this")->toString();
-    string search = pScope->get("search")->toString();
+    string str = pScope->getThis()->toString();
+    string search = pScope->getParam("search")->toString();
     size_t p = str.find(search);
     int val = (p == string::npos) ? -1 : p;
     return jsInt(val);
@@ -85,9 +85,9 @@ Ref<JSValue> scStringIndexOf(FunctionScope* pScope)
 
 Ref<JSValue> scStringSubstring(FunctionScope* pScope)
 {
-    string str = pScope->get("this")->toString();
-    int lo = pScope->get("lo")->toInt32();
-    int hi = pScope->get("hi")->toInt32();
+    string str = pScope->getThis()->toString();
+    int lo = pScope->getParam("lo")->toInt32();
+    int hi = pScope->getParam("hi")->toInt32();
 
     int l = hi - lo;
     if (l > 0 && lo >= 0 && lo + l <= (int) str.length())
@@ -98,8 +98,8 @@ Ref<JSValue> scStringSubstring(FunctionScope* pScope)
 
 Ref<JSValue> scStringCharAt(FunctionScope* pScope)
 {
-    string str = pScope->get("this")->toString();
-    int p = pScope->get("pos")->toInt32();
+    string str = pScope->getThis()->toString();
+    int p = pScope->getParam("pos")->toInt32();
     if (p >= 0 && p < (int) str.length())
         return jsString(str.substr(p, 1));
     else
@@ -108,8 +108,8 @@ Ref<JSValue> scStringCharAt(FunctionScope* pScope)
 
 Ref<JSValue> scStringCharCodeAt(FunctionScope* pScope)
 {
-    string str = pScope->get("this")->toString();
-    int p = pScope->get("pos")->toInt32();
+    string str = pScope->getThis()->toString();
+    int p = pScope->getParam("pos")->toInt32();
     if (p >= 0 && p < (int) str.length())
         return jsInt(str.at(p));
     else
@@ -118,8 +118,8 @@ Ref<JSValue> scStringCharCodeAt(FunctionScope* pScope)
 
 Ref<JSValue> scStringSplit(FunctionScope* pScope)
 {
-    string str = pScope->get("this")->toString();
-    string sep = pScope->get("separator")->toString();
+    string str = pScope->getThis()->toString();
+    string sep = pScope->getParam("separator")->toString();
     Ref<JSArray> result = JSArray::create();
 
     size_t pos = str.find(sep);
@@ -139,21 +139,21 @@ Ref<JSValue> scStringSplit(FunctionScope* pScope)
 Ref<JSValue> scStringFromCharCode(FunctionScope* pScope)
 {
     char str[2];
-    str[0] = pScope->get("char")->toInt32();
+    str[0] = pScope->getParam("char")->toInt32();
     str[1] = 0;
     return jsString(str);
 }
 
 Ref<JSValue> scIntegerParseInt(FunctionScope* pScope)
 {
-    string str = pScope->get("str")->toString();
+    string str = pScope->getParam("str")->toString();
     int val = strtol(str.c_str(), 0, 0);
     return jsInt(val);
 }
 
 Ref<JSValue> scIntegerValueOf(FunctionScope* pScope)
 {
-    string str = pScope->get("str")->toString();
+    string str = pScope->getParam("str")->toString();
 
     int val = 0;
     if (str.length() == 1)
@@ -164,7 +164,7 @@ Ref<JSValue> scIntegerValueOf(FunctionScope* pScope)
 Ref<JSValue> scJSONStringify(FunctionScope* pScope)
 {
     std::string result;
-    result = pScope->get("obj")->getJSON();
+    result = pScope->getParam("obj")->getJSON();
     return jsString(result);
 }
 
@@ -172,7 +172,7 @@ Ref<JSValue> scExec(FunctionScope* pScope)
 {
     //TODO: Is it meant to share globals?
     CTinyJS tinyJS;
-    std::string str = pScope->get("jsCode")->toString();
+    std::string str = pScope->getParam("jsCode")->toString();
     tinyJS.execute(str);
 
     return undefined();
@@ -182,7 +182,7 @@ Ref<JSValue> scEval(FunctionScope* pScope)
 {
     //TODO: Is it meant to share globals?
     CTinyJS tinyJS;
-    std::string str = pScope->get("jsCode")->toString();
+    std::string str = pScope->getParam("jsCode")->toString();
 
     return tinyJS.evaluateComplex(str);
 }
@@ -190,8 +190,8 @@ Ref<JSValue> scEval(FunctionScope* pScope)
 //TODO: Reactivate, but replacing them by standard javascript functions
 
 /*Ref<JSValue> scArrayContains(FunctionScope* pScope) {
-  Ref<JSValue>  obj = pScope->get("obj");
-  Ref<JSValue>  arr = pScope->get("this");
+  Ref<JSValue>  obj = pScope->getParam("obj");
+  Ref<JSValue>  arr = pScope->getThis();
   
   if (!arr->isArray())
       return jsFalse();
@@ -210,11 +210,11 @@ Ref<JSValue> scEval(FunctionScope* pScope)
 }
 
 Ref<JSValue> scArrayRemove(FunctionScope* pScope) {
-  CScriptVar *obj = pScope->get("obj");
+  CScriptVar *obj = pScope->getParam("obj");
   vector<int> removedIndices;
   CScriptVarLink *v;
   // remove
-  v = pScope->get("this")->firstChild;
+  v = pScope->getThis()->firstChild;
   while (v) {
       if (v->var->equals(obj)) {
         removedIndices.push_back(v->getIntName());
@@ -222,7 +222,7 @@ Ref<JSValue> scArrayRemove(FunctionScope* pScope) {
       v = v->nextSibling;
   }
   // renumber
-  v = pScope->get("this")->firstChild;
+  v = pScope->getThis()->firstChild;
   while (v) {
       int n = v->getIntName();
       int newn = n;
@@ -236,8 +236,8 @@ Ref<JSValue> scArrayRemove(FunctionScope* pScope) {
 }
 
 Ref<JSValue>scArrayJoin(FunctionScope* pScope) {
-  string sep = pScope->get("separator")->toString();
-  CScriptVar *arr = pScope->get("this");
+  string sep = pScope->getParam("separator")->toString();
+  CScriptVar *arr = pScope->getThis();
 
   ostringstream sstr;
   int l = arr->getArrayLength();

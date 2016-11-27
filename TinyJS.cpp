@@ -257,11 +257,11 @@ void CTinyJS::addNative(const string &funcDesc, JSNativeFn ptr, void *userdata)
 /**
  * Gets the value of a global symbol
  * @param name
- * @return 
+ * @return The symbol value or a NULL pointer is not found
  */
 Ref<JSValue> CTinyJS::getGlobal(const std::string& name)const
 {
-    return m_globals->get(name);
+    return m_globals->get_tmpn(name);
 }
 
 /**
@@ -417,10 +417,11 @@ SResult CTinyJS::factor(bool &execute, CScriptToken token, IScope* pScope)
     }
     if (token.type() == LEX_ID)
     {
-        Ref<JSValue> a = undefined();
+        const string    name = token.text();
+        Ref<JSValue>    a = undefined();
 
-        if (execute)
-            a = JSReference::create(pScope, token.text());
+        if (execute && !pScope->get_tmpn(name).isNull())
+            a = JSReference::create(pScope, name);
 
         /* The parent if we're executing a method call */
         Ref<JSValue> parent;
@@ -429,7 +430,8 @@ SResult CTinyJS::factor(bool &execute, CScriptToken token, IScope* pScope)
         {
             /* Variable doesn't exist! JavaScript says we should create it
              * (we won't add it here. This is done in the assignment operator)*/
-            a = pScope->set(token.text(), jsNull()); //TODO: null or undefined? Is this necessary
+            //TODO: I think it is not necessary to add it to the scope at this point.
+            //a = pScope->set(token.text(), jsNull()); //TODO: null or undefined? Is this necessary
         }
         token = token.match(LEX_ID);
         while (token.type() == '(' || token.type() == '.' || token.type() == '[')
@@ -555,7 +557,7 @@ SResult CTinyJS::factor(bool &execute, CScriptToken token, IScope* pScope)
         token = token.match(LEX_R_NEW);
         string className = token.text();
 
-        Ref<JSValue> constructor = pScope->get(className);
+        Ref<JSValue> constructor = pScope->get_tmpn(className);
         if (constructor.isNull())
         {
             errorAt(token.getPosition(), "%s is not a valid class name", className.c_str());

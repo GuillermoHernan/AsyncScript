@@ -9,7 +9,7 @@ if (!(undefined == null)) result = 0;  // unenforced type during check, displays
 if (undefined === null) result = 0;// enforce type during check, displays false
 
 
-if (null != undefined) result = 0;  // unenforced type during check, displays true
+//if (null != undefined) result = 0;  // unenforced type during check, displays true
 if (null === undefined) result = 0; // enforce type during check, displays false
 
 

@@ -230,6 +230,7 @@ Ref<JSValue> createConstant(CScriptToken token);
 Ref<JSObject> getObject(IScope* pScope, const std::string& name);
 
 Ref<JSValue> dereference (Ref<JSValue> value);
+Ref<JSValue> null2undef (Ref<JSValue> value);
 
 
 //////////////////////////////////////////
@@ -260,7 +261,7 @@ public:
 
     virtual double toDouble()const
     {
-        return 0;
+        return getNaN();
     }
 
     virtual Ref<JSValue> memberAccess(const std::string& name)
@@ -294,7 +295,14 @@ public:
  */
 struct IScope
 {
-    virtual Ref<JSValue> get(const std::string& name)const = 0;
+    /**
+     * Looks for a symbol. 
+     * It always look for it at the current scope, at may look for it at
+     * higher level scopes. This depends on the kind of scope.
+     * @param name Symbol name
+     * @return The requested value or a NULL pointer if not found.
+     */
+    virtual Ref<JSValue> get_tmpn(const std::string& name)const = 0;
     virtual Ref<JSValue> set(const std::string& name, Ref<JSValue> value, bool forceLocal=false) = 0;
     virtual IScope* getFunctionScope() = 0;
     
@@ -502,7 +510,7 @@ private:
 
     Ref<JSValue> target()const
     {
-        return m_pScope->get(m_name);
+        return null2undef(m_pScope->get_tmpn(m_name));
     }
 };
 
@@ -516,7 +524,7 @@ public:
 
     // IScope
     /////////////////////////////////////////
-    virtual Ref<JSValue> get(const std::string& name)const;
+    virtual Ref<JSValue> get_tmpn(const std::string& name)const;
     virtual Ref<JSValue> set(const std::string& name, Ref<JSValue> value, bool forceLocal=false);
 
     virtual IScope* getFunctionScope()
@@ -600,7 +608,7 @@ public:
 
     // IScope
     /////////////////////////////////////////
-    virtual Ref<JSValue> get(const std::string& name)const;
+    virtual Ref<JSValue> get_tmpn(const std::string& name)const;
     virtual Ref<JSValue> set(const std::string& name, Ref<JSValue> value, bool forceLocal=false);
 
     // JSValue
@@ -725,7 +733,7 @@ public:
     {
     }
 
-    virtual Ref<JSValue> get(const std::string& name)const;
+    virtual Ref<JSValue> get_tmpn(const std::string& name)const;
     virtual Ref<JSValue> set(const std::string& name, Ref<JSValue> value, bool forceLocal=false);
     virtual IScope* getFunctionScope();
 
@@ -751,7 +759,14 @@ public:
         m_this = value;
     }
 
+    Ref<JSValue> getThis()const
+    {
+        return m_this;
+    }
+
     int addParam(Ref<JSValue> value);
+    
+    Ref<JSValue> getParam(const std::string& name)const;
 
     Ref<JSValue> getResult()const
     {
@@ -763,7 +778,7 @@ public:
         m_result = value;
     }
 
-    virtual Ref<JSValue> get(const std::string& name)const;
+    virtual Ref<JSValue> get_tmpn(const std::string& name)const;
     virtual Ref<JSValue> set(const std::string& name, Ref<JSValue> value, bool forceLocal=false);
 
     virtual IScope* getFunctionScope()
@@ -779,7 +794,7 @@ public:
 private:
     typedef std::map <std::string, Ref<JSValue> > SymbolsMap;
 
-    SymbolsMap m_symbols;
+    SymbolsMap m_params;
     Ref<JSFunction> m_function;
     Ref<JSArray> m_arguments;
     Ref<JSValue> m_this;
