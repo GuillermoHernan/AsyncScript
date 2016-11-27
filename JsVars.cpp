@@ -307,6 +307,19 @@ double JSString::toDouble()const
         return result;
 }
 
+/**
+ * Member access function overridden to have access to 'length' property.
+ * @param name
+ * @return 
+ */
+Ref<JSValue> JSString::get(const std::string& name)const
+{
+    if (name == "length")
+        return jsDouble (m_text.size());
+    else
+        return JSObject::get(name);
+}
+
 
 
 // JSReference

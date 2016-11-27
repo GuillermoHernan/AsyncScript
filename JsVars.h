@@ -616,6 +616,8 @@ public:
     {
         return VT_STRING;
     }
+    
+    virtual Ref<JSValue> get(const std::string& name)const;
 
     /// 'JSString' default prototype.
     static Ref<JSObject> DefaultPrototype;
