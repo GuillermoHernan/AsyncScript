@@ -48,6 +48,7 @@ std::string getTypeName(JSValueTypes vType)
     if (types.empty())
     {
         types[VT_UNDEFINED] = "undefined";
+        types[VT_NULL] = "null";
         types[VT_NUMBER] = "Number";
         types[VT_BOOL] = "Boolean";
         types[VT_STRING] = "String";
