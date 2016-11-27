@@ -13,6 +13,7 @@
 #include <sstream>
 #include <cstdlib>
 #include <stdio.h>
+#include <cmath>
 
 using namespace std;
 
@@ -224,4 +225,13 @@ void errorAt_v(const ScriptPosition& position, const char* msgFormat, va_list ar
     const std::string message = generateErrorMessage(&position, msgFormat, args);
 
     throw CScriptException(message);
+}
+
+/**
+ * Gets a 'Not a Number' value.
+ * @return 
+ */
+double getNaN()
+{
+    return nan("");
 }
