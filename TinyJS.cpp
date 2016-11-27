@@ -337,7 +337,7 @@ SResult CTinyJS::functionCall(bool &execute, Ref<JSValue> fnValue, Ref<JSValue> 
             token = r.token;
 
             if (execute)
-                fnScope.addParam(r.value);
+                fnScope.addParam(dereference(r.value));
 
             if (token.type() != ')')
                 token = token.match(',');
