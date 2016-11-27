@@ -116,8 +116,8 @@ enum JSValueTypes
     VT_NULL,
     VT_NUMBER,
     VT_BOOL,
-    VT_STRING,
     VT_OBJECT,
+    VT_STRING,
     VT_ARRAY,
     VT_FUNCTION
 };
@@ -192,7 +192,7 @@ public:
     {
         const JSValueTypes t = this->getType();
 
-        return (t > VT_NULL && t < VT_OBJECT);
+        return t == VT_STRING || (t > VT_NULL && t < VT_OBJECT);
     }
 
     int addref()
