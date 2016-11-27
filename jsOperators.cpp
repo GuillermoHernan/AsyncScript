@@ -22,6 +22,7 @@ Ref<JSValue> logicOp(int type, Ref<JSValue> opA, Ref<JSValue> opB);
 Ref<JSValue> compareOp(int type, Ref<JSValue> opA, Ref<JSValue> opB);
 bool compareStrings(int type, const string& opA, const string& opB);
 bool compareNumbers(int type, const double opA, const double opB);
+bool compareUndefined(int opType, JSValueTypes typeA, JSValueTypes typeB);
 
 /**
  * Evaluates any Javascript binary operator
@@ -205,11 +206,13 @@ Ref<JSValue> compareOp(int type, Ref<JSValue> opA, Ref<JSValue> opB)
 
     //TODO: Missing compare semantics between objects
 
-    if (type == LEX_TYPEEQUAL || type == LEX_NTYPEEQUAL)
-    {
-        if (typeA != typeB)
-            return jsFalse();
-    }
+    if (type == LEX_TYPEEQUAL && typeA != typeB)
+        return jsFalse();
+    else if (type == LEX_NTYPEEQUAL && typeA != typeB)
+        return jsTrue();
+    
+    if (typeA == VT_UNDEFINED || typeB == VT_UNDEFINED)
+        return jsBool(compareUndefined(type, typeA, typeB));
 
     if (typeA >= VT_STRING && typeB >= VT_STRING)
         return jsBool(compareStrings(type, opA->toString(), opB->toString()));
@@ -263,6 +266,42 @@ bool compareNumbers(int type, const double opA, const double opB)
     case LEX_GEQUAL: return opA >= opB;
     default:
         ASSERT(!"Unexpected operator in 'compareNumbers'");
+        return false;
+    }
+}
+
+/**
+ * Handles comparisons when a 'undefined' value is involved.
+ * @param opType    Type of comparison operation
+ * @param typeA
+ * @param typeB
+ * @return 
+ */
+bool compareUndefined(int opType, JSValueTypes typeA, JSValueTypes typeB)
+{
+    //Ensure that typeA is undefined
+    if (typeB == VT_UNDEFINED)
+    {
+        JSValueTypes temp = typeA;
+        typeA = typeB;
+        typeB = temp;
+    }
+
+    switch (opType)
+    {
+    case '<': 
+    case '>': 
+    case LEX_LEQUAL: 
+    case LEX_GEQUAL: 
+        return false;
+        
+    case LEX_EQUAL:     return typeB == VT_NULL || typeB == VT_UNDEFINED;
+    case LEX_TYPEEQUAL: return typeB == VT_UNDEFINED;
+    
+    case LEX_NEQUAL:    return typeB != VT_NULL && typeB != VT_UNDEFINED;
+    case LEX_NTYPEEQUAL:return typeB != VT_UNDEFINED;
+    default:
+        ASSERT(!"Unexpected operator in 'compareUndefined'");
         return false;
     }
 }
