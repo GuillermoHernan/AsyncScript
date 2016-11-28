@@ -13,99 +13,13 @@
 
 #include "TinyJS_Lexer.h"
 #include "utils.h"
+#include "RefCountObj.h"
 #include <map>
 #include <sstream>
 #include <vector>
 
 class CScriptToken;
 struct IScope;
-
-/**
- * Smart reference class, for reference-counted objects
- */
-template <class ObjType>
-class Ref
-{
-public:
-
-    Ref() : m_ptr(NULL)
-    {
-    }
-
-    Ref(ObjType* ptr) : m_ptr(ptr)
-    {
-        if (ptr != NULL)
-            ptr->addref();
-    }
-
-    Ref(const Ref<ObjType>& src)
-    {
-        m_ptr = src.getPointer();
-
-        if (m_ptr != NULL)
-            m_ptr->addref();
-    }
-
-    template <class SrcType>
-    Ref(const Ref<SrcType>& src)
-    {
-        m_ptr = src.getPointer();
-
-        if (m_ptr != NULL)
-            m_ptr->addref();
-    }
-
-    ~Ref()
-    {
-        if (m_ptr != NULL)
-            m_ptr->release();
-    }
-
-    Ref<ObjType> & operator=(const Ref<ObjType>& src)
-    {
-        ObjType*  srcPtr = src.getPointer();
-
-        if (srcPtr != NULL)
-            srcPtr->addref();
-        
-        if (m_ptr != NULL)
-            m_ptr->release();
-
-        m_ptr = srcPtr;
-        
-        return *this;
-    }
-
-    template <class SrcType>
-    Ref<ObjType> & operator=(const Ref<SrcType>& src)
-    {
-        return this->operator =(src.staticCast<ObjType>());
-    }
-
-    bool isNull()const
-    {
-        return m_ptr == NULL;
-    }
-
-    ObjType* operator->()const
-    {
-        return m_ptr;
-    }
-
-    ObjType* getPointer()const
-    {
-        return m_ptr;
-    }
-
-    template <class DestType>
-    Ref<DestType> staticCast()const
-    {
-        return Ref<DestType> (static_cast<DestType*> (m_ptr));
-    }
-
-private:
-    ObjType* m_ptr;
-};
 
 /**
  * Enumeration of basic Javascript value types.
@@ -132,17 +46,9 @@ std::string getTypeName(JSValueTypes vType);
  *  - Type checking
  *  - JSON generation
  */
-class JSValue
+class JSValue : public RefCountObj
 {
 public:
-
-    JSValue() : m_refCount(1)
-    {
-    }
-
-    virtual ~JSValue()
-    {
-    }
 
     virtual std::string toString()const = 0;
     virtual bool toBoolean()const = 0;
@@ -194,20 +100,6 @@ public:
 
         return t == VT_STRING || (t > VT_NULL && t < VT_OBJECT);
     }
-
-    int addref()
-    {
-        return ++m_refCount;
-    }
-
-    void release()
-    {
-        if (--m_refCount == 0)
-            delete this;
-    }
-
-private:
-    int m_refCount;
 };
 
 // JSValue helper functions
