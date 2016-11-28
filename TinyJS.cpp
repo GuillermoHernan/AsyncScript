@@ -286,7 +286,7 @@ string CTinyJS::dumpJSONSymbols()
     return m_globals->getJSON(0);
 }
 
-SResult CTinyJS::parseFunctionDefinition(CScriptToken token, IScope* pScope)
+SResult CTinyJS::parseFunctionDefinition(CScriptToken token, Ref<IScope> pScope)
 {
     // actually parse a function...
     token = token.match(LEX_R_FUNCTION);
@@ -313,7 +313,7 @@ SResult CTinyJS::parseFunctionDefinition(CScriptToken token, IScope* pScope)
  * on the start bracket). 'parent' is the object that contains this method,
  * if there was one (otherwise it's just a normal function).
  */
-SResult CTinyJS::functionCall(bool &execute, Ref<JSValue> fnValue, Ref<JSValue> parent, CScriptToken token, IScope* pScope)
+SResult CTinyJS::functionCall(bool &execute, Ref<JSValue> fnValue, Ref<JSValue> parent, CScriptToken token, Ref<IScope> pScope)
 {
     if (execute)
     {
@@ -327,9 +327,9 @@ SResult CTinyJS::functionCall(bool &execute, Ref<JSValue> fnValue, Ref<JSValue> 
         Ref<JSFunction> function = fnValue.staticCast<JSFunction>();
 
         //Create function scope
-        FunctionScope fnScope(m_globals.getPointer(), function);
+        Ref<FunctionScope> fnScope = FunctionScope::create(m_globals.getPointer(), function);
 
-        fnScope.setThis(parent);
+        fnScope->setThis(parent);
 
         token = token.match('(');
 
@@ -339,7 +339,7 @@ SResult CTinyJS::functionCall(bool &execute, Ref<JSValue> fnValue, Ref<JSValue> 
             token = r.token;
 
             if (execute)
-                fnScope.addParam(dereference(r.value));
+                fnScope->addParam(dereference(r.value));
 
             if (token.type() != ')')
                 token = token.match(',');
@@ -353,12 +353,12 @@ SResult CTinyJS::functionCall(bool &execute, Ref<JSValue> fnValue, Ref<JSValue> 
         SResult r(token, Ref<JSValue>());
 
         if (function->isNative())
-            r.value = function->nativePtr()(&fnScope);
+            r.value = function->nativePtr()(fnScope.getPointer());
         else
         {
-            block(execute, function->codeBlock(), &fnScope);
+            block(execute, function->codeBlock(), fnScope);
             execute = true;
-            r.value = fnScope.getResult();
+            r.value = fnScope->getResult();
         }
 
 #ifdef TINYJS_CALL_STACK
@@ -388,7 +388,7 @@ SResult CTinyJS::functionCall(bool &execute, Ref<JSValue> fnValue, Ref<JSValue> 
     }
 }
 
-SResult CTinyJS::factor(bool &execute, CScriptToken token, IScope* pScope)
+SResult CTinyJS::factor(bool &execute, CScriptToken token, Ref<IScope> pScope)
 {
     if (token.type() == '(')
     {
@@ -583,7 +583,7 @@ SResult CTinyJS::factor(bool &execute, CScriptToken token, IScope* pScope)
     return SResult(token, NULL);
 }
 
-SResult CTinyJS::unary(bool &execute, CScriptToken token, IScope* pScope)
+SResult CTinyJS::unary(bool &execute, CScriptToken token, Ref<IScope> pScope)
 {
     if (token.type() == '!')
     {
@@ -601,7 +601,7 @@ SResult CTinyJS::unary(bool &execute, CScriptToken token, IScope* pScope)
         return factor(execute, token, pScope);
 }
 
-SResult CTinyJS::term(bool &execute, CScriptToken token, IScope* pScope)
+SResult CTinyJS::term(bool &execute, CScriptToken token, Ref<IScope> pScope)
 {
     SResult ra = unary(execute, token, pScope);
     Ref<JSValue> result = ra.value;
@@ -620,7 +620,7 @@ SResult CTinyJS::term(bool &execute, CScriptToken token, IScope* pScope)
     return SResult(token, result);
 }
 
-SResult CTinyJS::expression(bool &execute, CScriptToken token, IScope* pScope)
+SResult CTinyJS::expression(bool &execute, CScriptToken token, Ref<IScope> pScope)
 {
     bool negate = false;
     if (token.type() == '-')
@@ -677,7 +677,7 @@ SResult CTinyJS::expression(bool &execute, CScriptToken token, IScope* pScope)
     return r;
 }
 
-SResult CTinyJS::shift(bool &execute, CScriptToken token, IScope* pScope)
+SResult CTinyJS::shift(bool &execute, CScriptToken token, Ref<IScope> pScope)
 {
     SResult ra = expression(execute, token, pScope);
     token = ra.token;
@@ -695,7 +695,7 @@ SResult CTinyJS::shift(bool &execute, CScriptToken token, IScope* pScope)
     return ra;
 }
 
-SResult CTinyJS::condition(bool &execute, CScriptToken token, IScope* pScope)
+SResult CTinyJS::condition(bool &execute, CScriptToken token, Ref<IScope> pScope)
 {
     SResult ra = shift(execute, token, pScope);
     token = ra.token;
@@ -721,7 +721,7 @@ SResult CTinyJS::condition(bool &execute, CScriptToken token, IScope* pScope)
     return ra;
 }
 
-SResult CTinyJS::logic(bool &execute, CScriptToken token, IScope* pScope)
+SResult CTinyJS::logic(bool &execute, CScriptToken token, Ref<IScope> pScope)
 {
     SResult ra = condition(execute, token, pScope);
     token = ra.token;
@@ -759,7 +759,7 @@ SResult CTinyJS::logic(bool &execute, CScriptToken token, IScope* pScope)
     return ra;
 }
 
-SResult CTinyJS::ternary(bool &execute, CScriptToken token, IScope* pScope)
+SResult CTinyJS::ternary(bool &execute, CScriptToken token, Ref<IScope> pScope)
 {
     SResult lhsRes = logic(execute, token, pScope);
     token = lhsRes.token;
@@ -803,7 +803,7 @@ SResult CTinyJS::ternary(bool &execute, CScriptToken token, IScope* pScope)
     return lhsRes;
 }
 
-SResult CTinyJS::base(bool &execute, CScriptToken token, IScope* pScope)
+SResult CTinyJS::base(bool &execute, CScriptToken token, Ref<IScope> pScope)
 {
     //TODO: Ternary operator is an invalid left hand side...
     const CScriptToken startToken = token;
@@ -846,15 +846,16 @@ SResult CTinyJS::base(bool &execute, CScriptToken token, IScope* pScope)
     return lres;
 }
 
-CScriptToken CTinyJS::block(bool &execute, CScriptToken token, IScope* pScope)
+CScriptToken CTinyJS::block(bool &execute, CScriptToken token, Ref<IScope> pScope)
 {
     token = token.match('{');
 
     if (execute)
     {
-        BlockScope blScope(pScope);
+        Ref<BlockScope> blScope = BlockScope::create(pScope);
+        
         while (token.type() && token.type() != '}')
-            token = statement(execute, token, &blScope);
+            token = statement(execute, token, blScope);
         token = token.match('}');
     }
     else
@@ -872,7 +873,7 @@ CScriptToken CTinyJS::block(bool &execute, CScriptToken token, IScope* pScope)
     return token;
 }
 
-CScriptToken CTinyJS::statement(bool &execute, CScriptToken token, IScope* pScope)
+CScriptToken CTinyJS::statement(bool &execute, CScriptToken token, Ref<IScope> pScope)
 {
     if (token.type() == LEX_ID ||
         token.type() == LEX_INT ||
@@ -960,10 +961,10 @@ CScriptToken CTinyJS::statement(bool &execute, CScriptToken token, IScope* pScop
         }
         if (execute)
         {
-            IScope* fnScope = pScope->getFunctionScope();
+            Ref<IScope> fnScope = pScope->getFunctionScope();
             //CScriptVarLink *resultVar = scopes.back()->findChild(TINYJS_RETURN_VAR);
-            if (fnScope)
-                ((FunctionScope*) fnScope)->setResult(result);
+            if (!fnScope.isNull())
+                fnScope.staticCast<FunctionScope>()->setResult(result);
                 //resultVar->replaceWith(result);
             else
                 errorAt(retToken.getPosition(), "Illegal return statement. Not inside a function");
@@ -1003,7 +1004,7 @@ CScriptToken CTinyJS::statement(bool &execute, CScriptToken token, IScope* pScop
  * @param token
  * @return 
  */
-CScriptToken CTinyJS::whileLoop(bool &execute, CScriptToken token, IScope* pScope)
+CScriptToken CTinyJS::whileLoop(bool &execute, CScriptToken token, Ref<IScope> pScope)
 {
     token = token.match(LEX_R_WHILE);
     token = token.match('(');
@@ -1035,7 +1036,7 @@ CScriptToken CTinyJS::whileLoop(bool &execute, CScriptToken token, IScope* pScop
  * @param token
  * @return 
  */
-CScriptToken CTinyJS::forLoop(bool &execute, CScriptToken token, IScope* pScope)
+CScriptToken CTinyJS::forLoop(bool &execute, CScriptToken token, Ref<IScope> pScope)
 {
     bool noExec = false;
 
@@ -1112,7 +1113,7 @@ Ref<JSValue> CTinyJS::findInParentClasses(Ref<JSValue> object, const std::string
  * @param pScope
  * @return 
  */
-Ref<JSValue> CTinyJS::createGlobal (CScriptToken token, IScope* pScope)
+Ref<JSValue> CTinyJS::createGlobal (CScriptToken token, Ref<IScope> pScope)
 {
     if (token.type() != LEX_ID)
         errorAt(token.getPosition(), "Invalid left hand side in assignment");

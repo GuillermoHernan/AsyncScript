@@ -83,26 +83,26 @@ private:
 #endif
 
     // parsing - in order of precedence
-    SResult functionCall(bool &execute, Ref<JSValue> function, Ref<JSValue> parent, CScriptToken token, IScope* pScope);
-    SResult factor(bool &execute, CScriptToken token, IScope* pScope);
-    SResult unary(bool &execute, CScriptToken token, IScope* pScope);
-    SResult term(bool &execute, CScriptToken token, IScope* pScope);
-    SResult expression(bool &execute, CScriptToken token, IScope* pScope);
-    SResult shift(bool &execute, CScriptToken token, IScope* pScope);
-    SResult condition(bool &execute, CScriptToken token, IScope* pScope);
-    SResult logic(bool &execute, CScriptToken token, IScope* pScope);
-    SResult ternary(bool &execute, CScriptToken token, IScope* pScope);
-    SResult base(bool &execute, CScriptToken token, IScope* pScope);
-    CScriptToken block(bool &execute, CScriptToken token, IScope* pScope);
-    CScriptToken statement(bool &execute, CScriptToken token, IScope* pScope);
-    CScriptToken whileLoop(bool &execute, CScriptToken token, IScope* pScope);
-    CScriptToken forLoop(bool &execute, CScriptToken token, IScope* pScope);
+    SResult functionCall(bool &execute, Ref<JSValue> function, Ref<JSValue> parent, CScriptToken token, Ref<IScope> pScope);
+    SResult factor(bool &execute, CScriptToken token, Ref<IScope> pScope);
+    SResult unary(bool &execute, CScriptToken token, Ref<IScope> pScope);
+    SResult term(bool &execute, CScriptToken token, Ref<IScope> pScope);
+    SResult expression(bool &execute, CScriptToken token, Ref<IScope> pScope);
+    SResult shift(bool &execute, CScriptToken token, Ref<IScope> pScope);
+    SResult condition(bool &execute, CScriptToken token, Ref<IScope> pScope);
+    SResult logic(bool &execute, CScriptToken token, Ref<IScope> pScope);
+    SResult ternary(bool &execute, CScriptToken token, Ref<IScope> pScope);
+    SResult base(bool &execute, CScriptToken token, Ref<IScope> pScope);
+    CScriptToken block(bool &execute, CScriptToken token, Ref<IScope> pScope);
+    CScriptToken statement(bool &execute, CScriptToken token, Ref<IScope> pScope);
+    CScriptToken whileLoop(bool &execute, CScriptToken token, Ref<IScope> pScope);
+    CScriptToken forLoop(bool &execute, CScriptToken token, Ref<IScope> pScope);
     // parsing utility functions
-    SResult parseFunctionDefinition(CScriptToken token, IScope* pScope);
+    SResult parseFunctionDefinition(CScriptToken token, Ref<IScope> pScope);
     CScriptToken parseFunctionArguments(JSFunction *function, CScriptToken token);
 
     Ref<JSValue> findInParentClasses(Ref<JSValue> object, const std::string &name);
-    Ref<JSValue> createGlobal (CScriptToken token, IScope* pScope);
+    Ref<JSValue> createGlobal (CScriptToken token, Ref<IScope> pScope);
 };
 
 #endif

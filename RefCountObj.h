@@ -114,6 +114,11 @@ public:
         return m_ptr == NULL;
     }
 
+    bool notNull()const
+    {
+        return m_ptr != NULL;
+    }
+
     ObjType* operator->()const
     {
         return m_ptr;
@@ -133,6 +138,33 @@ public:
 private:
     ObjType* m_ptr;
 };
+
+
+/**
+ * Creates a reference for a pointer just returned from 'new' operator
+ * @param ptr
+ * @return 
+ */
+template <class T>
+inline Ref<T> refFromNew(T* ptr)
+{
+    Ref<T> r(ptr);
+
+    r->release();
+    return r;
+}
+
+/**
+ * Creates a reference from a pointer
+ * @param ptr
+ * @return 
+ */
+template <class T>
+inline Ref<T> ref(T* ptr)
+{
+    return Ref<T> (ptr);
+}
+
 
 
 #endif	/* REFCOUNTOBJ_H */

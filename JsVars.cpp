@@ -23,20 +23,6 @@ Ref<JSObject>   JSFunction::DefaultPrototype;
 //Ref<JSObject>   JSObject::DefaultPrototype;
 
 /**
- * Creates a reference for a pointer just returned from 'new' operator
- * @param ptr
- * @return 
- */
-template <class T>
-Ref<T> refFromNew(T* ptr)
-{
-    Ref<T> r(ptr);
-
-    r->release();
-    return r;
-}
-
-/**
  * Gives an string representation of the type name
  * @return 
  */
@@ -191,7 +177,7 @@ Ref<JSValue> createConstant(CScriptToken token)
  * @param name
  * @return 
  */
-Ref<JSObject> getObject(IScope* pScope, const std::string& name)
+Ref<JSObject> getObject(Ref<IScope> pScope, const std::string& name)
 {
     Ref<JSValue> value = pScope->get(name);
     
@@ -332,7 +318,7 @@ Ref<JSValue> JSString::get(const std::string& name)const
  * @param pScope
  * @param name
  */
-JSReference::JSReference(IScope* pScope, const std::string& name)
+JSReference::JSReference(Ref<IScope> pScope, const std::string& name)
 : m_name(name), m_pScope(pScope)
 {
 }
@@ -343,7 +329,7 @@ JSReference::JSReference(IScope* pScope, const std::string& name)
  * @param name
  * @return 
  */
-Ref<JSReference> JSReference::create(IScope* pScope, const std::string& name)
+Ref<JSReference> JSReference::create(Ref<IScope> pScope, const std::string& name)
 {
     return refFromNew(new JSReference(pScope, name));
 }
@@ -681,7 +667,7 @@ Ref<JSValue> BlockScope::get(const std::string& name)const
 
     if (it != m_symbols.end())
         return it->second;
-    else if (m_pParent != NULL)
+    else if (!m_pParent.isNull())
         return m_pParent->get(name);
     else
         return Ref<JSValue>();
@@ -706,7 +692,7 @@ Ref<JSValue> BlockScope::set(const std::string& name, Ref<JSValue> value, bool f
 
     if (value->isUndefined())
     {
-        if (m_pParent != NULL)
+        if (m_pParent.notNull())
             m_symbols[name] = value; //The symbol will be 'undefined' while this scope is active.
         else
             m_symbols.erase(name); //At global scope, we can delete it.
@@ -727,10 +713,10 @@ Ref<JSValue> BlockScope::set(const std::string& name, Ref<JSValue> value, bool f
  * Gets the first function scope down the scope chain.
  * @return Function scope or null if there is no function scope.
  */
-IScope* BlockScope::getFunctionScope()
+Ref<IScope> BlockScope::getFunctionScope()
 {
-    if (m_pParent == NULL)
-        return NULL;
+    if (m_pParent.isNull())
+        return Ref<IScope>();
     else
         return m_pParent->getFunctionScope();
 }
@@ -745,7 +731,7 @@ IScope* BlockScope::getFunctionScope()
  * @param globals
  * @param targetFn
  */
-FunctionScope::FunctionScope(IScope* globals, Ref<JSFunction> targetFn) :
+FunctionScope::FunctionScope(Ref<IScope> globals, Ref<JSFunction> targetFn) :
 m_function(targetFn),
 m_globals(globals)
 {
@@ -816,7 +802,7 @@ Ref<JSValue> FunctionScope::get(const std::string& name)const
 
         if (it != m_params.end())
             return it->second;
-        else if (m_globals != NULL)
+        else if (!m_globals.isNull())
             return m_globals->get(name);
         else
             return Ref<JSValue>();

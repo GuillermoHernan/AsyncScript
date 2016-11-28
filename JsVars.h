@@ -46,7 +46,7 @@ std::string getTypeName(JSValueTypes vType);
  *  - Type checking
  *  - JSON generation
  */
-class JSValue : public RefCountObj
+class JSValue : virtual public RefCountObj
 {
 public:
 
@@ -119,7 +119,7 @@ Ref<JSValue> jsString(const std::string& value);
 
 Ref<JSValue> createConstant(CScriptToken token);
 
-Ref<JSObject> getObject(IScope* pScope, const std::string& name);
+Ref<JSObject> getObject(Ref<IScope> pScope, const std::string& name);
 
 Ref<JSValue> dereference (Ref<JSValue> value);
 Ref<JSValue> null2undef (Ref<JSValue> value);
@@ -196,7 +196,7 @@ public:
 /**
  * Interface for variable scopes. Allows to define custom logic for each kind of scope.
  */
-struct IScope
+struct IScope : virtual public RefCountObj
 {
     /**
      * Looks for a symbol. 
@@ -207,7 +207,7 @@ struct IScope
      */
     virtual Ref<JSValue> get(const std::string& name)const = 0;
     virtual Ref<JSValue> set(const std::string& name, Ref<JSValue> value, bool forceLocal=false) = 0;
-    virtual IScope* getFunctionScope() = 0;
+    virtual Ref<IScope> getFunctionScope() = 0;
     
 protected:
     virtual ~IScope(){};
@@ -314,7 +314,7 @@ private:
 class JSReference : public JSValue
 {
 public:
-    static Ref<JSReference> create(IScope* pScope, const std::string& name);
+    static Ref<JSReference> create(Ref<IScope> pScope, const std::string& name);
 
     Ref<JSValue> set(Ref<JSValue> value);
     
@@ -370,10 +370,10 @@ public:
     }
 
 private:
-    JSReference(IScope* pScope, const std::string& name);
+    JSReference(Ref<IScope> pScope, const std::string& name);
 
-    const std::string m_name;
-    IScope * const m_pScope;
+    const std::string   m_name;
+    const Ref<IScope>   m_pScope;
 
     Ref<JSValue> target()const
     {
@@ -409,9 +409,9 @@ public:
     virtual Ref<JSValue> get(const std::string& name)const;
     virtual Ref<JSValue> set(const std::string& name, Ref<JSValue> value, bool forceLocal=false);
 
-    virtual IScope* getFunctionScope()
+    virtual Ref<IScope> getFunctionScope()
     {
-        return NULL;
+        return Ref<IScope>();
     }
     /////////////////////////////////////////
 
@@ -674,17 +674,21 @@ private:
 class BlockScope : public IScope
 {
 public:
-
-    BlockScope(IScope* parent) : m_pParent(parent)
+    static Ref<BlockScope> create(Ref<IScope> parent)
     {
+        return refFromNew(new BlockScope(parent));
     }
 
     virtual Ref<JSValue> get(const std::string& name)const;
     virtual Ref<JSValue> set(const std::string& name, Ref<JSValue> value, bool forceLocal=false);
-    virtual IScope* getFunctionScope();
+    virtual Ref<IScope> getFunctionScope();
 
 private:
-    IScope* m_pParent;
+    BlockScope(Ref<IScope> parent) : m_pParent(parent)
+    {
+    }
+    
+    Ref<IScope> m_pParent;
 
     typedef std::map<std::string, Ref<JSValue> > SymbolMap;
     SymbolMap m_symbols;
@@ -698,7 +702,10 @@ private:
 class FunctionScope : public IScope
 {
 public:
-    FunctionScope(IScope* globals, Ref<JSFunction> targetFn);
+    static Ref<FunctionScope> create(Ref<IScope> globals, Ref<JSFunction> targetFn)
+    {
+        return refFromNew(new FunctionScope(globals, targetFn));
+    }
 
     void setThis(Ref<JSValue> value)
     {
@@ -727,12 +734,12 @@ public:
     virtual Ref<JSValue> get(const std::string& name)const;
     virtual Ref<JSValue> set(const std::string& name, Ref<JSValue> value, bool forceLocal=false);
 
-    virtual IScope* getFunctionScope()
+    virtual Ref<IScope> getFunctionScope()
     {
-        return this;
+        return ref(this);
     }
 
-    IScope* getGlobals()const
+    Ref<IScope> getGlobals()const
     {
         return m_globals;
     }
@@ -745,5 +752,7 @@ private:
     Ref<JSArray> m_arguments;
     Ref<JSValue> m_this;
     Ref<JSValue> m_result;
-    IScope* m_globals;
+    Ref<IScope> m_globals;
+    
+    FunctionScope(Ref<IScope> globals, Ref<JSFunction> targetFn);
 };
