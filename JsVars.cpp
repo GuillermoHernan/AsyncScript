@@ -349,6 +349,11 @@ Ref<JSValue> JSReference::set(Ref<JSValue> value)
 //
 //////////////////////////////////////////////////
 
+JSObject::~JSObject()
+{
+    //printf ("Destroying object: %s\n", this->getJSON(0).c_str());
+}
+
 /**
  * Creates an empty JSON object
  * @return 
@@ -380,7 +385,7 @@ Ref<JSValue> JSObject::get(const std::string& name)const
  * @param value
  * @return 
  */
-Ref<JSValue> JSObject::set(const std::string& name, Ref<JSValue> value, bool forceLocal)
+Ref<JSValue> JSObject::set(const std::string& name, Ref<JSValue> value)
 {
     if (m_frozen)
         return get(name);
@@ -406,7 +411,8 @@ Ref<JSValue> JSObject::set(const std::string& name, Ref<JSValue> value, bool for
  */
 Ref<JSValue> JSObject::memberAccess(const std::string& name)
 {
-    return JSReference::create(this, name);
+    //TODO: simplify references!!!
+    return JSReference::create( ObjectScope::create (ref(this)), name);
 }
 
 std::string indentText(int indent)

@@ -46,7 +46,7 @@ std::string getTypeName(JSValueTypes vType);
  *  - Type checking
  *  - JSON generation
  */
-class JSValue : virtual public RefCountObj
+class JSValue : public RefCountObj
 {
 public:
 
@@ -196,7 +196,7 @@ public:
 /**
  * Interface for variable scopes. Allows to define custom logic for each kind of scope.
  */
-struct IScope : virtual public RefCountObj
+struct IScope : public RefCountObj
 {
     /**
      * Looks for a symbol. 
@@ -374,17 +374,19 @@ private:
 
     const std::string   m_name;
     const Ref<IScope>   m_pScope;
+    mutable Ref<JSValue>        m_target;
 
     Ref<JSValue> target()const
     {
-        return null2undef(m_pScope->get(m_name));
+        m_target = null2undef(m_pScope->get(m_name));
+        return m_target;
     }
 };
 
 /**
  * Javascript object class
  */
-class JSObject : public JSValue, public IScope
+class JSObject : public JSValue
 {
 public:
     static Ref<JSObject> create(Ref<JSObject> prototype);
@@ -404,15 +406,10 @@ public:
         m_frozen = true;
     }
 
-    // IScope
+    // IScope (old)
     /////////////////////////////////////////
     virtual Ref<JSValue> get(const std::string& name)const;
-    virtual Ref<JSValue> set(const std::string& name, Ref<JSValue> value, bool forceLocal=false);
-
-    virtual Ref<IScope> getFunctionScope()
-    {
-        return Ref<IScope>();
-    }
+    virtual Ref<JSValue> set(const std::string& name, Ref<JSValue> value);
     /////////////////////////////////////////
 
     // JSValue
@@ -469,6 +466,8 @@ protected:
     JSObject(Ref<JSObject> prototype) : m_prototype (prototype), m_frozen(false)
     {
     }
+
+    ~JSObject();
 
 private:
     typedef std::map <std::string, Ref<JSValue> > MembersMap;
@@ -755,4 +754,39 @@ private:
     Ref<IScope> m_globals;
     
     FunctionScope(Ref<IScope> globals, Ref<JSFunction> targetFn);
+};
+
+/**
+ * Scope which just access the members of an object.
+ * It do not has reference to a parent scope
+ */
+class ObjectScope : public IScope
+{
+public:
+    static Ref<ObjectScope> create(Ref<JSObject> object)
+    {
+        return refFromNew(new ObjectScope(object));
+    }
+
+    virtual Ref<JSValue> get(const std::string& name)const
+    {
+        return m_object->get(name);
+    }
+    
+    virtual Ref<JSValue> set(const std::string& name, Ref<JSValue> value, bool forceLocal=false)
+    {
+        return m_object->set(name, value);
+    }
+    
+    virtual Ref<IScope> getFunctionScope()
+    {
+        return Ref<IScope>();
+    }
+
+private:
+    ObjectScope (Ref<JSObject> object) : m_object(object)
+    {
+    }
+    
+    const Ref<JSObject>   m_object;
 };

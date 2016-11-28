@@ -150,7 +150,7 @@ inline Ref<T> refFromNew(T* ptr)
 {
     Ref<T> r(ptr);
 
-    r->release();
+    ptr->release();
     return r;
 }
 

@@ -76,11 +76,17 @@ public:
     std::string dumpJSONSymbols();
 
 private:
-    Ref<JSObject> m_globals;
+    Ref<JSObject>   m_globals;
+    Ref<IScope>     m_globalScope;
 
 #ifdef TINYJS_CALL_STACK
     std::vector<std::string> call_stack; /// Names of places called so we can show when erroring
 #endif
+    
+    Ref<IScope> globalScope()const
+    {
+        return m_globalScope;
+    }
 
     // parsing - in order of precedence
     SResult functionCall(bool &execute, Ref<JSValue> function, Ref<JSValue> parent, CScriptToken token, Ref<IScope> pScope);

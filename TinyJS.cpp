@@ -120,7 +120,9 @@ struct SResult
     }
 };
 
-CTinyJS::CTinyJS() : m_globals(JSObject::create(Ref<JSObject>()))
+CTinyJS::CTinyJS() : 
+    m_globals(JSObject::create(Ref<JSObject>())),
+    m_globalScope(ObjectScope::create(m_globals))
 {
 }
 
@@ -144,7 +146,7 @@ void CTinyJS::execute(const string &code)
 
         token = token.next();
         while (!token.eof())
-            token = statement(execute, token, m_globals.getPointer());
+            token = statement(execute, token, globalScope());
     }
     catch (const CScriptException &e)
     {
@@ -173,7 +175,7 @@ Ref<JSValue> CTinyJS::evaluateComplex(const string &code)
         token = token.next();
         do
         {
-            SResult r = base(execute, token, m_globals.getPointer());
+            SResult r = base(execute, token, globalScope());
             token = r.token;
             v = r.value;
             if (!token.eof())
@@ -224,7 +226,7 @@ Ref<JSFunction> CTinyJS::addNative(const string &funcDesc, JSNativeFn ptr)
     CScriptToken token(funcDesc.c_str());
     token = token.next();
 
-    IScope *scope = m_globals.getPointer();
+    Ref<IScope> scope = globalScope();
 
     token = token.match(LEX_R_FUNCTION);
     string funcName = token.text();
@@ -243,7 +245,7 @@ Ref<JSFunction> CTinyJS::addNative(const string &funcDesc, JSNativeFn ptr)
             scope->set(funcName, child);
         }
 
-        scope = child.getPointer();
+        scope = ObjectScope::create(child);
         funcName = token.text();
         token = token.match(LEX_ID);
     }
@@ -327,7 +329,7 @@ SResult CTinyJS::functionCall(bool &execute, Ref<JSValue> fnValue, Ref<JSValue> 
         Ref<JSFunction> function = fnValue.staticCast<JSFunction>();
 
         //Create function scope
-        Ref<FunctionScope> fnScope = FunctionScope::create(m_globals.getPointer(), function);
+        Ref<FunctionScope> fnScope = FunctionScope::create(globalScope(), function);
 
         fnScope->setThis(parent);
 
@@ -455,7 +457,7 @@ SResult CTinyJS::factor(bool &execute, CScriptToken token, Ref<IScope> pScope)
                         errorAt (token.getPosition(), "Illegal left hand side of member access operator");
                     
                     parent = a;
-                    a = JSReference::create(castTo<JSObject>(a).getPointer(), name);
+                    a = a->memberAccess(name);
                 }
                 token = token.match(LEX_ID);
             }
@@ -1121,7 +1123,7 @@ Ref<JSValue> CTinyJS::createGlobal (CScriptToken token, Ref<IScope> pScope)
     const string name = token.text();
     
     m_globals->set(name, jsNull());
-    return JSReference::create(m_globals.getPointer(), name);    
+    return JSReference::create(globalScope(), name);    
 }
 
 

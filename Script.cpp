@@ -50,9 +50,10 @@ Ref<JSValue> js_print(FunctionScope* pScope)
 
 Ref<JSValue> js_dump(FunctionScope* pScope)
 {
-    Ref<JSObject> globals = pScope->getGlobals().staticCast<JSObject>();
-
-    printf("> %s\n", globals->getJSON(0).c_str());
+    //TODO: Make it work again.
+//    Ref<JSObject> globals = pScope->getGlobals().staticCast<JSObject>();
+//
+//    printf("> %s\n", globals->getJSON(0).c_str());
     return undefined();
 }
 
