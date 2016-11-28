@@ -90,9 +90,11 @@ std::string ScriptPosition::toString()const
  * The token created with the constructor is not parsed from input string. It is
  * just the 'initial' token. To parse the first real token, call 'next'.
  */
-CScriptToken::CScriptToken(const char* code) : m_code(code)
+CScriptToken::CScriptToken(const char* code) 
+: m_code(code)
 , m_type(LEX_INITIAL)
 , m_position(1, 1)
+, m_length(0)
 {
 }
 
