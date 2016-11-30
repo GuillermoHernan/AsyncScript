@@ -57,7 +57,7 @@ using namespace std;
 void **get_stackframe()
 {
     void **trace = (void**) malloc(sizeof (void*)*17);
-    int trace_size = 0;
+    int trace_size;
 
     for (int i = 0; i < 17; i++) trace[i] = (void*) 0;
     trace_size = backtrace(trace, 16);
@@ -95,10 +95,11 @@ static void *my_malloc_hook(size_t size, const void *caller)
     __malloc_hook = old_malloc_hook;
     __free_hook = old_free_hook;
     /* Call recursively */
+    printf ("malloc (%u)... ", (unsigned int) size);
     void *result = malloc(size);
     /* we call malloc here, so protect it too. */
-    //printf ("malloc (%u) returns %p\n", (unsigned int) size, result);
-    malloced[result] = get_stackframe();
+    printf ("returns %p\n", result);
+    //malloced[result] = get_stackframe();
 
     /* Restore our own hooks */
     __malloc_hook = my_malloc_hook;
@@ -112,9 +113,9 @@ static void my_free_hook(void *ptr, const void *caller)
     __malloc_hook = old_malloc_hook;
     __free_hook = old_free_hook;
     /* Call recursively */
+    printf ("freeing pointer %p\n", ptr);
     free(ptr);
     /* we call malloc here, so protect it too. */
-    //printf ("freed pointer %p\n", ptr);
     if (malloced.find(ptr) == malloced.end())
     {
         /*fprintf(stderr, "INVALID FREE\n");
@@ -184,7 +185,7 @@ void memtracing_kill()
     while (!done)
     {
         done = true;
-        for (int i = 0; i < sorting.size() - 1; i++)
+        for (size_t i = 0; i < sorting.size() - 1; i++)
         {
             if (sorting[i].first < sorting[i + 1].first)
             {
@@ -197,7 +198,7 @@ void memtracing_kill()
     }
 
 
-    for (int i = 0; i < sorting.size(); i++)
+    for (size_t i = 0; i < sorting.size(); i++)
     {
         long hash = sorting[i].second;
         int count = sorting[i].first;
@@ -243,7 +244,7 @@ bool run_test(const char *filename)
     {
         printf("ERROR: %s\n", e.what());
     }
-    bool pass = s.getGlobal("result")->toBoolean();
+    bool pass = null2undef( s.getGlobal("result") )->toBoolean();
 
     if (pass)
         printf("PASS\n");
@@ -280,8 +281,12 @@ int main(int argc, char **argv)
     printf("   ./run_tests               : run all tests\n");
     if (argc == 2)
     {
+        printf("Running test: %s\n", argv[1]);
+        
         return !run_test(argv[1]);
     }
+    else
+        printf("Running all tests!\n");
 
     int test_num = 1;
     int count = 0;
