@@ -28,11 +28,23 @@
 
 #pragma once
 
+#include <string>
+
 enum LEX_TYPES
 {
     LEX_EOF = 0,
     LEX_INITIAL,
     LEX_COMMENT,
+    LEX_ASSIGN_BASE = 128,
+
+    LEX_LSHIFTEQUAL,
+    LEX_RSHIFTEQUAL,
+    LEX_PLUSEQUAL = LEX_ASSIGN_BASE + '+',
+    LEX_MINUSEQUAL = LEX_ASSIGN_BASE + '-',
+    LEX_ANDEQUAL = LEX_ASSIGN_BASE + '&',
+    LEX_OREQUAL = LEX_ASSIGN_BASE + '|',
+    LEX_XOREQUAL = LEX_ASSIGN_BASE + '^',
+    
     LEX_ID = 256,
     LEX_INT,
     LEX_FLOAT,
@@ -44,20 +56,13 @@ enum LEX_TYPES
     LEX_NTYPEEQUAL,
     LEX_LEQUAL,
     LEX_LSHIFT,
-    LEX_LSHIFTEQUAL,
     LEX_GEQUAL,
     LEX_RSHIFT,
     LEX_RSHIFTUNSIGNED,
-    LEX_RSHIFTEQUAL,
-    LEX_PLUSEQUAL,
-    LEX_MINUSEQUAL,
     LEX_PLUSPLUS,
     LEX_MINUSMINUS,
-    LEX_ANDEQUAL,
     LEX_ANDAND,
-    LEX_OREQUAL,
     LEX_OROR,
-    LEX_XOREQUAL,
     // reserved words
 #define LEX_R_LIST_START LEX_R_IF
     LEX_R_IF,
@@ -144,6 +149,11 @@ public:
     LEX_TYPES type()const
     {
         return m_type;
+    }
+    
+    bool isAssignment()const
+    {
+        return m_type == '=' || (m_type > LEX_ASSIGN_BASE && m_type < LEX_ID);
     }
 
     bool eof()const

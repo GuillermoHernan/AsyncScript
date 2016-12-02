@@ -9,7 +9,10 @@ TinyJS_MathFunctions.cpp \
 TinyJS_Lexer.cpp \
 utils.cpp \
 JsVars.cpp \
-jsOperators.cpp
+jsOperators.cpp \
+jsParser.cpp \
+ast.cpp \
+parserResults.cpp
 
 OBJECTS=$(SOURCES:.cpp=.o)
 
