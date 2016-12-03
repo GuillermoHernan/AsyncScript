@@ -12,7 +12,9 @@ JsVars.cpp \
 jsOperators.cpp \
 jsParser.cpp \
 ast.cpp \
-parserResults.cpp
+parserResults.cpp \
+microVM.cpp \
+mvmCodegen.cpp
 
 OBJECTS=$(SOURCES:.cpp=.o)
 

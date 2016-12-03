@@ -609,7 +609,6 @@ void JSArray::setLength(Ref<JSValue> value)
 /**
  * Creates a Javascript function 
  * @param name Function name
- * @param token Lexer token which references to the start of the function code block.
  * @return A new function object
  */
 Ref<JSFunction> JSFunction::createJS(const std::string& name)

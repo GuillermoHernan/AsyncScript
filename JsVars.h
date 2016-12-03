@@ -596,6 +596,11 @@ public:
         return (int) m_params.size();
     }
 
+    void setParams(const ParametersList& params)
+    {
+        m_params = params;
+    }
+
     const ParametersList getParams()const
     {
         return m_params;
@@ -609,6 +614,16 @@ public:
     void setCode(CScriptToken token)
     {
         m_code = token;
+    }
+
+    void setCodeMVM(Ref<RefCountObj> code)
+    {
+        m_codeMVM = code;
+    }
+
+    Ref<RefCountObj> getCodeMVM()const
+    {
+        return m_codeMVM;
     }
 
     bool isNative()const
@@ -659,6 +674,7 @@ private:
 
     const std::string m_name;
     CScriptToken m_code;
+    Ref<RefCountObj> m_codeMVM;
     const JSNativeFn m_pNative;
     ParametersList m_params;
 };

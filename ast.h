@@ -19,6 +19,32 @@
 #include <map>
 
 /**
+ * AST node types enumeration
+ */
+enum AstNodeTypes
+{
+    AST_BLOCK
+    ,AST_VAR
+    ,AST_IF
+    ,AST_FOR
+    ,AST_RETURN
+    ,AST_FUNCTION
+    ,AST_ASSIGNMENT
+    ,AST_FNCALL
+    ,AST_LITERAL
+    ,AST_IDENTIFIER
+    ,AST_ARRAY
+    ,AST_OBJECT
+    ,AST_ARRAY_ACCESS
+    ,AST_MEMBER_ACCESS
+    ,AST_CONDITIONAL
+    ,AST_BINARYOP
+    ,AST_PREFIXOP
+    ,AST_POSTFIXOP
+    ,AST_TYPES_COUNT
+};
+
+/**
  * Base class for statements
  */
 class AstStatement : public RefCountObj
@@ -30,11 +56,21 @@ public:
     {
         return m_children;
     }
+    
+    bool childExists (size_t index)const
+    {
+        if (index < m_children.size())
+            return m_children[index].notNull();
+        else
+            return false;
+    }
 
     const ScriptPosition& position()const
     {
         return m_position;
     }
+    
+    virtual AstNodeTypes getType()const =0;
 
 protected:
     ChildList m_children;
@@ -51,7 +87,7 @@ protected:
 class AstExpression : public AstStatement
 {
 public:
-    typedef std::vector< Ref<AstStatement> > ExprList;
+    typedef std::vector< Ref<AstExpression> > ExprList;
 
     const ExprList& subExprs()const
     {
@@ -82,6 +118,12 @@ public:
     {
         m_children.push_back(child);
     }
+    
+    virtual AstNodeTypes getType()const
+    {
+        return AST_BLOCK;
+    }
+
 
 protected:
 
@@ -101,6 +143,12 @@ public:
     {
         return refFromNew(new AstVar(position, name, expr));
     }
+    
+    virtual AstNodeTypes getType()const
+    {
+        return AST_VAR;
+    }
+    
 
     const std::string name;
 protected:
@@ -125,6 +173,12 @@ public:
     {
         return refFromNew(new AstIf(position, condition, thenSt, elseSt));
     }
+    
+    virtual AstNodeTypes getType()const
+    {
+        return AST_IF;
+    }
+
 
 protected:
     AstIf (ScriptPosition position,
@@ -154,6 +208,12 @@ public:
     {
         return refFromNew (new AstFor(position, initSt, condition, incrementSt, body));
     }
+    
+    AstNodeTypes getType()const
+    {
+        return AST_FOR;
+    }
+
 
 protected:
     AstFor (ScriptPosition position,
@@ -184,6 +244,12 @@ public:
         return refFromNew (new AstReturn(position, expr));
     }
     
+    virtual AstNodeTypes getType()const
+    {
+        return AST_RETURN;
+    }
+
+    
 protected:
     AstReturn(ScriptPosition position, Ref<AstExpression> expr) : AstStatement(position)
     {
@@ -208,10 +274,32 @@ public:
         m_code = code;
     }
 
+    Ref<AstStatement> getCode()const
+    {
+        return m_code;
+    }
+    
+    const std::string& getName()const
+    {
+        return m_name;
+    }
+
     void addParam(const std::string& paramName)
     {
         m_params.push_back(paramName);
     }
+
+    typedef std::vector<std::string> Params;
+    const Params& getParams()const
+    {
+        return m_params;
+    }
+    
+    virtual AstNodeTypes getType()const
+    {
+        return AST_FUNCTION;
+    }
+    
 
 protected:
 
@@ -222,7 +310,7 @@ protected:
     }
 
     const std::string m_name;
-    std::vector<std::string> m_params;
+    Params m_params;
     Ref<AstStatement> m_code;
 };
 
@@ -255,6 +343,12 @@ public:
     {
         return refFromNew (new AstAssignment(position, opCode, left, right));
     }
+    
+    virtual AstNodeTypes getType()const
+    {
+        return AST_ASSIGNMENT;
+    }
+
 protected:
     AstAssignment(ScriptPosition position,
                     int opCode,
@@ -298,6 +392,12 @@ public:
         return m_bNew;
     }
     
+    virtual AstNodeTypes getType()const
+    {
+        return AST_FNCALL;
+    }
+
+    
 protected:
     AstFunctionCall(ScriptPosition position, Ref<AstExpression> fnExpression):
         AstExpression(position),
@@ -316,9 +416,16 @@ class AstLiteral : public AstExpression
 {
 public:
     static Ref<AstLiteral> create(CScriptToken token);
+    static Ref<AstLiteral> create(ScriptPosition pos, int value);
     static Ref<AstLiteral> undefined(ScriptPosition pos);
     
     const Ref<JSValue>  value;
+    
+    virtual AstNodeTypes getType()const
+    {
+        return AST_LITERAL;
+    }
+    
 protected:
     AstLiteral (ScriptPosition position, Ref<JSValue> val) : 
     AstExpression(position),
@@ -339,6 +446,12 @@ public:
     }
     
     const std::string&  name;
+    
+    virtual AstNodeTypes getType()const
+    {
+        return AST_IDENTIFIER;
+    }
+
     
 protected:
     AstIdentifier (CScriptToken token) : 
@@ -363,6 +476,12 @@ public:
     {
         m_children.push_back(expr);
     }
+    
+    virtual AstNodeTypes getType()const
+    {
+        return AST_ARRAY;
+    }
+
 
 protected:
     AstArray(ScriptPosition pos) : AstExpression(pos)
@@ -392,6 +511,12 @@ public:
     {
         return m_properties;
     }
+    
+    virtual AstNodeTypes getType()const
+    {
+        return AST_OBJECT;
+    }
+    
 
 protected:
     AstObject(ScriptPosition pos) : AstExpression(pos)
@@ -411,6 +536,12 @@ public:
     {
         return refFromNew (new AstArrayAccess(pos, array, index));
     }
+    
+    virtual AstNodeTypes getType()const
+    {
+        return AST_ARRAY_ACCESS;
+    }
+
 
 protected:
     AstArrayAccess(ScriptPosition pos, Ref<AstExpression> array, Ref<AstExpression> index) :
@@ -431,6 +562,12 @@ public:
     {
         return refFromNew (new AstMemberAccess(pos, obj, field));
     }
+    
+    virtual AstNodeTypes getType()const
+    {
+        return AST_MEMBER_ACCESS;
+    }
+    
 
 protected:
     AstMemberAccess(ScriptPosition pos, Ref<AstExpression> obj, Ref<AstExpression> field) :
@@ -454,6 +591,12 @@ public:
     {
         return refFromNew (new AstConditional(position, condition, thenExpr, elseExpr));
     }
+    
+    virtual AstNodeTypes getType()const
+    {
+        return AST_CONDITIONAL;
+    }
+    
     
 protected:
     AstConditional(ScriptPosition position,
@@ -482,6 +625,12 @@ public:
     {
         return refFromNew (new AstBinaryOp(position, opType, left, right));
     }
+    
+    virtual AstNodeTypes getType()const
+    {
+        return AST_BINARYOP;
+    }
+    
 
 protected:
     AstBinaryOp(ScriptPosition position,
@@ -507,6 +656,12 @@ public:
     {
         return refFromNew (new AstPrefixOp(position, opType, child));
     }
+    
+    virtual AstNodeTypes getType()const
+    {
+        return AST_PREFIXOP;
+    }
+
 
 protected:
     AstPrefixOp(ScriptPosition position,
@@ -529,6 +684,12 @@ public:
     {
         return refFromNew (new AstPostfixOp(position, opType, child));
     }
+    
+    virtual AstNodeTypes getType()const
+    {
+        return AST_POSTFIXOP;
+    }
+
 
 protected:
     AstPostfixOp(ScriptPosition position,

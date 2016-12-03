@@ -39,6 +39,18 @@ Ref<AstLiteral> AstLiteral::create(CScriptToken token)
 }
 
 /**
+ * Creates a literal form an integer
+ * @param pos
+ * @param value
+ * @return 
+ */
+Ref<AstLiteral> AstLiteral::create(ScriptPosition pos, int value)
+{
+    return refFromNew(new AstLiteral(pos, jsInt(value)));
+}
+
+
+/**
  * Creates a undefined literal
  * @param pos
  * @return 
