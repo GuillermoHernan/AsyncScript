@@ -15,10 +15,13 @@
 #include "JsVars.h"
 #include <vector>
 
-struct MvmFunction;
+struct MvmScript;
 
-Ref<JSValue>    mvmExecute (Ref<MvmFunction> code);
+Ref<JSValue>    mvmExecute (Ref<MvmScript> code, Ref<IScope> globals);
 
+/**
+ * 8 bit instruction codes.
+ */
 enum OpCodes8
 {
     OC_CALL = 0,
@@ -28,7 +31,7 @@ enum OpCodes8
     OC_SWAP = 12,
     OC_POP = 13,
     
-    OC_RETURN = 15,
+    //OC_RETURN = 15,   //No return instruction, by the moment
     OC_RD_LOCAL = 16,
     OC_WR_LOCAL = 17,
     OC_RD_GLOBAL = 18,
@@ -40,12 +43,16 @@ enum OpCodes8
     OC_EXT_FLAG = 128
 };
 
+/**
+ * 16 bit instruction codes.
+ */
 enum OpCodes16
 {
     OC16_CALL = 0,
-    OC16_CALL_MAX = 1023,
+    OC16_CALL_MAX = 0x03ff,     //1023
     OC16_PUSHC = 0x2000,
-    OC16_EXT_FLAG = 0x4000, //Reserved for future extension to 32 bit opCodes.
+    OC16_32BIT_FLAG = 0x4000,   //Reserved for future extension to 32 bit instructions.
+    OC16_16BIT_FLAG = 0x8000    //Always active for 16 bit instructions
 };
 
 typedef std::vector<unsigned char>      ByteVector;
@@ -90,27 +97,5 @@ protected:
         blocks.push_back(MvmBlock());
     }
 };
-/*
-class MvmFunction : public MvmScript
-{
-public:
-    static Ref<MvmFunction> create()
-    {
-        return refFromNew(new MvmFunction);
-    }
-    
-    typedef std::vector<std::string> Params;
-    void setParams (const Params & p)
-    {
-        m_params = p;
-    }
-    
-protected:
-    MvmFunction()
-    {
-    }
-    
-    Params m_params;
-};*/
 #endif	/* MICROVM_H */
 

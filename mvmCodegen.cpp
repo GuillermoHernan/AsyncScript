@@ -314,13 +314,15 @@ void forCodegen (Ref<AstStatement> statement, CodegenState* pState)
  */
 void returnCodegen (Ref<AstStatement> statement, CodegenState* pState)
 {
+    //It just pushes return expression value on the stack, and sets next block 
+    //indexes to (-1), which means that the current function shall end.
     if (!childCodegen(statement, 0, pState))
     {
         //If it is an empty return statement, push a 'undefined' value on the stack
         pushUndefined(pState);
     }
     
-    instruction8(OC_RETURN, pState);
+    //instruction8(OC_RETURN, pState);
     endBlock(-1, -1, pState);
 }
 
