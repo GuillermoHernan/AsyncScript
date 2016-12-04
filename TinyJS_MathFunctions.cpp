@@ -28,11 +28,12 @@
  * SOFTWARE.
  */
 
+#include "TinyJS_MathFunctions.h"
+#include "scriptMain.h"
+
 #include <math.h>
 #include <cstdlib>
 #include <sstream>
-#include "TinyJS_MathFunctions.h"
-#include "TinyJS.h"
 
 using namespace std;
 
@@ -291,39 +292,39 @@ Ref<JSValue> scMathSqrt(FunctionScope* pScope)
 
 // ----------------------------------------------- Register Functions
 
-void registerMathFunctions(CTinyJS *tinyJS)
+void registerMathFunctions(Ref<IScope> scope)
 {
 
     // --- Math and Trigonometry functions ---
-    tinyJS->addNative("function Math.abs(a)", scMathAbs);
-    tinyJS->addNative("function Math.round(a)", scMathRound);
-    tinyJS->addNative("function Math.min(a,b)", scMathMin);
-    tinyJS->addNative("function Math.max(a,b)", scMathMax);
-    tinyJS->addNative("function Math.range(x,a,b)", scMathRange);
-    tinyJS->addNative("function Math.sign(a)", scMathSign);
+    addNative("function Math.abs(a)", scMathAbs, scope);
+    addNative("function Math.round(a)", scMathRound, scope);
+    addNative("function Math.min(a,b)", scMathMin, scope);
+    addNative("function Math.max(a,b)", scMathMax, scope);
+    addNative("function Math.range(x,a,b)", scMathRange, scope);
+    addNative("function Math.sign(a)", scMathSign, scope);
 
-    tinyJS->addNative("function Math.PI()", scMathPI);
-    tinyJS->addNative("function Math.toDegrees(a)", scMathToDegrees);
-    tinyJS->addNative("function Math.toRadians(a)", scMathToRadians);
-    tinyJS->addNative("function Math.sin(a)", scMathSin);
-    tinyJS->addNative("function Math.asin(a)", scMathASin);
-    tinyJS->addNative("function Math.cos(a)", scMathCos);
-    tinyJS->addNative("function Math.acos(a)", scMathACos);
-    tinyJS->addNative("function Math.tan(a)", scMathTan);
-    tinyJS->addNative("function Math.atan(a)", scMathATan);
-    tinyJS->addNative("function Math.sinh(a)", scMathSinh);
-    tinyJS->addNative("function Math.asinh(a)", scMathASinh);
-    tinyJS->addNative("function Math.cosh(a)", scMathCosh);
-    tinyJS->addNative("function Math.acosh(a)", scMathACosh);
-    tinyJS->addNative("function Math.tanh(a)", scMathTanh);
-    tinyJS->addNative("function Math.atanh(a)", scMathATanh);
+    addNative("function Math.PI()", scMathPI, scope);
+    addNative("function Math.toDegrees(a)", scMathToDegrees, scope);
+    addNative("function Math.toRadians(a)", scMathToRadians, scope);
+    addNative("function Math.sin(a)", scMathSin, scope);
+    addNative("function Math.asin(a)", scMathASin, scope);
+    addNative("function Math.cos(a)", scMathCos, scope);
+    addNative("function Math.acos(a)", scMathACos, scope);
+    addNative("function Math.tan(a)", scMathTan, scope);
+    addNative("function Math.atan(a)", scMathATan, scope);
+    addNative("function Math.sinh(a)", scMathSinh, scope);
+    addNative("function Math.asinh(a)", scMathASinh, scope);
+    addNative("function Math.cosh(a)", scMathCosh, scope);
+    addNative("function Math.acosh(a)", scMathACosh, scope);
+    addNative("function Math.tanh(a)", scMathTanh, scope);
+    addNative("function Math.atanh(a)", scMathATanh, scope);
 
-    tinyJS->addNative("function Math.E()", scMathE);
-    tinyJS->addNative("function Math.log(a)", scMathLog);
-    tinyJS->addNative("function Math.log10(a)", scMathLog10);
-    tinyJS->addNative("function Math.exp(a)", scMathExp);
-    tinyJS->addNative("function Math.pow(a,b)", scMathPow);
+    addNative("function Math.E()", scMathE, scope);
+    addNative("function Math.log(a)", scMathLog, scope);
+    addNative("function Math.log10(a)", scMathLog10, scope);
+    addNative("function Math.exp(a)", scMathExp, scope);
+    addNative("function Math.pow(a,b)", scMathPow, scope);
 
-    tinyJS->addNative("function Math.sqr(a)", scMathSqr);
-    tinyJS->addNative("function Math.sqrt(a)", scMathSqrt);
+    addNative("function Math.sqr(a)", scMathSqr, scope);
+    addNative("function Math.sqrt(a)", scMathSqrt, scope);
 }

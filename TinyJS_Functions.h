@@ -29,9 +29,11 @@
 #ifndef TINYJS_FUNCTIONS_H
 #define TINYJS_FUNCTIONS_H
 
-#include "TinyJS.h"
+#pragma once
+
+#include "JsVars.h"
 
 /// Register useful functions with the TinyJS interpreter
-extern void registerFunctions(CTinyJS *tinyJS);
+void registerFunctions(Ref<IScope> scope);
 
 #endif

@@ -31,8 +31,8 @@
  */
 
 #include "utils.h"
-#include "TinyJS_Functions.h"
-#include "TinyJS_MathFunctions.h"
+#include "scriptMain.h"
+
 #include <assert.h>
 #include <sys/stat.h>
 #include <string>
@@ -231,19 +231,22 @@ bool run_test(const char *filename)
     buffer[size] = 0;
     fclose(file);
 
-    CTinyJS s;
-    registerFunctions(&s);
-    registerMathFunctions(&s);
-    s.setGlobal("result", jsInt(0));
+    Ref<JSObject> globalsObj = createDefaultGlobalsObj();
+    Ref<IScope> globals = ObjectScope::create(globalsObj);
+    
+//    registerFunctions(&s);
+//    registerMathFunctions(&s);
+    globals->set("result", jsInt(0));
     try
     {
-        s.execute(buffer);
+        evaluate(buffer, globals);
+        //s.execute(buffer);
     }
     catch (const CScriptException &e)
     {
         printf("ERROR: %s\n", e.what());
     }
-    bool pass = null2undef( s.getGlobal("result") )->toBoolean();
+    bool pass = null2undef( globals->get("result") )->toBoolean();
 
     if (pass)
         printf("PASS\n");
@@ -254,7 +257,7 @@ bool run_test(const char *filename)
         FILE *f = fopen(fn, "wt");
         if (f)
         {
-            std::string symbols = s.dumpJSONSymbols();
+            std::string symbols = globalsObj->getJSON(0);
             fprintf(f, "%s", symbols.c_str());
             fclose(f);
         }

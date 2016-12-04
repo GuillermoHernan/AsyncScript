@@ -13,8 +13,16 @@
 #pragma once
 
 #include "JsVars.h"
+#include <string>
 
 Ref<JSValue>    evaluate (const char* script, Ref<IScope> globals);
+
+Ref<IScope>     createDefaultGlobals();
+Ref<JSObject>   createDefaultGlobalsObj();
+
+Ref<JSFunction> addNative (const std::string& szFunctionHeader, 
+                           JSNativeFn pFn, 
+                           Ref<IScope> scope);
 
 
 #endif	/* SCRIPTMAIN_H */

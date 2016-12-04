@@ -29,6 +29,8 @@
  */
 
 #include "TinyJS_Functions.h"
+#include "scriptMain.h"
+
 #include <math.h>
 #include <cstdlib>
 #include <sstream>
@@ -172,21 +174,17 @@ Ref<JSValue> scJSONStringify(FunctionScope* pScope)
 
 Ref<JSValue> scExec(FunctionScope* pScope)
 {
-    //TODO: Is it meant to share globals?
-    CTinyJS tinyJS;
     std::string str = pScope->getParam("jsCode")->toString();
-    tinyJS.execute(str);
+    Ref<IScope> globals = createDefaultGlobals();
 
-    return undefined();
+    return evaluate (str.c_str(), globals);
 }
 
 Ref<JSValue> scEval(FunctionScope* pScope)
 {
-    //TODO: Is it meant to share globals?
-    CTinyJS tinyJS;
     std::string str = pScope->getParam("jsCode")->toString();
 
-    return tinyJS.evaluateComplex(str);
+    return evaluate (str.c_str(), pScope->getGlobals());
 }
 
 Ref<JSValue> objectConstructor(FunctionScope* pScope)
@@ -281,64 +279,64 @@ Ref<JSValue>scArrayJoin(FunctionScope* pScope) {
 Ref<JSObject> createClass(const char* className,
                           Ref<JSObject> parentPrototype,
                           JSNativeFn constructorFn,
-                          CTinyJS *tinyJS)
+                          Ref<IScope> scope)
 {
     static const std::string fnHeader = "function ";
     Ref<JSObject>   prototype = JSObject::create(parentPrototype);
-    Ref<JSFunction> constructor = tinyJS->addNative(fnHeader + className, constructorFn);
+    Ref<JSFunction> constructor = addNative(fnHeader + className, constructorFn, scope);
     
     constructor->set("prototype", prototype);
     return prototype;
 }
 
-void fixPrototype (const char* objName, Ref<JSObject> prototype, CTinyJS *tinyJS)
+void fixPrototype (const char* objName, Ref<JSObject> prototype, Ref<IScope> scope)
 {
-    Ref<JSValue>    obj = tinyJS->getGlobal(objName);
+    Ref<JSValue>    obj = scope->get(objName);
     
     castTo<JSObject>(obj)->setPrototype(prototype);
 }
 
 
-void createDefaultPrototypes (CTinyJS *tinyJS)
+void createDefaultPrototypes (Ref<IScope> scope)
 {
-    Ref<JSObject>   objProto = createClass("Object(obj)", Ref<JSObject>(), objectConstructor, tinyJS);
+    Ref<JSObject>   objProto = createClass("Object(obj)", Ref<JSObject>(), objectConstructor, scope);
     
     JSObject::DefaultPrototype = objProto;
-    JSFunction::DefaultPrototype = createClass("Function()", objProto, functionConstructor, tinyJS);
+    JSFunction::DefaultPrototype = createClass("Function()", objProto, functionConstructor, scope);
     
-    fixPrototype ("Object", JSFunction::DefaultPrototype, tinyJS);
-    fixPrototype ("Function", JSFunction::DefaultPrototype, tinyJS);
+    fixPrototype ("Object", JSFunction::DefaultPrototype, scope);
+    fixPrototype ("Function", JSFunction::DefaultPrototype, scope);
     
-    JSArray::DefaultPrototype = createClass("Array()", objProto, arrayConstructor, tinyJS);
-    JSString::DefaultPrototype = createClass("String(obj)", objProto, stringConstructor, tinyJS);
+    JSArray::DefaultPrototype = createClass("Array()", objProto, arrayConstructor, scope);
+    JSString::DefaultPrototype = createClass("String(obj)", objProto, stringConstructor, scope);
 }
 
-void registerFunctions(CTinyJS *tinyJS)
+void registerFunctions(Ref<IScope> scope)
 {
-    createDefaultPrototypes (tinyJS);
+    createDefaultPrototypes (scope);
     
-    tinyJS->addNative("function exec(jsCode)", scExec); // execute the given code
-    tinyJS->addNative("function eval(jsCode)", scEval); // execute the given string (an expression) and return the result
-    //    tinyJS->addNative("function trace()", scTrace);
-    //    tinyJS->addNative("function Object.dump()", scObjectDump);
-    //    tinyJS->addNative("function Object.clone()", scObjectClone);
-    tinyJS->addNative("function Math.rand()", scMathRand);
-    tinyJS->addNative("function Math.randInt(min, max)", scMathRandInt);
-    tinyJS->addNative("function charToInt(ch)", scCharToInt); //  convert a character to an int - get its value
+    addNative("function exec(jsCode)", scExec, scope); // execute the given code
+    addNative("function eval(jsCode)", scEval, scope); // execute the given string (an expression) and return the result
+    //    addNative("function trace()", scTrace, scope);
+    //    addNative("function Object.dump()", scObjectDump, scope);
+    //    addNative("function Object.clone()", scObjectClone, scope);
+    addNative("function Math.rand()", scMathRand, scope);
+    addNative("function Math.randInt(min, max)", scMathRandInt, scope);
+    addNative("function charToInt(ch)", scCharToInt, scope); //  convert a character to an int - get its value
 
-    tinyJS->addNative("function String.prototype.indexOf(search)", scStringIndexOf); // find the position of a string in a string, -1 if not
-    tinyJS->addNative("function String.prototype.substring(lo,hi)", scStringSubstring);
-    tinyJS->addNative("function String.prototype.charAt(pos)", scStringCharAt);
-    tinyJS->addNative("function String.prototype.charCodeAt(pos)", scStringCharCodeAt);
-    tinyJS->addNative("function String.prototype.split(separator)", scStringSplit);
-    tinyJS->addNative("function String.fromCharCode(char)", scStringFromCharCode);
+    addNative("function String.prototype.indexOf(search)", scStringIndexOf, scope); // find the position of a string in a string, -1 if not
+    addNative("function String.prototype.substring(lo,hi)", scStringSubstring, scope);
+    addNative("function String.prototype.charAt(pos)", scStringCharAt, scope);
+    addNative("function String.prototype.charCodeAt(pos)", scStringCharCodeAt, scope);
+    addNative("function String.prototype.split(separator)", scStringSplit, scope);
+    addNative("function String.fromCharCode(char)", scStringFromCharCode, scope);
 
-    tinyJS->addNative("function parseInt(str)", scIntegerParseInt); // string to int
-    tinyJS->addNative("function Integer.valueOf(str)", scIntegerValueOf); // value of a single character
-    tinyJS->addNative("function JSON.stringify(obj, replacer)", scJSONStringify); // convert to JSON. replacer is ignored at the moment
+    addNative("function parseInt(str)", scIntegerParseInt, scope); // string to int
+    addNative("function Integer.valueOf(str)", scIntegerValueOf, scope); // value of a single character
+    addNative("function JSON.stringify(obj, replacer)", scJSONStringify, scope); // convert to JSON. replacer is ignored at the moment
     // JSON.parse is left out as you can (unsafely!) use eval instead
-    //    tinyJS->addNative("function Array.contains(obj)", scArrayContains);
-    //    tinyJS->addNative("function Array.remove(obj)", scArrayRemove);
-    //    tinyJS->addNative("function Array.join(separator)", scArrayJoin);
+    //    addNative("function Array.contains(obj)", scArrayContains, scope);
+    //    addNative("function Array.remove(obj)", scArrayRemove, scope);
+    //    addNative("function Array.join(separator)", scArrayJoin, scope);
 }
 

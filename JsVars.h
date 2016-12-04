@@ -590,7 +590,7 @@ public:
 
     typedef std::vector<std::string> ParametersList;
 
-    int addParameter(const std::string& name)
+    int addParam(const std::string& name)
     {
         m_params.push_back(name);
         return (int) m_params.size();

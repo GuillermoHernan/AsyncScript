@@ -2,7 +2,6 @@
  * Tiny JS lexer implementation file
  */
 
-#include "TinyJS.h"
 #include "TinyJS_Lexer.h"
 #include "utils.h"
 

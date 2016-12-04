@@ -2,9 +2,9 @@
 #define TINYJS_MATHFUNCTIONS_H
 #pragma once
 
-class CTinyJS;
+#include "JsVars.h"
 
 /// Register useful math. functions with the TinyJS interpreter
-extern void registerMathFunctions(CTinyJS *tinyJS);
+extern void registerMathFunctions(Ref<IScope> scope);
 
 #endif

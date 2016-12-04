@@ -31,8 +31,7 @@
  */
 
 #include "utils.h"
-#include "TinyJS.h"
-#include "TinyJS_Functions.h"
+#include "scriptMain.h"
 #include <assert.h>
 #include <stdio.h>
 
@@ -50,6 +49,7 @@ Ref<JSValue> js_print(FunctionScope* pScope)
 
 Ref<JSValue> js_dump(FunctionScope* pScope)
 {
+    printf ("Temporarily out of order!\n");
     //TODO: Make it work again.
 //    Ref<JSObject> globals = pScope->getGlobals().staticCast<JSObject>();
 //
@@ -59,38 +59,37 @@ Ref<JSValue> js_dump(FunctionScope* pScope)
 
 int main(int argc, char **argv)
 {
-    CTinyJS *js = new CTinyJS();
-    /* add the functions from TinyJS_Functions.cpp */
-    registerFunctions(js);
-    /* Add a native function */
-    js->addNative("function print(text)", &js_print);
-    js->addNative("function dump()", &js_dump);
-    /* Execute out bit of code - we could call 'evaluate' here if
-       we wanted something returned */
+    //Create default global functions
+    Ref<IScope>     globals = createDefaultGlobals();
+
+    // Add custom native functions
+    addNative("function print(text)", js_print, globals);
+    addNative("function dump()", js_dump, globals);
+    
+    /* Execute out bit of code */
     try
     {
-        js->execute("var lets_quit = 0; function quit() { lets_quit = 1; }");
-        js->execute("print(\"Interactive mode... Type quit(); to exit, or print(...); to print something, or dump() to dump the symbol table!\");");
+        evaluate("var lets_quit = 0; function quit() { lets_quit = 1; }", globals);
+        evaluate("print(\"Interactive mode... Type quit(); to exit, or print(...); to print something, or dump() to dump the symbol table!\");", globals);
     }
     catch (const CScriptException& e)
     {
         printf("ERROR: %s\n", e.what());
     }
 
-    while (js->evaluate("lets_quit") == "0")
+    while (evaluate("lets_quit", globals)->toBoolean() == false)
     {
         char buffer[2048];
         fgets(buffer, sizeof (buffer), stdin);
         try
         {
-            js->execute(buffer);
+            evaluate(buffer, globals);
         }
         catch (const CScriptException &e)
         {
             printf("ERROR: %s\n", e.what());
         }
     }
-    delete js;
 #ifdef _WIN32
 #ifdef _DEBUG
     _CrtDumpMemoryLeaks();
