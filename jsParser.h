@@ -19,8 +19,6 @@
 #include "ast.h"
 #include "parserResults.h"
 
-struct ParseResult;
-
 ParseResult parseStatement(CScriptToken token);
 
 

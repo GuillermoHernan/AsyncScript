@@ -31,7 +31,6 @@
  */
 
 #include "utils.h"
-#include "TinyJS.h"
 #include "TinyJS_Functions.h"
 #include "TinyJS_MathFunctions.h"
 #include <assert.h>
@@ -291,6 +290,9 @@ int main(int argc, char **argv)
     int test_num = 1;
     int count = 0;
     int passed = 0;
+    
+    //TODO: Run all tests in the directory (or even in subdirectories). Do not depend
+    //on test numbers.
 
     while (test_num < 1000)
     {

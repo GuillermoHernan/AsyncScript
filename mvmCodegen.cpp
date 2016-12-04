@@ -99,7 +99,7 @@ int  curBlockId (CodegenState* pState);
  * @param statements    The script is received as a sequence (vector) of compiled statements.
  * @return 
  */
-Ref<MvmScript> scriptCodegen (std::vector <Ref<AstStatement> > statements)
+Ref<MvmScript> scriptCodegen (const StatementList& statements)
 {
     CodegenState    state;
     

@@ -14,7 +14,8 @@ jsParser.cpp \
 ast.cpp \
 parserResults.cpp \
 microVM.cpp \
-mvmCodegen.cpp
+mvmCodegen.cpp \
+scriptMain.cpp
 
 OBJECTS=$(SOURCES:.cpp=.o)
 

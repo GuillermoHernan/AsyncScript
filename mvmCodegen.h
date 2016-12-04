@@ -13,8 +13,11 @@
 
 #include "microVM.h"
 #include "ast.h"
+#include <vector>
 
-Ref<MvmScript> scriptCodegen (std::vector <Ref<AstStatement> > statements);
+typedef std::vector <Ref<AstStatement> > StatementList;
+
+Ref<MvmScript> scriptCodegen ( const StatementList& statements);
 
 
 #endif	/* MVMCODEGEN_H */
