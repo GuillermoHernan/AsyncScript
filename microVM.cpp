@@ -210,7 +210,7 @@ void execInstruction16 (const int opCode, ExecutionContext* ec)
 {
     const int decoded = opCode & 0x3FF;
     
-    if (decoded > OC16_PUSHC)
+    if (decoded >= OC16_PUSHC)
         execPushC16 (decoded, ec);
     else if (decoded <= OC16_CALL_MAX)
         execCall16(decoded, ec);
