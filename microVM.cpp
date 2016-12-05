@@ -227,7 +227,7 @@ void execInstruction8 (const int opCode, ExecutionContext* ec)
 {
     const int decoded = opCode & 0x3FF;
     
-    if (decoded > OC_PUSHC)
+    if (decoded >= OC_PUSHC)
         execPushC8 (decoded, ec);
     else
     {
