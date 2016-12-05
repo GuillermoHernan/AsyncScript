@@ -140,6 +140,8 @@ void codegen (Ref<AstStatement> statement, CodegenState* pState)
         types [AST_PREFIXOP] = prefixOpCodegen;
         types [AST_POSTFIXOP] = postfixOpCodegen;
     }
+    
+    types[statement->getType()](statement, pState);
 }
 
 /**
