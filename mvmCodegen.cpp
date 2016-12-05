@@ -152,7 +152,7 @@ int childrenCodegen (Ref<AstStatement> statement, CodegenState* pState)
     const StatementList&  children = statement->children();
     int count = 0;
     
-    for (size_t i; i < children.size(); ++i)
+    for (size_t i=0; i < children.size(); ++i)
     {
         if (children[i].notNull())
         {
