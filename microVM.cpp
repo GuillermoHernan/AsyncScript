@@ -475,35 +475,34 @@ void invalidOp (const int opCode, ExecutionContext* ec)
     error ("Invalid operation code: %04X", opCode);
 }
 
-string disassemblyFunction (Ref<JSFunction> function);
+Ref<JSObject> disassemblyFunction (Ref<JSFunction> function);
 
 /**
  * Generates a textual representation of a constant list
  * @param constants
  * @return 
  */
-string disassemblyConstants (const ValueVector& constants)
+Ref<JSObject> constantsToJS (const ValueVector& constants)
 {
-    ostringstream   output;
-    
-    output << "{";
+    Ref<JSObject>   obj = JSObject::create();
+    char            name[64];
     
     for (size_t i=0; i < constants.size(); ++i )
     {
-        output << i << ": ";
+        sprintf_s (name, "%04lu", i);
+        Ref<JSValue>    value;
+
         if (constants[i]->isFunction())
-            output << disassemblyFunction (constants[i].staticCast<JSFunction>());
+            value = disassemblyFunction (constants[i].staticCast<JSFunction>());
         else if (constants[i]->isNull())
-            output << "null";
+            value = jsNull();
         else
-            output << constants[i]->getJSON(0);
+            value = constants[i];
         
-        output << ", ";
-        
+        obj->set(name, value);
     }
-    output << "}";
     
-    return output.str();
+    return obj;
 }
 
 /**
@@ -590,29 +589,27 @@ string disassembly16bitInst (int opCode, const ValueVector& constants)
  * @param constants
  * @return 
  */
-string disassemblyInstructions (const ByteVector& code, const ValueVector& constants)
+Ref<JSArray> disassemblyInstructions (const ByteVector& code, const ValueVector& constants)
 {
-    ostringstream   output;
-    
-    output << "[";
+    Ref<JSArray>    result = JSArray::create();
     
     for (size_t i=0; i < code.size(); ++i)
     {
+        string  instructionStr;
+        
         if (code[i] & OC_EXT_FLAG)
         {
             const int opCode = int(code[i]) << 8 | code[i+1];
-            output << "\"" << disassembly16bitInst (opCode, constants) << "\"";
+            instructionStr = disassembly16bitInst (opCode, constants);
             ++i;
         }
         else
-            output << "\"" << disassembly8bitInst (code[i], constants)<< "\"";
-        output << ", ";
+            instructionStr = disassembly8bitInst (code[i], constants);
+        
+        result->push( jsString(instructionStr) );
     }
     
-    output << "]";
-    
-    return output.str();
-    
+    return result;
 }
 
 
@@ -621,27 +618,25 @@ string disassemblyInstructions (const ByteVector& code, const ValueVector& const
  * @param blocks
  * @return 
  */
-string disassemblyBlocks (const BlockVector& blocks, const ValueVector& constants)
+Ref<JSObject> blocksToJS (const BlockVector& blocks, const ValueVector& constants)
 {
-    ostringstream   output;
-    
-    output << "{";
+    Ref<JSObject>   obj = JSObject::create();
+    char            name[64];
     
     for (size_t i=0; i < blocks.size(); ++i )
     {
-        output << "Block_" << i << ": {";
+        sprintf_s (name, "Block%04lu", i);
+        Ref<JSObject>   blockObj = JSObject::create();
+
+        obj->set(name, blockObj);
         
-        output << "nexts: [" << blocks[i].nextBlocks[0] << ",";
-        output << blocks[i].nextBlocks[1] << "], ";
-        output << "instructions: " << disassemblyInstructions (
-                blocks[i].instructions, constants);
-        
-        output << "}, ";
+        blockObj->set("a_nextTrue", jsInt(blocks[i].nextBlocks[1]));
+        blockObj->set("a_nextFalse", jsInt(blocks[i].nextBlocks[0]));
+        blockObj->set("instructions", disassemblyInstructions (blocks[i].instructions, constants));
         
     }
-    output << "}";
     
-    return output.str();
+    return obj;
 }
 
 
@@ -652,35 +647,40 @@ string disassemblyBlocks (const BlockVector& blocks, const ValueVector& constant
  */
 string mvmDisassembly (Ref<MvmScript> code)
 {
-    ostringstream   output;
-    
-    output << "{";
-    output << "contants: " << disassemblyConstants(code->constants);
-    output << ", blocks: " << disassemblyBlocks(code->blocks, code->constants);
-    output << "}";
-    
-    return output.str();
+    return toJSObject(code)->getJSON(0);
 }
+
+/**
+ * Transforms a compiled scirpt into a JSObject.
+ * It can be used later from JAvascript code or written to a JSOn file.
+ * @param code
+ * @return 
+ */
+Ref<JSObject> toJSObject (Ref<MvmScript> code)
+{
+    Ref<JSObject>   obj = JSObject::create();
+    
+    obj->set ("a_constants", constantsToJS(code->constants));
+    obj->set ("b_blocks", blocksToJS(code->blocks, code->constants));
+    
+    return obj;
+}
+
 
 /**
  * Generates an human readable representation of a function
  * @param function
  * @return 
  */
-string disassemblyFunction (Ref<JSFunction> function)
+Ref<JSObject> disassemblyFunction (Ref<JSFunction> function)
 {
-    ostringstream   output;
-    
-    output << "{";
-    output << "desc: \"" << function->toString() << "\"";
-    output << ", code: ";
-    if (function->isNative())
-        output << "\"native\"";
-    else
-        output << mvmDisassembly(function->getCodeMVM().staticCast<MvmScript>());
+    Ref<JSObject>   obj = JSObject::create();
 
-    output << "}";
-    
-    return output.str();
-    
+    obj->set ("a_header", jsString(function->toString() ));
+    if (function->isNative())
+        obj->set("code", jsString("native"));
+    else
+        obj->set("code", toJSObject(function->getCodeMVM().staticCast<MvmScript>()));
+
+    return obj;
 }

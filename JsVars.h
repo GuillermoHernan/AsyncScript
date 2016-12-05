@@ -179,7 +179,10 @@ public:
 
     virtual std::string getJSON(int indent)
     {
-        return "";
+        if (V_TYPE == VT_NULL)
+            return "null";
+        else
+            return "";
     }
 
     virtual bool isReference()const
