@@ -14,10 +14,12 @@
 
 #include "JsVars.h"
 #include <vector>
+#include <string>
 
 struct MvmScript;
 
 Ref<JSValue>    mvmExecute (Ref<MvmScript> code, Ref<IScope> globals);
+std::string     mvmDisassembly (Ref<MvmScript> code);
 
 /**
  * 8 bit instruction codes.

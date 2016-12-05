@@ -225,10 +225,10 @@ void execInstruction16 (const int opCode, ExecutionContext* ec)
  */
 void execInstruction8 (const int opCode, ExecutionContext* ec)
 {
-    const int decoded = opCode & 0x3FF;
+    printf ("MVM exec: %02X\n", opCode);
     
-    if (decoded >= OC_PUSHC)
-        execPushC8 (decoded, ec);
+    if (opCode >= OC_PUSHC)
+        execPushC8 (opCode, ec);
     else
     {
         //The remaining op codes are decoded with a table (there are only 64)
@@ -475,4 +475,214 @@ void execNop (const int opCode, ExecutionContext* ec)
 void invalidOp (const int opCode, ExecutionContext* ec)
 {
     error ("Invalid operation code: %04X", opCode);
+}
+
+string disassemblyFunction (Ref<JSFunction> function);
+
+/**
+ * Generates a textual representation of a constant list
+ * @param constants
+ * @return 
+ */
+string disassemblyConstants (const ValueVector& constants)
+{
+    ostringstream   output;
+    
+    output << "{";
+    
+    for (size_t i=0; i < constants.size(); ++i )
+    {
+        output << i << ": ";
+        if (constants[i]->isFunction())
+            output << disassemblyFunction (constants[i].staticCast<JSFunction>());
+        else if (constants[i]->isNull())
+            output << "null";
+        else
+            output << constants[i]->getJSON(0);
+        
+        output << ", ";
+        
+    }
+    output << "}";
+    
+    return output.str();
+}
+
+/**
+ * Disassemblies a 'push constant' operation
+ * @param index
+ * @param constants
+ * @return 
+ */
+string disassemblyPushC (int index, const ValueVector& constants)
+{
+    ostringstream   output;
+
+    //output << "PUSHC(" << index << ") -> " << constants[index]->toString();
+    output << "PUSHC(" << index << ")";
+    return output.str();
+    
+}
+
+/**
+ * Disassemblies an 8 bit instruction
+ * @param opCode
+ * @param constants
+ * @return 
+ */
+string disassembly8bitInst (int opCode, const ValueVector& constants)
+{
+    if (opCode >= OC_PUSHC)
+        return disassemblyPushC (opCode - OC_PUSHC, constants);
+    else
+    {
+        switch (opCode)
+        {
+        case OC_CALL:   return "CALL(0)";
+        case OC_CALL+1:   return "CALL(1)";
+        case OC_CALL+2:   return "CALL(2)";
+        case OC_CALL+3:   return "CALL(3)";
+        case OC_CALL+4:   return "CALL(4)";
+        case OC_CALL+5:   return "CALL(5)";
+        case OC_CALL+6:   return "CALL(6)";
+        case OC_CALL+7:   return "CALL(7)";
+        case OC_CP:         return "CP(0)";
+        case OC_CP+1:       return "CP(1)";
+        case OC_CP+2:       return "CP(2)";
+        case OC_CP+3:       return "CP(3)";
+        case OC_SWAP:       return "SWAP";
+        case OC_POP:        return "POP";
+        case OC_RD_LOCAL:   return "RD_LOCAL";
+        case OC_WR_LOCAL:   return "WR_LOCAL";
+        case OC_RD_GLOBAL:   return "RD_GLOBAL";
+        case OC_WR_GLOBAL:   return "WR_GLOBAL";
+        case OC_RD_FIELD:   return "RD_FIELD";
+        case OC_WR_FIELD:   return "WR_FIELD";
+        case OC_NOP:        return "NOP";
+        default:
+            return "BAD_OP_CODE_8";
+        }
+    }
+}
+
+/**
+ * Disassemblies a 16 bit instruction
+ * @param opCode
+ * @param constants
+ * @return 
+ */
+string disassembly16bitInst (int opCode, const ValueVector& constants)
+{
+    if (opCode >= OC16_PUSHC)
+        return disassemblyPushC (opCode - (OC16_PUSHC - 64), constants);
+    else if (opCode <= OC16_CALL_MAX)
+    {
+        ostringstream   output;
+        
+        output << "CALL(" << (opCode + OC_CALL_MAX + 1) << ")";
+        return output.str();
+    }
+    else
+        return "BAD_OP_CODE_16";
+}
+
+/**
+ * Disassemblies a block of instructions
+ * @param code
+ * @param constants
+ * @return 
+ */
+string disassemblyInstructions (const ByteVector& code, const ValueVector& constants)
+{
+    ostringstream   output;
+    
+    output << "[";
+    
+    for (size_t i=0; i < code.size(); ++i)
+    {
+        if (code[i] & OC_EXT_FLAG)
+        {
+            const int opCode = int(code[i]) << 8 | code[i+1];
+            output << "\"" << disassembly16bitInst (opCode, constants) << "\"";
+            ++i;
+        }
+        else
+            output << "\"" << disassembly8bitInst (code[i], constants)<< "\"";
+        output << ", ";
+    }
+    
+    output << "]";
+    
+    return output.str();
+    
+}
+
+
+/**
+ * Blocks disassembly
+ * @param blocks
+ * @return 
+ */
+string disassemblyBlocks (const BlockVector& blocks, const ValueVector& constants)
+{
+    ostringstream   output;
+    
+    output << "{";
+    
+    for (size_t i=0; i < blocks.size(); ++i )
+    {
+        output << "Block_" << i << ": {";
+        
+        output << "nexts: [" << blocks[i].nextBlocks[0] << ",";
+        output << blocks[i].nextBlocks[1] << "], ";
+        output << "instructions: " << disassemblyInstructions (
+                blocks[i].instructions, constants);
+        
+        output << "}, ";
+        
+    }
+    output << "}";
+    
+    return output.str();
+}
+
+
+/**
+ * Generates a human-readable representation of the input script.
+ * @param code
+ * @return 
+ */
+string mvmDisassembly (Ref<MvmScript> code)
+{
+    ostringstream   output;
+    
+    output << "{";
+    output << "contants: " << disassemblyConstants(code->constants);
+    output << ", blocks: " << disassemblyBlocks(code->blocks, code->constants);
+    output << "}";
+    
+    return output.str();
+}
+
+/**
+ * Generates an human readable representation of a function
+ * @param function
+ * @return 
+ */
+string disassemblyFunction (Ref<JSFunction> function)
+{
+    ostringstream   output;
+    
+    output << "{";
+    output << "desc: \"" << function->toString() << "\"";
+    output << ", code: ";
+    if (function->isNative())
+        output << "\"native\"";
+    else
+        output << mvmDisassembly(function->getCodeMVM().staticCast<MvmScript>());
+
+    output << "}";
+    
+    return output.str();
+    
 }
