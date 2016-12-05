@@ -231,7 +231,7 @@ ParseResult parseVar (CScriptToken token)
     if (token.type() == '=')
     {
         //Initialization is optional.
-        ExprResult r = parseExpression(token);
+        ExprResult r = parseExpression(token.next());
         r.throwIfError();
         
         initExp = r.result;

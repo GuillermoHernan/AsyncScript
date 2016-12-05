@@ -516,8 +516,8 @@ string disassemblyPushC (int index, const ValueVector& constants)
 {
     ostringstream   output;
 
-    //output << "PUSHC(" << index << ") -> " << constants[index]->toString();
-    output << "PUSHC(" << index << ")";
+    output << "PUSHC(" << index << ") -> " << constants[index]->toString();
+    //output << "PUSHC(" << index << ")";
     return output.str();
     
 }
