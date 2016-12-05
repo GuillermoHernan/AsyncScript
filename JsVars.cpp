@@ -479,6 +479,22 @@ Ref<JSArray> JSArray::create()
 }
 
 /**
+ * Creates an array of a given initial length.
+ * All elements in the array will be set to 'undefined'
+ * @param size
+ * @return 
+ */
+Ref<JSArray> JSArray::create(size_t size)
+{
+    Ref<JSArray>    a = refFromNew(new JSArray);
+    
+    a->m_length = size;
+    
+    return a;
+}
+
+
+/**
  * Adds a value to the end of the array
  * @param value
  * @return Returns new array size
@@ -785,7 +801,6 @@ Ref<JSValue> FunctionScope::getParam(const std::string& name)const
     else
         return undefined();            
 }
-
 
 /**
  * Gets a value from function scope. It looks for:

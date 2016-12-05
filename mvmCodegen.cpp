@@ -520,7 +520,7 @@ void arrayCodegen (Ref<AstStatement> statement, CodegenState* pState)
     const StatementList children = statement->children();
     
     pushConstant((int)children.size(), pState);
-    pushConstant("@createArray", pState);
+    pushConstant("@newArray", pState);
     instruction8 (OC_RD_GLOBAL, pState);
     instruction8(OC_CALL+1, pState);
     
@@ -545,7 +545,7 @@ void objectCodegen (Ref<AstStatement> statement, CodegenState* pState)
     Ref<AstObject>              obj = statement.staticCast<AstObject>();
     const AstObject::PropsMap   properties= obj->getProperties();
     
-    pushConstant("@createObject", pState);
+    pushConstant("@newObj", pState);
     instruction8 (OC_RD_GLOBAL, pState);
     instruction8(OC_CALL, pState);
 

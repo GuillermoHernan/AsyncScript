@@ -532,6 +532,7 @@ class JSArray : public JSObject
 {
 public:
     static Ref<JSArray> create();
+    static Ref<JSArray> create(size_t size);
 
     size_t push(Ref<JSValue> value);
 

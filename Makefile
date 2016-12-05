@@ -14,7 +14,8 @@ ast.cpp \
 parserResults.cpp \
 microVM.cpp \
 mvmCodegen.cpp \
-scriptMain.cpp
+scriptMain.cpp \
+mvmFunctions.cpp
 
 OBJECTS=$(SOURCES:.cpp=.o)
 

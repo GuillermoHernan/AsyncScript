@@ -24,6 +24,21 @@ Ref<JSFunction> addNative (const std::string& szFunctionHeader,
                            JSNativeFn pFn, 
                            Ref<IScope> scope);
 
+Ref<JSFunction> addNative0 (const std::string& szName, 
+                           JSNativeFn pFn, 
+                           Ref<IScope> scope);
+
+Ref<JSFunction> addNative1 (const std::string& szName, 
+                            const std::string& p1, 
+                           JSNativeFn pFn, 
+                           Ref<IScope> scope);
+
+Ref<JSFunction> addNative2 (const std::string& szName, 
+                            const std::string& p1, 
+                            const std::string& p2, 
+                           JSNativeFn pFn, 
+                           Ref<IScope> scope);
+
 
 #endif	/* SCRIPTMAIN_H */
 

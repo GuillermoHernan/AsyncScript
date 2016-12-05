@@ -14,6 +14,7 @@
 #include "mvmCodegen.h"
 #include "TinyJS_Functions.h"
 #include "TinyJS_MathFunctions.h"
+#include "mvmFunctions.h"
 
 using namespace std;
 
@@ -70,7 +71,7 @@ Ref<JSObject> createDefaultGlobalsObj()
     Ref<JSObject>   globals = JSObject::create(Ref<JSObject>());
     Ref<IScope>     tmpScope = ObjectScope::create(globals);
     
-    //TODO: MVM functions!!!!
+    registerMvmFunctions(tmpScope);
     registerFunctions(tmpScope);
     registerMathFunctions(tmpScope);
     
@@ -78,12 +79,13 @@ Ref<JSObject> createDefaultGlobalsObj()
 }
 
 /**
- * Adds a new native function 
+ * Adds a new native function. This version uses a javascript declaration of
+ * the function name to get its name and parameters.
  * @param szFunctionHeader  Javascript function header definition, which includes the
  * function name and parameters.
  * @param pFn               Pointer to native function.
  * @param scope             Scope object to which the function will be added.
- * @return A Javascript function object
+ * @return A new Javascript function object
  */
 Ref<JSFunction> addNative (const std::string& szFunctionHeader, 
                            JSNativeFn pFn, 
@@ -147,5 +149,71 @@ CScriptToken parseFunctionArguments(Ref<JSFunction> function, CScriptToken token
             token = token.match(',');
     }
     return token.match(')');
+}
+
+
+/**
+ * Adds a native function with no arguments
+ * @param szName    Function name
+ * @param pFn       Pointer to native function
+ * @param scope     Scope object to which the function will be added.
+ * @return A new Javascript function object
+ */
+Ref<JSFunction> addNative0 (const std::string& szName, 
+                           JSNativeFn pFn, 
+                           Ref<IScope> scope)
+{
+    Ref<JSFunction> function = JSFunction::createNative(szName, pFn);
+
+    scope->set(szName, function);
+    
+    return function;
+    
+}
+
+/**
+ * Adds a native function with one argument
+ * @param szName    Function name
+ * @param p1        First parameter name
+ * @param pFn       Pointer to native function
+ * @param scope     Scope object to which the function will be added.
+ * @return A new Javascript function object
+ */
+Ref<JSFunction> addNative1 (const std::string& szName, 
+                            const std::string& p1, 
+                           JSNativeFn pFn, 
+                           Ref<IScope> scope)
+{
+    Ref<JSFunction> function = JSFunction::createNative(szName, pFn);
+
+    function->addParam(p1);
+    scope->set(szName, function);
+    
+    return function;
+}
+
+
+/**
+ * Adds a native function with two arguments
+ * @param szName    Function name
+ * @param p1        First parameter name
+ * @param p1        Second parameter name
+ * @param pFn       Pointer to native function
+ * @param scope     Scope object to which the function will be added.
+ * @return A new Javascript function object
+ */
+Ref<JSFunction> addNative2 (const std::string& szName, 
+                            const std::string& p1, 
+                            const std::string& p2, 
+                           JSNativeFn pFn, 
+                           Ref<IScope> scope)
+{
+    Ref<JSFunction> function = JSFunction::createNative(szName, pFn);
+
+    function->addParam(p1);
+    function->addParam(p2);
+    scope->set(szName, function);
+    
+    return function;
 }
 
