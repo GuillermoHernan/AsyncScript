@@ -445,7 +445,7 @@ public:
         return refFromNew(new AstIdentifier(token));
     }
     
-    const std::string&  name;
+    const std::string   name;
     
     virtual AstNodeTypes getType()const
     {
