@@ -389,6 +389,7 @@ private:
 class JSObject : public JSValue
 {
 public:
+    static Ref<JSObject> create();
     static Ref<JSObject> create(Ref<JSObject> prototype);
     
     Ref<JSObject> getPrototype()const
@@ -533,6 +534,7 @@ class JSArray : public JSObject
 public:
     static Ref<JSArray> create();
     static Ref<JSArray> create(size_t size);
+    static Ref<JSArray> createStrArray(const std::vector<std::string>& strList);
 
     size_t push(Ref<JSValue> value);
 

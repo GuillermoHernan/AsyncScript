@@ -44,15 +44,23 @@ enum AstNodeTypes
     ,AST_TYPES_COUNT
 };
 
+class AstStatement;
+typedef std::vector <Ref<AstStatement> > StatementList;
+
+//AST conversion functions (mainly for AST /parser debugging)
+Ref<JSArray> toJSArray (const StatementList& statements);
+std::string toJSON (const StatementList& statements);
+
+std::string astTypeToString(AstNodeTypes type);
+
+
 /**
  * Base class for statements
  */
 class AstStatement : public RefCountObj
 {
 public:
-    typedef std::vector< Ref<AstStatement> > ChildList;
-
-    const ChildList& children()const
+    const StatementList& children()const
     {
         return m_children;
     }
@@ -70,10 +78,12 @@ public:
         return m_position;
     }
     
+    virtual Ref<JSValue> toJSValue()const;
+    
     virtual AstNodeTypes getType()const =0;
 
 protected:
-    ChildList m_children;
+    StatementList m_children;
     ScriptPosition m_position;
 
     AstStatement(const ScriptPosition& pos) : m_position(pos)
@@ -149,6 +159,7 @@ public:
         return AST_VAR;
     }
     
+    virtual Ref<JSValue> toJSValue()const;
 
     const std::string name;
 protected:
@@ -300,6 +311,7 @@ public:
         return AST_FUNCTION;
     }
     
+    virtual Ref<JSValue> toJSValue()const;
 
 protected:
 
@@ -321,6 +333,8 @@ class AstOperator : public AstExpression
 {
 public:
     const int code;
+    
+    virtual Ref<JSValue> toJSValue()const;
     
 protected:
     AstOperator (ScriptPosition position, int opCode) : 
@@ -397,6 +411,7 @@ public:
         return AST_FNCALL;
     }
 
+    virtual Ref<JSValue> toJSValue()const;
     
 protected:
     AstFunctionCall(ScriptPosition position, Ref<AstExpression> fnExpression):
@@ -425,6 +440,8 @@ public:
     {
         return AST_LITERAL;
     }
+
+    virtual Ref<JSValue> toJSValue()const;
     
 protected:
     AstLiteral (ScriptPosition position, Ref<JSValue> val) : 
@@ -452,6 +469,7 @@ public:
         return AST_IDENTIFIER;
     }
 
+    virtual Ref<JSValue> toJSValue()const;
     
 protected:
     AstIdentifier (CScriptToken token) : 
@@ -517,6 +535,7 @@ public:
         return AST_OBJECT;
     }
     
+    virtual Ref<JSValue> toJSValue()const;
 
 protected:
     AstObject(ScriptPosition pos) : AstExpression(pos)

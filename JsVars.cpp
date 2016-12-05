@@ -355,6 +355,15 @@ JSObject::~JSObject()
 }
 
 /**
+ * Creates an empty JSON object, with default prototype
+ * @return 
+ */
+Ref<JSObject> JSObject::create()
+{
+    return refFromNew(new JSObject(DefaultPrototype));
+}
+
+/**
  * Creates an empty JSON object
  * @return 
  */
@@ -491,6 +500,21 @@ Ref<JSArray> JSArray::create(size_t size)
     a->m_length = size;
     
     return a;
+}
+
+/**
+ * Translates a C++ string vector into a Javascript string array
+ * @param strList
+ * @return 
+ */
+Ref<JSArray> JSArray::createStrArray(const std::vector<std::string>& strList)
+{
+    Ref<JSArray>    arr = JSArray::create();
+    
+    for (size_t i=0; i < strList.size(); ++i)
+        arr->push(jsString(strList[i]));
+    
+    return arr;
 }
 
 

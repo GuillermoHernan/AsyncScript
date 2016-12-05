@@ -16,8 +16,6 @@
 
 using namespace std;
 
-typedef AstStatement::ChildList StatementList;
-
 class CodegenScope 
 {
 public:

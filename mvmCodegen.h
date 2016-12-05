@@ -15,8 +15,6 @@
 #include "ast.h"
 #include <vector>
 
-typedef std::vector <Ref<AstStatement> > StatementList;
-
 Ref<MvmScript> scriptCodegen ( const StatementList& statements);
 
 

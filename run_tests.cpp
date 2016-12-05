@@ -80,6 +80,10 @@ bool run_test(const std::string& szFile, const string &testDir, const string& re
             token = parseRes.nextToken;
         }
 
+        //Write Abstract Syntax Tree
+        const string astJSON = toJSON (statements);
+        writeTextFile(testResultsDir + testName + ".ast.json", astJSON);
+
         //Code generation.
         const Ref<MvmScript>    code = scriptCodegen(statements);
 
