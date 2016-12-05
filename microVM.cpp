@@ -225,8 +225,6 @@ void execInstruction16 (const int opCode, ExecutionContext* ec)
  */
 void execInstruction8 (const int opCode, ExecutionContext* ec)
 {
-    printf ("MVM exec: %02X\n", opCode);
-    
     if (opCode >= OC_PUSHC)
         execPushC8 (opCode, ec);
     else
