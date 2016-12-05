@@ -1031,6 +1031,8 @@ ExprResult parseBinaryLROp (CScriptToken token, const int* ids, ExprResult::Pars
     if (r.ok() && oneOf (r.token, ids))
     {
         const Ref<AstExpression>    left = r.result;
+        const ScriptPosition        pos = r.token.getPosition();
+        const int                   op = r.token.type();
         
         r = r.skip();
         if (r.error())
@@ -1040,8 +1042,7 @@ ExprResult parseBinaryLROp (CScriptToken token, const int* ids, ExprResult::Pars
             
         if (r.ok())
         {
-            r.result = AstBinaryOp::create (token.getPosition(), 
-                                            LEX_OROR, left, r.result);
+            r.result = AstBinaryOp::create (pos, op, left, r.result);
             return r;
         }
         else
