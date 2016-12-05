@@ -47,8 +47,6 @@ Ref<JSValue> evaluate (const char* script, Ref<IScope> globals)
     //Code generation.
     const Ref<MvmScript>    code = scriptCodegen(statements);
     
-    printf ("\n%s\n", mvmDisassembly(code).c_str());
-    
     //Execution
     return mvmExecute(code, globals);
 }

@@ -69,3 +69,12 @@ std::string to_string(const T &x)
 }
 
 double getNaN();
+
+std::string readTextFile (const std::string& szPath);
+bool writeTextFile (const std::string& szPath, const std::string& szContent);
+bool createDirIfNotExist (const std::string& szPath);
+
+std::string parentPath (const std::string& szPath);
+std::string removeExt (const std::string& szPath);
+std::string fileFromPath (const std::string& szPath);
+

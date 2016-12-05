@@ -30,8 +30,11 @@
  * This is a program to run all the tests in the tests folder...
  */
 
+#include "OS_support.h"
 #include "utils.h"
 #include "scriptMain.h"
+#include "mvmCodegen.h"
+#include "jsParser.h"
 
 #include <assert.h>
 #include <sys/stat.h>
@@ -39,244 +42,76 @@
 #include <sstream>
 #include <stdio.h>
 
-#ifdef MTRACE
-#include <mcheck.h>
-#endif
-
-//#define INSANE_MEMORY_DEBUG
-
-#ifdef INSANE_MEMORY_DEBUG
-// needs -rdynamic when compiling/linking
-#include <execinfo.h>
-#include <malloc.h>
-#include <map>
-#include <vector>
 using namespace std;
 
-void **get_stackframe()
+bool run_test(const std::string& szFile, const string &testDir, const string& resultsDir)
 {
-    void **trace = (void**) malloc(sizeof (void*)*17);
-    int trace_size;
-
-    for (int i = 0; i < 17; i++) trace[i] = (void*) 0;
-    trace_size = backtrace(trace, 16);
-    return trace;
-}
-
-void print_stackframe(char *header, void **trace)
-{
-    char **messages = (char **) NULL;
-    int trace_size = 0;
-
-    trace_size = 0;
-    while (trace[trace_size]) trace_size++;
-    messages = backtrace_symbols(trace, trace_size);
-
-    printf("%s\n", header);
-    for (int i = 0; i < trace_size; ++i)
+    printf("TEST %s ", szFile.c_str());
+    
+    string script = readTextFile(szFile);
+    if (script.empty())
     {
-        printf("%s\n", messages[i]);
-    }
-    //free(messages);
-}
-
-/* Prototypes for our hooks.  */
-static void *my_malloc_hook(size_t, const void *);
-static void my_free_hook(void*, const void *);
-static void *(*old_malloc_hook) (size_t, const void *);
-static void (*old_free_hook) (void*, const void *);
-
-map<void *, void **> malloced;
-
-static void *my_malloc_hook(size_t size, const void *caller)
-{
-    /* Restore all old hooks */
-    __malloc_hook = old_malloc_hook;
-    __free_hook = old_free_hook;
-    /* Call recursively */
-    printf ("malloc (%u)... ", (unsigned int) size);
-    void *result = malloc(size);
-    /* we call malloc here, so protect it too. */
-    printf ("returns %p\n", result);
-    //malloced[result] = get_stackframe();
-
-    /* Restore our own hooks */
-    __malloc_hook = my_malloc_hook;
-    __free_hook = my_free_hook;
-    return result;
-}
-
-static void my_free_hook(void *ptr, const void *caller)
-{
-    /* Restore all old hooks */
-    __malloc_hook = old_malloc_hook;
-    __free_hook = old_free_hook;
-    /* Call recursively */
-    printf ("freeing pointer %p\n", ptr);
-    free(ptr);
-    /* we call malloc here, so protect it too. */
-    if (malloced.find(ptr) == malloced.end())
-    {
-        /*fprintf(stderr, "INVALID FREE\n");
-        void *trace[16];
-        int trace_size = 0;
-        trace_size = backtrace(trace, 16);
-        backtrace_symbols_fd(trace, trace_size, STDERR_FILENO);*/
-    }
-    else
-        malloced.erase(ptr);
-    /* Restore our own hooks */
-    __malloc_hook = my_malloc_hook;
-    __free_hook = my_free_hook;
-}
-
-void memtracing_init()
-{
-    old_malloc_hook = __malloc_hook;
-    old_free_hook = __free_hook;
-    __malloc_hook = my_malloc_hook;
-    __free_hook = my_free_hook;
-}
-
-long gethash(void **trace)
-{
-    unsigned long hash = 0;
-    while (*trace)
-    {
-        hash = (hash << 1) ^ (hash >> 63) ^ (unsigned long) *trace;
-        trace++;
-    }
-    return hash;
-}
-
-void memtracing_kill()
-{
-    /* Restore all old hooks */
-    __malloc_hook = old_malloc_hook;
-    __free_hook = old_free_hook;
-
-    map<long, void**> hashToReal;
-    map<long, int> counts;
-    map<void *, void **>::iterator it = malloced.begin();
-    while (it != malloced.end())
-    {
-        long hash = gethash(it->second);
-        hashToReal[hash] = it->second;
-
-        if (counts.find(hash) == counts.end())
-            counts[hash] = 1;
-        else
-            counts[hash]++;
-
-        it++;
-    }
-
-    vector<pair<int, long> > sorting;
-    map<long, int>::iterator countit = counts.begin();
-    while (countit != counts.end())
-    {
-        sorting.push_back(pair<int, long>(countit->second, countit->first));
-        countit++;
-    }
-
-    // sort
-    bool done = false;
-    while (!done)
-    {
-        done = true;
-        for (size_t i = 0; i < sorting.size() - 1; i++)
-        {
-            if (sorting[i].first < sorting[i + 1].first)
-            {
-                pair<int, long> t = sorting[i];
-                sorting[i] = sorting[i + 1];
-                sorting[i + 1] = t;
-                done = false;
-            }
-        }
-    }
-
-
-    for (size_t i = 0; i < sorting.size(); i++)
-    {
-        long hash = sorting[i].second;
-        int count = sorting[i].first;
-        char header[256];
-        sprintf(header, "--------------------------- LEAKED %d", count);
-        print_stackframe(header, hashToReal[hash]);
-    }
-}
-#endif // INSANE_MEMORY_DEBUG
-
-bool run_test(const char *filename)
-{
-    printf("TEST %s ", filename);
-    struct stat results;
-    if (!stat(filename, &results) == 0)
-    {
-        printf("Cannot stat file! '%s'\n", filename);
+        printf("Cannot read file: '%s'\n", szFile.c_str());
         return false;
     }
-    int size = results.st_size;
-    FILE *file = fopen(filename, "rb");
-    /* if we open as text, the number of bytes read may be > the size we read */
-    if (!file)
-    {
-        printf("Unable to open file! '%s'\n", filename);
-        return false;
-    }
-    char *buffer = new char[size + 1];
-    long actualRead = fread(buffer, 1, size, file);
-    buffer[actualRead] = 0;
-    buffer[size] = 0;
-    fclose(file);
+    
+    const string relPath = szFile.substr (testDir.size());
+    const string testName = removeExt( fileFromPath(relPath));
+    string testResultsDir = resultsDir + removeExt(relPath) + '/';
 
     Ref<JSObject> globalsObj = createDefaultGlobalsObj();
     Ref<IScope> globals = ObjectScope::create(globalsObj);
     
-//    registerFunctions(&s);
-//    registerMathFunctions(&s);
     globals->set("result", jsInt(0));
     try
     {
-        evaluate(buffer, globals);
-        //s.execute(buffer);
+        //This code is copied from 'evalute', to log the intermediate results 
+        //generated from each state
+        CScriptToken    token (script.c_str());
+        StatementList   statements;
+
+        //Parsing loop
+        token = token.next();
+        while (!token.eof())
+        {
+            const ParseResult   parseRes = parseStatement (token);
+
+            statements.push_back(parseRes.ast);
+            token = parseRes.nextToken;
+        }
+
+        //Code generation.
+        const Ref<MvmScript>    code = scriptCodegen(statements);
+
+        //Write disassembly
+        writeTextFile(testResultsDir + testName + ".asm.json", mvmDisassembly(code));
+
+        //Execution
+        mvmExecute(code, globals);
     }
     catch (const CScriptException &e)
     {
         printf("ERROR: %s\n", e.what());
     }
+
+    //Write globals
+    writeTextFile(testResultsDir + testName + ".globals.json", globalsObj->getJSON(0));
+
     bool pass = null2undef( globals->get("result") )->toBoolean();
 
     if (pass)
         printf("PASS\n");
     else
-    {
-        char fn[64];
-        sprintf(fn, "%s.fail.js", filename);
-        FILE *f = fopen(fn, "wt");
-        if (f)
-        {
-            std::string symbols = globalsObj->getJSON(0);
-            fprintf(f, "%s", symbols.c_str());
-            fclose(f);
-        }
+        printf("FAIL\n");
 
-        printf("FAIL - symbols written to %s\n", fn);
-    }
-
-    delete[] buffer;
     return pass;
 }
 
 int main(int argc, char **argv)
 {
-#ifdef MTRACE
-    mtrace();
-#endif
-#ifdef INSANE_MEMORY_DEBUG
-    memtracing_init();
-#endif
+    const string testsDir = "./tests/";
+    const string resultsDir = "./tests/results/";
+    
     printf("TinyJS test runner\n");
     printf("USAGE:\n");
     printf("   ./run_tests test.js       : run just one test\n");
@@ -285,7 +120,7 @@ int main(int argc, char **argv)
     {
         printf("Running test: %s\n", argv[1]);
         
-        return !run_test(argv[1]);
+        return !run_test(testsDir + argv[1], testsDir, resultsDir);
     }
     else
         printf("Running all tests!\n");
@@ -299,31 +134,27 @@ int main(int argc, char **argv)
 
     while (test_num < 1000)
     {
-        char fn[32];
-        sprintf(fn, "tests/test%03d.js", test_num);
+        char name[32];
+        sprintf_s(name, "test%03d.js", test_num);
+        
+        const string    szPath = testsDir + name;
         // check if the file exists - if not, assume we're at the end of our tests
-        FILE *f = fopen(fn, "r");
+        FILE *f = fopen(szPath.c_str(), "r");
         if (!f) break;
         fclose(f);
 
-        if (run_test(fn))
+        if (run_test(szPath, testsDir, resultsDir))
             passed++;
         count++;
         test_num++;
     }
 
     printf("Done. %d tests, %d pass, %d fail\n", count, passed, count - passed);
-#ifdef INSANE_MEMORY_DEBUG
-    memtracing_kill();
-#endif
 
 #ifdef _DEBUG
 #ifdef _WIN32
     _CrtDumpMemoryLeaks();
 #endif
-#endif
-#ifdef MTRACE
-    muntrace();
 #endif
 
     return 0;

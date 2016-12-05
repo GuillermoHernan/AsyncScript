@@ -40,3 +40,4 @@ nbproject/**
 
 #Generated tests results
 tests/*.fail.js
+tests/results/**
