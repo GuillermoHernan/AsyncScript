@@ -111,7 +111,7 @@ ParseResult parseStatement (CScriptToken token)
     switch ((int)token.type())
     {
     case '{':           return parseBlock(token);
-    case ';':           return parseStatement (token.next());   //Skip
+    case ';':           return ParseResult (token.next(), emptyStatement(token.getPosition()));
     case LEX_R_VAR:     return parseVar (token);
     case LEX_R_IF:      return parseIf (token);
     case LEX_R_WHILE:   return parseWhile (token);
@@ -431,27 +431,20 @@ ExprResult parseExpression (CScriptToken token)
  */
 ExprResult parseAssignment (CScriptToken token)
 {
-    ExprResult r = parseConditional(token);
-    
-    if (!r.error())
-        return r;
-    else
+    ExprResult r = parseLeftExpr(token);
+
+    const Ref<AstExpression>    lexpr = r.result;
+    const int                   op = r.token.type();
+    const ScriptPosition        pos = r.token.getPosition();
+
+    r = r.require(isAssignment).then (parseAssignment);
+    if (r.ok())
     {
-        r = parseLeftExpr(token);
-        
-        const Ref<AstExpression>    lexpr = r.result;
-        const int                   op = r.token.type();
-        const ScriptPosition        pos = r.token.getPosition();
-        
-        r = r.require(isAssignment).then (parseAssignment);
-        if (r.error())
-            return ExprResult (token , r.errorDesc);
-        else
-        {
-            Ref<AstAssignment> result = AstAssignment::create(pos, op, lexpr, r.result);
-            return ExprResult(r.token, result);
-        }
+        Ref<AstAssignment> result = AstAssignment::create(pos, op, lexpr, r.result);
+        return ExprResult(r.token, result);
     }
+    else
+        return parseConditional(token);
 }
 
 /**
