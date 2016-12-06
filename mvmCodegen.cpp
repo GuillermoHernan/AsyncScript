@@ -77,6 +77,7 @@ void pushConstant (int value, CodegenState* pState);
 void pushConstant (bool value, CodegenState* pState);
 void pushUndefined (CodegenState* pState);
 
+void callCodegen (const std::string& fnName, int nParams, CodegenState* pState);
 void callInstruction (int nParams, CodegenState* pState);
 
 void instruction8 (int opCode, CodegenState* pState);
@@ -423,8 +424,7 @@ void fncallCodegen (Ref<AstStatement> statement, CodegenState* pState)
     if (callNode->getNewFlag())
     {
         //Create a new object, and pass it as 'this' reference.
-        pushConstant("@newObj", pState);
-        instruction8(OC_CALL, pState);
+        callCodegen("@newObj", 0, pState);
     }
     else
     {
@@ -504,7 +504,7 @@ void identifierCodegen (Ref<AstStatement> statement, CodegenState* pState)
     Ref<AstIdentifier>  id = statement.staticCast<AstIdentifier>();
     
     pushConstant(id->name, pState);
-    if (pState->scopes.rbegin()->isDeclared(id->name))
+    if (pState->scopes.back().isDeclared(id->name))
         instruction8 (OC_RD_LOCAL, pState);
     else
         instruction8 (OC_RD_GLOBAL, pState);
@@ -520,9 +520,7 @@ void arrayCodegen (Ref<AstStatement> statement, CodegenState* pState)
     const StatementList children = statement->children();
     
     pushConstant((int)children.size(), pState);
-    pushConstant("@newArray", pState);
-    instruction8 (OC_RD_GLOBAL, pState);
-    instruction8(OC_CALL+1, pState);
+    callCodegen("@newArray", 1, pState);
     
     for (int i=0; i < (int)children.size(); ++i)
     {
@@ -545,9 +543,7 @@ void objectCodegen (Ref<AstStatement> statement, CodegenState* pState)
     Ref<AstObject>              obj = statement.staticCast<AstObject>();
     const AstObject::PropsMap   properties= obj->getProperties();
     
-    pushConstant("@newObj", pState);
-    instruction8 (OC_RD_GLOBAL, pState);
-    instruction8(OC_CALL, pState);
+    callCodegen("@newObj", 0, pState);
 
     //TODO: Properties are not evaluated in definition order, but in 
     //alphabetical order, as they are defined in a map.
@@ -654,8 +650,7 @@ void prefixOpCodegen(Ref<AstStatement> statement, CodegenState* pState)
         }
         
         //Call function
-        pushConstant(function, pState);
-        instruction8 (OC_CALL+1, pState);
+        callCodegen(function, 1, pState);
     }
 }
 
@@ -681,8 +676,7 @@ void postfixOpCodegen (Ref<AstStatement> statement, CodegenState* pState)
     }
     
     instruction8(rdInst, pState);
-    pushConstant(op->code == LEX_PLUSPLUS ? "@inc": "@dec", pState);
-    instruction8(OC_CALL+1, pState);
+    callCodegen(LEX_PLUSPLUS ? "@inc": "@dec", 1, pState);
     instruction8(wrInst, pState);
 }
 
@@ -784,6 +778,24 @@ void pushUndefined (CodegenState* pState)
 {
     pushConstant(undefined(), pState);
 }
+
+/**
+ * Adds the instructions necessary to perform a call to a function, given its name.
+ * @param fnName
+ * @param nParams
+ * @param pState
+ */
+void callCodegen (const std::string& fnName, int nParams, CodegenState* pState)
+{
+    pushConstant(fnName, pState);
+    
+    if (pState->scopes.back().isDeclared(fnName))
+        instruction8(OC_RD_LOCAL, pState);
+    else
+        instruction8(OC_RD_GLOBAL, pState);
+    callInstruction(nParams, pState);    
+}
+
 
 /**
  * Writes a call instruction. Takes into account the number of parameters to 
@@ -921,8 +933,7 @@ void binaryOperatorCode (int tokenCode, CodegenState* pState)
     OpMap::const_iterator it = operators.find(tokenCode);
     
     ASSERT (it != operators.end());
-    pushConstant(it->second, pState);
-    instruction8(OC_CALL+2, pState);
+    callCodegen(it->second, 2, pState);
 }
 
 /**
