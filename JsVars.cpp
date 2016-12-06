@@ -605,11 +605,15 @@ std::string JSArray::toString()const
 std::string JSArray::getJSON(int indent)
 {
     std::ostringstream output;
+    const bool multiLine = m_length > 4;
 
     output << '[';
 
     for (size_t i = 0; i < m_length; ++i)
     {
+        if (multiLine)
+            output << "\n" << indentText(indent + 1);
+        
         if (i > 0)
             output << ',';
 
@@ -620,6 +624,9 @@ std::string JSArray::getJSON(int indent)
         else
             output << childJSON;
     }
+    
+    if (multiLine)
+            output << "\n" << indentText(indent);
     output << ']';
 
     return output.str();
