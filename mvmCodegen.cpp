@@ -108,7 +108,12 @@ Ref<MvmScript> scriptCodegen (const StatementList& statements)
     state.scopes.push_back(CodegenScope());
     
     for (size_t i = 0; i < statements.size(); ++i)
+    {
+        //Remove previous result
+        if (i > 0)
+            instruction8 (OC_POP, &state);
         codegen (statements[i], &state);
+    }
     
     return state.curScript;    
 }
