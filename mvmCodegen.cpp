@@ -202,7 +202,7 @@ void blockCodegen (Ref<AstStatement> statement, CodegenState* pState)
 {
     const StatementList&  children = statement->children();
     
-    for (size_t i; i < children.size(); ++i)
+    for (size_t i=0; i < children.size(); ++i)
     {
         if (children[i].notNull())
         {
