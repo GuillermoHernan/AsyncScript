@@ -959,11 +959,12 @@ void binaryOperatorCode (int tokenCode, CodegenState* pState)
  */
 void endBlock (int trueJump, int falseJump, CodegenState* pState)
 {
-    MvmBlock    &curBlock = *pState->curScript->blocks.rbegin();
+    MvmBlock    &curBlock = pState->curScript->blocks.back();
     
-    pState->curScript->blocks.push_back(MvmBlock());
     curBlock.nextBlocks[1] = trueJump;
     curBlock.nextBlocks[0] = falseJump;
+
+    pState->curScript->blocks.push_back(MvmBlock());
 }
 
 /**
