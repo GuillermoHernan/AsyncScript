@@ -41,6 +41,8 @@ enum OpCodes8
     OC_WR_GLOBAL = 19,
     OC_RD_FIELD = 20,
     OC_WR_FIELD = 21,
+    OC_CP_AUX = 32,
+    OC_PUSH_AUX = 33,
     OC_NOP = 63,
     OC_PUSHC = 64,
     OC_EXT_FLAG = 128

@@ -26,6 +26,7 @@ struct ExecutionContext
     ValueVector     stack;
     ValueVector*    constants;
     ScopeStack      scopes;
+    Ref<JSValue>    auxRegister;
     
     Ref<JSValue> pop()
     {
@@ -80,6 +81,8 @@ void execWrGlobal (const int opCode, ExecutionContext* ec);
 void execRdField (const int opCode, ExecutionContext* ec);
 void execWrField (const int opCode, ExecutionContext* ec);
 void execNop (const int opCode, ExecutionContext* ec);
+void execCpAux (const int opCode, ExecutionContext* ec);
+void execPushAux (const int opCode, ExecutionContext* ec);
 
 void invalidOp (const int opCode, ExecutionContext* ec);
 
@@ -104,7 +107,7 @@ static const OpFunction s_instructions[64] =
     invalidOp,      invalidOp,      invalidOp,      invalidOp,
     
     //32
-    invalidOp,      invalidOp,      invalidOp,      invalidOp,
+    execCpAux,      execPushAux,    invalidOp,      invalidOp,
     invalidOp,      invalidOp,      invalidOp,      invalidOp,
     
     //40
@@ -161,6 +164,10 @@ Ref<JSValue> execScript (Ref<MvmScript> code, ExecutionContext* ec)
     }
     
     ec->constants = prevConstants;
+    
+    //'AUX' register is cleared when finishing a script, to prevent memory leaks
+    //(and may be also a good security measure)
+    ec->auxRegister = undefined();
     
     if (ec->stack.empty())
         return undefined();
@@ -468,6 +475,34 @@ void execNop (const int opCode, ExecutionContext* ec)
 {
     //This one is easy
 }
+
+/**
+ * Copies current value on the top of the stack to the 'AUX' register.
+ * It does not remove it from the stack, it is a copy
+ * @param opCode
+ * @param ec
+ */
+void execCpAux (const int opCode, ExecutionContext* ec)
+{
+    if (ec->stack.empty())
+        error ("Empty stack executing OC_CP_AUX");
+    
+    ec->auxRegister = ec->stack.back();
+}
+
+/**
+ * Pushes the current value of the 'AUX' register to the top of the stack
+ * @param opCode
+ * @param ec
+ */
+void execPushAux (const int opCode, ExecutionContext* ec)
+{
+    if (ec->auxRegister.notNull())
+        ec->stack.push_back(ec->auxRegister);
+    else
+        ec->stack.push_back(undefined());
+}
+
 
 
 void invalidOp (const int opCode, ExecutionContext* ec)
