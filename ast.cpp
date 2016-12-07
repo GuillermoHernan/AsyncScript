@@ -183,7 +183,12 @@ Ref<JSArray> toJSArray (const StatementList& statements)
     Ref<JSArray>    result = JSArray::create();
     
     for (size_t i = 0; i < statements.size(); ++i)
-        result->push( statements[i]->toJSValue() );
+    {
+        if (statements[i].notNull())
+            result->push( statements[i]->toJSValue() );
+        else
+            result->push(jsNull());
+    }
     
     return result;
 }
