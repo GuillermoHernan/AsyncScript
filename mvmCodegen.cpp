@@ -286,7 +286,8 @@ void ifCodegen (Ref<AstStatement> statement, CodegenState* pState)
 void forCodegen (Ref<AstStatement> statement, CodegenState* pState)
 {
     //Loop initialization
-    childCodegen (statement, 0, pState);
+    if (childCodegen (statement, 0, pState))
+        instruction8(OC_POP, pState);
     
     const int conditionBlock = curBlockId(pState)+1;
     //Generate code for condition
@@ -300,8 +301,11 @@ void forCodegen (Ref<AstStatement> statement, CodegenState* pState)
     endBlock (bodyBegin, -1, pState);
 
     //loop body & increment
-    childCodegen (statement, 2, pState);
-    childCodegen (statement, 3, pState);
+    if (childCodegen (statement, 3, pState))
+        instruction8(OC_POP, pState);
+
+    if (childCodegen (statement, 2, pState))
+        instruction8(OC_POP, pState);
     
     const int nextBlock = curBlockId(pState)+1;
     endBlock(conditionBlock, conditionBlock, pState);
@@ -309,7 +313,7 @@ void forCodegen (Ref<AstStatement> statement, CodegenState* pState)
     //Fix condition jump destination
     setFalseJump(bodyBegin-1, nextBlock, pState);    
     
-    //Non expression stataments leave an 'undefined' on the stack.
+    //Non expression statements leave an 'undefined' on the stack.
     pushUndefined(pState);
 }
 
