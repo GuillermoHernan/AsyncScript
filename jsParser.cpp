@@ -332,6 +332,8 @@ ParseResult parseFor (CScriptToken token)
         init = r.ast;
         token = r.nextToken.match(';');
     }
+    else
+        token = token.next();
     
     ExprResult rCondition = parseExpression(token);
     rCondition.throwIfError();
