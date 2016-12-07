@@ -698,9 +698,9 @@ ExprResult parseNewExpr (CScriptToken token)
  */
 ExprResult parseCallExpr (CScriptToken token)
 {
-    ExprResult r = parseMemberExpr(token).then(parseCallArguments);
+    ExprResult r = ExprResult(token).then(parseMemberExpr).then(parseCallArguments);
         
-    while (!r.error() && oneOf (r.token, "([."))
+    while (r.ok() && oneOf (r.token, "([."))
     {
         const LEX_TYPES t = r.token.type();
         
