@@ -990,7 +990,7 @@ void endBlock (int trueJump, int falseJump, CodegenState* pState)
  */
 void setTrueJump (int blockId, int destinationId, CodegenState* pState)
 {
-    pState->curScript->blocks[destinationId].nextBlocks[1] = blockId;
+    pState->curScript->blocks[blockId].nextBlocks[1] = destinationId;
 }
 
 /**
@@ -1001,7 +1001,7 @@ void setTrueJump (int blockId, int destinationId, CodegenState* pState)
  */
 void setFalseJump (int blockId, int destinationId, CodegenState* pState)
 {
-    pState->curScript->blocks[destinationId].nextBlocks[0] = blockId;
+    pState->curScript->blocks[blockId].nextBlocks[0] = destinationId;
 }
 
 /**
