@@ -590,6 +590,8 @@ string disassembly8bitInst (int opCode, const ValueVector& constants)
         case OC_WR_GLOBAL:   return "WR_GLOBAL";
         case OC_RD_FIELD:   return "RD_FIELD";
         case OC_WR_FIELD:   return "WR_FIELD";
+        case OC_CP_AUX:     return "CP_AUX";
+        case OC_PUSH_AUX:   return "PUSH_AUX";
         case OC_NOP:        return "NOP";
         default:
             return "BAD_OP_CODE_8";
