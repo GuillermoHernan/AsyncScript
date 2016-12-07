@@ -390,6 +390,12 @@ void assignmentCodegen (Ref<AstStatement> statement, CodegenState* pState)
     {
         //Simple assignment
         childCodegen(statement, 1, pState);
+
+        //TODO: Won't work for field assignments.
+        //Copy assigned value so it remains at the top of the stack once the 
+        //assignment is completed
+        instruction8(OC_SWAP, pState);
+        instruction8(OC_CP+1, pState);
         instruction8(wrInst, pState);
     }
     else
@@ -408,12 +414,16 @@ void assignmentCodegen (Ref<AstStatement> statement, CodegenState* pState)
         
         //execute right side
         childCodegen(statement, 1, pState);
+        instruction8 (OC_CP_AUX, pState);
         
         //execute operation
         binaryOperatorCode (op - LEX_ASSIGN_BASE, pState);
 
         //Execute write.
         instruction8(wrInst, pState);
+
+        //The assigned value was stored in 'AUX' register.
+        instruction8 (OC_PUSH_AUX, pState);
     }
 }
 
