@@ -148,6 +148,7 @@ ParseResult parseSimpleStatement (CScriptToken token)
         r.throwIfError();
         return ParseResult (r.token, r.result);                
     }
+    case LEX_R_VAR:     return parseVar (token);
     default:
         errorAt(token.getPosition(), "Unexpected token: '%s'", token.text().c_str());
         return ParseResult (token.next(), emptyStatement(token.getPosition()));
