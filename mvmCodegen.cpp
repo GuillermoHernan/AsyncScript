@@ -695,8 +695,19 @@ void postfixOpCodegen (Ref<AstStatement> statement, CodegenState* pState)
     }
     
     instruction8(rdInst, pState);
+    instruction8(OC_CP, pState);        //Save previous
     callCodegen(LEX_PLUSPLUS ? "@inc": "@dec", 1, pState);
+    
+    //Move previous value to aux
+    instruction8(OC_SWAP, pState);
+    instruction8(OC_CP_AUX, pState);
+    instruction8(OC_POP, pState);
+    
+    //Write result.
     instruction8(wrInst, pState);
+    
+    //Recover previous value from aux.
+    instruction8 (OC_PUSH_AUX, pState);
 }
 
 /**
