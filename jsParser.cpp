@@ -145,8 +145,7 @@ ParseResult parseSimpleStatement (CScriptToken token)
     case LEX_MINUSMINUS:
     {
         ExprResult r = parseExpression (token);
-        r.throwIfError();
-        return ParseResult (r.token, r.result);                
+        return r.toParseResult();
     }
     case LEX_R_VAR:     return parseVar (token);
     default:
@@ -444,7 +443,8 @@ ExprResult parseAssignment (CScriptToken token)
     if (r.ok())
     {
         Ref<AstAssignment> result = AstAssignment::create(pos, op, lexpr, r.result);
-        return ExprResult(r.token, result);
+        r.result = result;
+        return r.final();
     }
     else
         return parseConditional(token);
@@ -458,9 +458,9 @@ ExprResult parseAssignment (CScriptToken token)
  */
 ExprResult parseLeftExpr (CScriptToken token)
 {
-    ExprResult     r = parseNewExpr (token);
+    ExprResult     r = parseCallExpr (token);
     
-    return r.orElse (parseCallExpr);
+    return r.orElse (parseNewExpr).final();
 }
 
 /**
@@ -490,7 +490,7 @@ ExprResult parseConditional (CScriptToken token)
         
     }
     
-    return r;
+    return r.final();
 }
 
 /**
@@ -562,8 +562,7 @@ ExprResult parseEqualityExpr(CScriptToken token)
 ExprResult parseRelationalExpr(CScriptToken token)
 {
     //TODO: Missing 'instanceof' and 'in' operators
-    const int operators[] = 
-    {'<', '>', LEX_LEQUAL, LEX_GEQUAL,  0 };
+    const int operators[] = {'<', '>', LEX_LEQUAL, LEX_GEQUAL,  0 };
     return parseBinaryLROp(token, operators, parseShiftExpr);
 }
 
@@ -574,8 +573,7 @@ ExprResult parseRelationalExpr(CScriptToken token)
  */
 ExprResult parseShiftExpr(CScriptToken token)
 {
-    const int operators[] = 
-    {LEX_LSHIFT, LEX_RSHIFT, LEX_RSHIFTUNSIGNED,  0 };
+    const int operators[] = {LEX_LSHIFT, LEX_RSHIFT, LEX_RSHIFTUNSIGNED,  0 };
     return parseBinaryLROp(token, operators, parseAddExpr);
 }
 
@@ -618,7 +616,7 @@ ExprResult parseUnaryExpr (CScriptToken token)
         if (r.ok())
         {
             r.result = AstPrefixOp::create(token.getPosition(), token.type(), r.result);
-            return r;
+            return r.final();
         }
         else
             return ExprResult(token, r.errorDesc);
@@ -645,7 +643,7 @@ ExprResult parsePostFixExpr (CScriptToken token)
         r = r.skip();
     }
     
-    return r;
+    return r.final();
 }
 
 /**
@@ -655,10 +653,12 @@ ExprResult parsePostFixExpr (CScriptToken token)
  */
 ExprResult parseIdentifier (CScriptToken token)
 {
-    if (token.type() == LEX_ID)
-        return ExprResult(token.next(), AstIdentifier::create(token));
-    else
-        return ExprResult(token).require(LEX_ID);       //Will generate an error
+    ExprResult  r = ExprResult(token).require(LEX_ID);
+    
+    if (r.ok())
+        r.result = AstIdentifier::create(token);
+    
+    return r.final();
 }
 
 
@@ -671,7 +671,7 @@ ExprResult parseNewExpr (CScriptToken token)
 {
     ExprResult     r = parseMemberExpr (token);
     
-    if (!r.error())
+    if (r.ok())
         return r;
     else
     {
@@ -679,15 +679,15 @@ ExprResult parseNewExpr (CScriptToken token)
         
         r = r.require(LEX_R_NEW).then(parseNewExpr);
         
-        if (!r.error())
+        if (r.ok())
         {
             Ref<AstFunctionCall>    call = AstFunctionCall::create(newPos, r.result);
             call->setNewFlag();
             
-            return ExprResult(r.token, call);
+            r.result = call;
         }
-        else
-            return r;        
+
+        return r.final();
     }
 }
 
@@ -715,7 +715,7 @@ ExprResult parseCallExpr (CScriptToken token)
         }
     }//while
     
-    return r;
+    return r.final();
 }
 
 /**
@@ -734,7 +734,7 @@ ExprResult parseMemberExpr (CScriptToken token)
         
         if (!r.error())
             r.result.staticCast<AstFunctionCall>()->setNewFlag();
-        return r;
+        return r.final();
     }
     else
     {
@@ -753,7 +753,7 @@ ExprResult parseMemberExpr (CScriptToken token)
             }
         }//while
 
-        return r;
+        return r.final();
     }
 }
 
@@ -783,7 +783,7 @@ ExprResult parsePrimaryExpr (CScriptToken token)
         return ExprResult(token)
                 .require('(')
                 .then(parseExpression)
-                .require(')');
+                .require(')').final();
         
     default:
         return ExprResult(token)
@@ -804,7 +804,7 @@ ExprResult parseFunctionExpr (CScriptToken token)
 
     r = r.require(LEX_R_FUNCTION);
     if (r.error())
-        return r;
+        return r.final();
 
     token = r.token;
 
@@ -864,7 +864,7 @@ ExprResult parseArrayLiteral (CScriptToken token)
     if (r.ok())
         r.result = array;
     
-    return r;
+    return r.final();
 }
 
 /**
@@ -890,7 +890,7 @@ ExprResult parseObjectLiteral (CScriptToken token)
     
     r = r.require('}');
     
-    return r;
+    return r.final();
 }
 
 /**
@@ -989,7 +989,7 @@ ExprResult parseObjectProperty (CScriptToken token, Ref<AstExpression> objExpr)
         name = token.strValue();
         
     default:
-        return r.getError("Invalid object property name: %s", token.text().c_str());
+        return r.getError("Invalid object property name: %s", token.text().c_str()).final();
     }//switch
     
     r = r.skip().require(':').then(parseAssignment);
@@ -1039,18 +1039,15 @@ ExprResult parseBinaryLROp (CScriptToken token, const int* ids, ExprResult::Pars
         
         r = r.skip();
         if (r.error())
-            return ExprResult(token, r.errorDesc);
+            return r.final();
         
         r = parseBinaryLROp(r.token, ids, childParser);
             
         if (r.ok())
-        {
             r.result = AstBinaryOp::create (pos, op, left, r.result);
-            return r;
-        }
-        else
-            return ExprResult(token, r.errorDesc);
+        
+        return r.final();
     }
     else    
-        return r;
+        return r.final();
 }
