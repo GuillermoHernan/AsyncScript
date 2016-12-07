@@ -272,7 +272,7 @@ void ifCodegen (Ref<AstStatement> statement, CodegenState* pState)
     //Fix else jump
     setFalseJump (thenInitialBlock-1, thenFinalBlock+1, pState);
     
-    //Non expression stataments leave an 'undefined' on the stack.
+    //Non expression statements leave an 'undefined' on the stack.
     pushUndefined(pState);
 }
 
