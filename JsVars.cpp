@@ -839,7 +839,7 @@ Ref<JSValue> FunctionScope::getParam(const std::string& name)const
  * - Function arguments
  * - global variables
  * @param name Symbol name
- * @return The symbol value or 'undefined'.
+ * @return The symbol value or a NULL pointer.
  */
 Ref<JSValue> FunctionScope::get(const std::string& name)const
 {
@@ -853,10 +853,16 @@ Ref<JSValue> FunctionScope::get(const std::string& name)const
 
         if (it != m_params.end())
             return it->second;
-        else if (!m_globals.isNull())
-            return m_globals->get(name);
         else
-            return Ref<JSValue>();
+        {
+            it = m_locals.find(name);
+            if (it != m_locals.end())
+                return it->second;
+            else if (!m_globals.isNull())
+                return m_globals->get(name);
+            else
+                return Ref<JSValue>();
+        }
     }
 }
 
@@ -869,15 +875,14 @@ Ref<JSValue> FunctionScope::get(const std::string& name)const
  */
 Ref<JSValue> FunctionScope::set(const std::string& name, Ref<JSValue> value, bool forceLocal)
 {
-    //It should not be called with 'forceLocal'
-    ASSERT (!forceLocal);
-    
     value = dereference(value);
     
     if (name == "this" || name == "arguments")
         throw CScriptException("Invalid left hand side in assignment");
     else if (m_params.find(name) != m_params.end())
         m_params[name] = value;
+    else if (forceLocal || m_locals.find(name) != m_locals.end())
+        m_locals[name] = value;
     else if (!get(name).isNull())
         return m_globals->set(name, value);
 

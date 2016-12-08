@@ -769,6 +769,7 @@ private:
     typedef std::map <std::string, Ref<JSValue> > SymbolsMap;
 
     SymbolsMap m_params;
+    SymbolsMap m_locals;
     Ref<JSFunction> m_function;
     Ref<JSArray> m_arguments;
     Ref<JSValue> m_this;

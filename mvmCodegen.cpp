@@ -223,7 +223,9 @@ void blockCodegen (Ref<AstStatement> statement, CodegenState* pState)
 void varCodegen (Ref<AstStatement> statement, CodegenState* pState)
 {
     const std::string& name = statement.staticCast<AstVar>()->name;
-    pState->scopes.rbegin()->declare(name);
+    //TODO: If block scopes are implemented, next line should be modified to
+    //target function scope specifically.
+    pState->scopes.back().declare(name);
     
     if (statement->childExists(0))
     {
@@ -232,7 +234,7 @@ void varCodegen (Ref<AstStatement> statement, CodegenState* pState)
         instruction8 (OC_WR_LOCAL, pState);
     }
     
-    //Non expression stataments leave an 'undefined' on the stack.
+    //Non-expression statements leave an 'undefined' on the stack.
     pushUndefined(pState);
 }
 

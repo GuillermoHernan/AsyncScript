@@ -405,7 +405,7 @@ void execWrLocal (const int opCode, ExecutionContext* ec)
     const Ref<JSValue>  val = ec->pop();
     const Ref<JSValue>  name = ec->pop();
     
-    ec->scopes.back()->set(name->toString(), val);
+    ec->scopes.back()->set(name->toString(), val, true);
 }
 
 /**
