@@ -608,6 +608,7 @@ string disassembly8bitInst (int opCode, const ValueVector& constants)
  */
 string disassembly16bitInst (int opCode, const ValueVector& constants)
 {
+    opCode &= ~OC16_16BIT_FLAG;
     if (opCode >= OC16_PUSHC)
         return disassemblyPushC (opCode - (OC16_PUSHC - 64), constants);
     else if (opCode <= OC16_CALL_MAX)
