@@ -598,8 +598,11 @@ void arrayAccessCodegen (Ref<AstStatement> statement, CodegenState* pState)
  */
 void memberAccessCodegen(Ref<AstStatement> statement, CodegenState* pState)
 {
-    //It is just the same code
-    arrayAccessCodegen(statement, pState);
+    childCodegen(statement, 0, pState);
+    
+    Ref<AstIdentifier>  fieldId = statement->children()[1].staticCast<AstIdentifier>();
+    pushConstant(fieldId->name, pState);
+    instruction8 (OC_RD_FIELD, pState);
 }
 
 /**
