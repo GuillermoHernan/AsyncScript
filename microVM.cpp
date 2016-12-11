@@ -216,7 +216,7 @@ int execBlock (const MvmBlock& block, ExecutionContext* ec)
  */
 void execInstruction16 (const int opCode, ExecutionContext* ec)
 {
-    const int decoded = opCode & 0x3FF;
+    const int decoded = opCode & 0x3FFF;
     
     if (decoded >= OC16_PUSHC)
         execPushC16 (decoded, ec);
