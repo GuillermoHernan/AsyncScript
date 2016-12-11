@@ -39,6 +39,7 @@ struct ExecutionContext
     
     Ref<JSValue> push(Ref<JSValue> value)
     {
+        ASSERT (value.notNull());
         stack.push_back(value);
         return value;
     }

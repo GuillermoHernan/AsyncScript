@@ -333,7 +333,7 @@ Ref<JSValue> JSObject::get(const std::string& name)const
     else if (!nullCheck(m_prototype))
         return m_prototype->get (name);
     else
-        return Ref<JSValue>();
+        return undefined();
 }
 
 /**
@@ -786,7 +786,7 @@ Ref<JSValue> FunctionScope::getParam(const std::string& name)const
  * - Function arguments
  * - global variables
  * @param name Symbol name
- * @return The symbol value or a NULL pointer.
+ * @return The symbol value or undefined.
  */
 Ref<JSValue> FunctionScope::get(const std::string& name)const
 {
@@ -808,7 +808,7 @@ Ref<JSValue> FunctionScope::get(const std::string& name)const
             else if (!m_globals.isNull())
                 return m_globals->get(name);
             else
-                return Ref<JSValue>();
+                return undefined();
         }
     }
 }
