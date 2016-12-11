@@ -768,7 +768,7 @@ void pushConstant (Ref<JSValue> value, CodegenState* pState)
         if (id16 >= OC16_PUSHC)
             errorAt (pState->curScript->position,  "Too much constants. Maximum is 8256 per function");
         else
-            instruction16(id16, pState);
+            instruction16(id16 + OC16_PUSHC, pState);
     }
 }
 
