@@ -110,7 +110,15 @@ ParseResult parseStatement (CScriptToken token)
 {
     switch ((int)token.type())
     {
-    case '{':           return parseBlock(token);
+    case '{':
+    {
+        ExprResult  r = parseObjectLiteral(token);
+        
+        if (r.ok())
+            return r.toParseResult();
+        else
+            return parseBlock(token);
+    }
     case ';':           return ParseResult (token.next(), emptyStatement(token.getPosition()));
     case LEX_R_VAR:     return parseVar (token);
     case LEX_R_IF:      return parseIf (token);
