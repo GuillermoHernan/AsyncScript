@@ -121,7 +121,6 @@ Ref<JSValue> createConstant(CScriptToken token);
 
 Ref<JSObject> getObject(Ref<IScope> pScope, const std::string& name);
 
-Ref<JSValue> dereference (Ref<JSValue> value);
 Ref<JSValue> null2undef (Ref<JSValue> value);
 bool nullCheck (Ref<JSValue> value);
 
@@ -131,7 +130,7 @@ Ref<DestType> castTo (Ref<SrcType> value)
     if (nullCheck(value))
         return Ref<DestType>();
     else
-        return Ref<DestType>( static_cast<DestType*> ( dereference(value).getPointer() ) );
+        return Ref<DestType>( static_cast<DestType*> ( value.getPointer() ) );
 }
 
 
@@ -306,84 +305,6 @@ private:
     }
 
     const bool m_value;
-};
-
-/**
- * Holds a reference to a Javascript variable.
- * @note The reference must be strictly temporary, as it depends on the pointer to 
- * the scope, which will be invalid when it goes out of scope.
- */
-//TODO: The current references system is problematic. Re-think it.
-class JSReference : public JSValue
-{
-public:
-    static Ref<JSReference> create(Ref<IScope> pScope, const std::string& name);
-
-    Ref<JSValue> set(Ref<JSValue> value);
-    
-    Ref<JSValue> get()const
-    {
-        return target();
-    }
-
-    virtual std::string toString()const
-    {
-        return target()->toString();
-    }
-
-    virtual bool toBoolean()const
-    {
-        return target()->toBoolean();
-    }
-
-    virtual int toInt32()const
-    {
-        return target()->toInt32();
-    }
-
-    virtual double toDouble()const
-    {
-        return target()->toDouble();
-    }
-
-    virtual Ref<JSValue> memberAccess(const std::string& name)
-    {
-        return target()->memberAccess(name);
-    }
-
-    virtual Ref<JSValue> arrayAccess(Ref<JSValue> index)
-    {
-        return target()->arrayAccess(index);
-
-    }
-
-    virtual std::string getJSON(int indent)
-    {
-        return target()->getJSON(indent);
-    }
-
-    virtual bool isReference()const
-    {
-        return true;
-    }
-
-    virtual JSValueTypes getType()const
-    {
-        return target()->getType();
-    }
-
-private:
-    JSReference(Ref<IScope> pScope, const std::string& name);
-
-    const std::string   m_name;
-    const Ref<IScope>   m_pScope;
-    mutable Ref<JSValue>        m_target;
-
-    Ref<JSValue> target()const
-    {
-        m_target = null2undef(m_pScope->get(m_name));
-        return m_target;
-    }
 };
 
 /**

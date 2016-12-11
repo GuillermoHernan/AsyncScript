@@ -191,21 +191,6 @@ Ref<JSObject> getObject(Ref<IScope> pScope, const std::string& name)
 }
 
 /**
- * Checks if an object is a reference. If it is, returns is target.
- * If it is not, returns the same value.
- * 
- * @param value
- * @return 
- */
-Ref<JSValue> dereference (Ref<JSValue> value)
-{
-    if (!value->isReference())
-        return value;
-    else
-        return value.staticCast<JSReference>()->get();
-}
-
-/**
  * Transforms a NULL pointer into an undefined value. If not undefined,
  * just returns the input value.
  * @param value input value to check
@@ -308,43 +293,6 @@ Ref<JSValue> JSString::get(const std::string& name)const
 }
 
 
-
-// JSReference
-//
-//////////////////////////////////////////////////
-
-/**
- * Constructor for reference class. Private, use 'create' method.
- * @param pScope
- * @param name
- */
-JSReference::JSReference(Ref<IScope> pScope, const std::string& name)
-: m_name(name), m_pScope(pScope)
-{
-}
-
-/**
- * Creates a reference
- * @param pScope
- * @param name
- * @return 
- */
-Ref<JSReference> JSReference::create(Ref<IScope> pScope, const std::string& name)
-{
-    return refFromNew(new JSReference(pScope, name));
-}
-
-/**
- * Changes the reference value
- * @param value
- * @return 
- */
-Ref<JSValue> JSReference::set(Ref<JSValue> value)
-{
-    return m_pScope->set(m_name, value);
-}
-
-
 // JSObject
 //
 //////////////////////////////////////////////////
@@ -399,8 +347,6 @@ Ref<JSValue> JSObject::set(const std::string& name, Ref<JSValue> value)
     if (m_frozen)
         return get(name);
     
-    value = dereference(value);
-
     if (value->isUndefined())
     {
         //'undefined' means not present in the object. So it is deleted.
@@ -420,8 +366,7 @@ Ref<JSValue> JSObject::set(const std::string& name, Ref<JSValue> value)
  */
 Ref<JSValue> JSObject::memberAccess(const std::string& name)
 {
-    //TODO: simplify references!!!
-    return JSReference::create( ObjectScope::create (ref(this)), name);
+    return get(name);
 }
 
 std::string indentText(int indent)
@@ -554,8 +499,6 @@ Ref<JSValue> JSArray::get(const std::string& name)const
  */
 Ref<JSValue> JSArray::set(const std::string& name, Ref<JSValue> value, bool forceLocal)
 {
-    value = dereference(value);
-    
     if (name == "length")
     {
         setLength(value);
@@ -746,8 +689,6 @@ Ref<JSValue> BlockScope::get(const std::string& name)const
  */
 Ref<JSValue> BlockScope::set(const std::string& name, Ref<JSValue> value, bool forceLocal)
 {
-    value = dereference(value);
-
     if (value->isUndefined())
     {
         if (m_pParent.notNull())
@@ -813,7 +754,7 @@ int FunctionScope::addParam(Ref<JSValue> value)
         const std::string &name = paramsDef[index];
 
         m_params[name] = value;
-        m_arguments->push(JSReference::create(this, name));
+        m_arguments->push(value);
     }
     else
         m_arguments->push(value);
@@ -881,8 +822,6 @@ Ref<JSValue> FunctionScope::get(const std::string& name)const
  */
 Ref<JSValue> FunctionScope::set(const std::string& name, Ref<JSValue> value, bool forceLocal)
 {
-    value = dereference(value);
-    
     if (name == "this" || name == "arguments")
         throw CScriptException("Invalid left hand side in assignment");
     else if (m_params.find(name) != m_params.end())
