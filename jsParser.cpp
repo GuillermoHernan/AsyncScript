@@ -268,7 +268,7 @@ ParseResult parseIf (CScriptToken token)
     
     if (token.type() == LEX_R_ELSE)
     {
-        r = parseBodyStatement(token);
+        r = parseBodyStatement(token.next());
         elseSt = r.ast;
         token = r.nextToken;
     }
