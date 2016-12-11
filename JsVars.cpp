@@ -674,6 +674,12 @@ Ref<JSFunction> JSFunction::createNative(const std::string& name, JSNativeFn fnP
     return refFromNew(new JSFunction(name, fnPtr));
 }
 
+JSFunction::~JSFunction()
+{
+//    printf ("Destroying function: %s\n", m_name.c_str());
+}
+
+
 /**
  * String representation of the function.
  * Just the function and the parameter list, no code.
@@ -799,7 +805,7 @@ m_globals(globals)
  */
 int FunctionScope::addParam(Ref<JSValue> value)
 {
-    JSFunction::ParametersList paramsDef = m_function->getParams();
+    const JSFunction::ParametersList paramsDef = m_function->getParams();
     const size_t index = m_arguments->length();
 
     if (index < paramsDef.size())

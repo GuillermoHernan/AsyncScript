@@ -607,7 +607,7 @@ public:
         m_params = params;
     }
 
-    const ParametersList getParams()const
+    const ParametersList& getParams()const
     {
         return m_params;
     }
@@ -677,6 +677,8 @@ private:
     m_pNative(pNative)
     {
     }
+    
+    ~JSFunction();
 
     const std::string m_name;
     CScriptToken m_code;
