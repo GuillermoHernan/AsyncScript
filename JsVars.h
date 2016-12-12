@@ -331,6 +331,8 @@ public:
         m_frozen = true;
     }
 
+    //TODO: Remove 'IScope' old functions, as they are duplicate. Also, make
+    //a virtual function to write a field in 'JSValue'
     // IScope (old)
     /////////////////////////////////////////
     virtual Ref<JSValue> get(const std::string& name)const;
@@ -467,7 +469,7 @@ public:
     // IScope
     /////////////////////////////////////////
     virtual Ref<JSValue> get(const std::string& name)const;
-    virtual Ref<JSValue> set(const std::string& name, Ref<JSValue> value, bool forceLocal=false);
+    virtual Ref<JSValue> set(const std::string& name, Ref<JSValue> value);
 
     // JSValue
     /////////////////////////////////////////

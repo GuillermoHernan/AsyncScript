@@ -508,7 +508,7 @@ Ref<JSValue> JSArray::get(const std::string& name)const
  * @param value
  * @return 
  */
-Ref<JSValue> JSArray::set(const std::string& name, Ref<JSValue> value, bool forceLocal)
+Ref<JSValue> JSArray::set(const std::string& name, Ref<JSValue> value)
 {
     if (name == "length")
     {
