@@ -1,5 +1,5 @@
 CC=g++
-CFLAGS=-c -g -Wall -rdynamic -D_DEBUG
+CFLAGS=-c -g -Wall -rdynamic -D_DEBUG -std=c++11
 LDFLAGS=-g -rdynamic
 
 SOURCES=  \
