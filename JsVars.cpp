@@ -482,7 +482,7 @@ Ref<JSArray> JSArray::createStrArray(const std::vector<std::string>& strList)
 size_t JSArray::push(Ref<JSValue> value)
 {
     //TODO: String conversion may be more efficient.
-    this->set(jsInt(m_length)->toString(), value);
+    this->set(jsInt(m_length++)->toString(), value);
     return m_length;
 }
 
