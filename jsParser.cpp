@@ -995,6 +995,7 @@ ExprResult parseObjectProperty (CScriptToken token, Ref<AstExpression> objExpr)
         
     case LEX_STR:
         name = token.strValue();
+        break;
         
     default:
         return r.getError("Invalid object property name: %s", token.text().c_str()).final();
