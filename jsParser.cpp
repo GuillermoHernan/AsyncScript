@@ -311,7 +311,7 @@ ParseResult parseWhile (CScriptToken token)
                                          Ref<AstStatement>(),
                                          r.ast);
     
-    return ParseResult (token, result);
+    return ParseResult (r.nextToken, result);
 }
 
 /**
