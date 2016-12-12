@@ -60,13 +60,15 @@ void errorAt_v(const ScriptPosition& position, const char* msgFormat, va_list ar
 //Remove if compiling with c++ 2011 or later
 
 template <class T>
-std::string to_string(const T &x)
+std::string to_string(T x)
 {
     std::ostringstream output;
 
     output << x;
     return output.str();
 }
+
+std::string double_to_string(double x);
 
 double getNaN();
 

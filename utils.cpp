@@ -13,7 +13,8 @@
 #include <sstream>
 #include <cstdlib>
 #include <stdio.h>
-#include <cmath>
+//#include <cmath>
+#include <math.h>
 #include <sys/stat.h>
 
 using namespace std;
@@ -231,6 +232,24 @@ void errorAt_v(const ScriptPosition& position, const char* msgFormat, va_list ar
 
     throw CScriptException(message);
 }
+
+/**
+ * Transforms a double into a string.
+ * @param x
+ * @return 
+ */
+std::string double_to_string(double x)
+{
+    if (isnan(x))
+        return "NaN";
+    else
+    {
+        char szTemp[128];
+        sprintf_s (szTemp, "%lg", x);
+        return szTemp;
+    }
+}
+
 
 /**
  * Gets a 'Not a Number' value.

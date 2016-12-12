@@ -239,7 +239,7 @@ Ref<JSNumber> JSNumber::create(double value)
 std::string JSNumber::toString()const
 {
     //TODO: Review the standard. Find about number to string conversion formats.
-    return to_string(m_value);
+    return double_to_string(m_value);
 }
 
 // JSString
