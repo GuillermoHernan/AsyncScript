@@ -72,6 +72,8 @@ void execPushC16 (const int opCode, ExecutionContext* ec);
 void execCall8 (const int opCode, ExecutionContext* ec);
 void execCall16 (const int opCode, ExecutionContext* ec);
 void execCall (const int nArgs, ExecutionContext* ec);
+void callLog (Ref<FunctionScope> fnScope, ExecutionContext* ec);
+void returnLog (Ref<FunctionScope> fnScope, Ref<JSValue> result, ExecutionContext* ec);
 void execCp8 (const int opCode, ExecutionContext* ec);
 void execSwap (const int opCode, ExecutionContext* ec);
 void execPop (const int opCode, ExecutionContext* ec);
@@ -323,6 +325,8 @@ void execCall (const int nArgs, ExecutionContext* ec)
     //Remove function parameters from the stack
     ec->stack.resize(ec->stack.size() - nArgs);
     
+    callLog (fnScope, ec);
+    
     ec->scopes.push_back(fnScope);
 
     Ref<JSValue> result;
@@ -340,7 +344,92 @@ void execCall (const int nArgs, ExecutionContext* ec)
     ec->scopes.pop_back();      //Remove function scope
     
     ec->push(result);
+
+    returnLog(fnScope, result, ec);
 }
+
+/**
+ * Logs function calls, if enabled.
+ * @param fnScope
+ */
+void callLog (Ref<FunctionScope> fnScope, ExecutionContext* ec)
+{
+    const auto globals = fnScope->getGlobals();
+    const auto logFunction = globals->get("callLogger");
+    
+    if (!logFunction->isFunction())
+        return;
+    
+    //Re-entry guard
+    if (logFunction == fnScope->getFunction())
+        return;
+    
+    auto level = logFunction->memberAccess("callDepth");
+    
+    if (level->getType() != VT_NUMBER)
+        level = jsInt(1);
+    else
+        level = jsInt(level->toInt32() + 1);
+    
+    logFunction.staticCast<JSFunction>()->set("callDepth", level);
+    
+    auto obj = JSObject::create();
+    obj->set("level", level);
+    obj->set("name", jsString(fnScope->getFunction()->getName()));
+    obj->set("params", fnScope->get("arguments"));
+    
+    ec->push(undefined());      //this
+    ec->push(obj);              //Log entry
+    ec->push(logFunction);
+    
+    execCall(2, ec);  
+    ec->pop();                  //Discard result.
+}
+
+/**
+ * Logs function return, if enabled.
+ * @param fnScope
+ * @param result
+ * @param ec
+ */
+void returnLog (Ref<FunctionScope> fnScope, Ref<JSValue> result, ExecutionContext* ec)
+{
+    const auto globals = fnScope->getGlobals();
+    const auto logFunction = globals->get("callLogger");
+    
+    if (!logFunction->isFunction())
+        return;
+    
+    //Re-entry guard
+    if (logFunction == fnScope->getFunction())
+        return;
+    
+    auto level = logFunction->memberAccess("callDepth");
+    
+    if (level->getType() != VT_NUMBER)
+        level = jsInt(0);
+    
+    if (level->toInt32() < 0)
+        globals->set("callLogger", undefined());    //Remove call logger
+    else
+    {
+        logFunction.staticCast<JSFunction>()->set("callDepth", jsInt(level->toInt32()-1));
+    
+        auto obj = JSObject::create();
+        obj->set("level", level);
+        obj->set("name", jsString(fnScope->getFunction()->getName()));
+        obj->set("result", result);
+
+        ec->push(undefined());      //this
+        ec->push(obj);              //log entry
+        ec->push(logFunction);
+
+        execCall(2, ec);    
+        ec->pop();                  //Discard result.
+    }
+}
+
+
 
 
 /**

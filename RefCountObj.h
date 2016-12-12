@@ -134,6 +134,12 @@ public:
     {
         return Ref<DestType> (static_cast<DestType*> (m_ptr));
     }
+    
+    template <class DestType>
+    bool operator == (const Ref<DestType>& x)const
+    {
+        return this->getPointer() == x.getPointer();
+    }
 
 private:
     ObjType* m_ptr;

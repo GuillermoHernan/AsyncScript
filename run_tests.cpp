@@ -44,6 +44,50 @@
 
 using namespace std;
 
+/**
+ * Generic 
+ */
+class JsonLogger
+{
+public:
+    JsonLogger (const string& filePath) : m_path (filePath)
+    {
+        FILE*   pf = fopen (m_path.c_str(), "w");
+        if (pf)
+        {
+            fclose(pf);
+            log ("[", false);
+            m_first = true;
+        }
+    }
+    
+    ~JsonLogger()
+    {
+        log ("]", false);
+    }
+    
+    void log (const string& text, bool comma = true)
+    {
+        FILE*   pf = fopen (m_path.c_str(), "a+");
+        
+        if (pf)
+        {
+            if (comma && !m_first)
+                fprintf (pf, ",%s\n", text.c_str());
+            else
+                fprintf (pf, "%s\n", text.c_str());
+            m_first = false;
+            fclose(pf);
+        }
+    }
+    
+private:
+    string  m_path;
+    bool    m_first;
+};
+
+JsonLogger*  s_curFunctionLogger = NULL;
+
 bool run_test(const std::string& szFile, const string &testDir, const string& resultsDir)
 {
     printf("TEST %s ", szFile.c_str());
@@ -65,7 +109,7 @@ bool run_test(const std::string& szFile, const string &testDir, const string& re
     globals->set("result", jsInt(0));
     try
     {
-        //This code is copied from 'evalute', to log the intermediate results 
+        //This code is copied from 'evaluate', to log the intermediate results 
         //generated from each state
         CScriptToken    token (script.c_str());
         StatementList   statements;
@@ -89,6 +133,18 @@ bool run_test(const std::string& szFile, const string &testDir, const string& re
 
         //Write disassembly
         writeTextFile(testResultsDir + testName + ".asm.json", mvmDisassembly(code));
+        
+        //Call logger setup
+        JsonLogger  callLogger (testResultsDir + testName + ".calls.json");
+        s_curFunctionLogger = &callLogger;
+        auto logFn = [](FunctionScope* pScope) -> Ref<JSValue>
+        {
+            auto entry = pScope->getParam("x");
+            
+            s_curFunctionLogger->log(entry->getJSON(0));
+            return undefined();
+        };
+        addNative("function callLogger(x)", logFn, globals);
 
         //Execution
         mvmExecute(code, globals);

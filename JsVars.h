@@ -684,6 +684,11 @@ public:
     {
         return m_globals;
     }
+    
+    Ref<JSFunction> getFunction()const
+    {
+        return m_function;
+    }
 
 private:
     typedef std::map <std::string, Ref<JSValue> > SymbolsMap;
