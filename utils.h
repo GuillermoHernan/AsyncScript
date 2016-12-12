@@ -34,7 +34,7 @@ const char* skipNumeric(const char* input);
 const char* skipHexadecimal(const char* input);
 
 /// convert the given string into a quoted string suitable for javascript
-std::string getJSString(const std::string &str);
+std::string escapeString(const std::string &str, bool quote = true);
 
 /**
  * Exceptions throw in script execution / parsing

@@ -423,10 +423,7 @@ public:
         return m_text;
     }
 
-    virtual std::string getJSON(int indent)
-    {
-        return std::string("\"") + m_text + "\"";
-    }
+    virtual std::string getJSON(int indent);
 
     virtual JSValueTypes getType()const
     {
@@ -574,10 +571,10 @@ public:
 
     //TODO: adding functions to the JSON yields invalid JSON. But it is a valuable
     //debug information. Add some kind of flag to enable / disable it.
-//    virtual std::string getJSON(int indent)
-//    {
-//        return "";
-//    }
+    virtual std::string getJSON(int indent)
+    {
+        return "";
+    }
 
     virtual JSValueTypes getType()const
     {

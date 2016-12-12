@@ -280,6 +280,17 @@ double JSString::toDouble()const
 }
 
 /**
+ * Gets the JSON representation of a string
+ * @param indent
+ * @return 
+ */
+std::string JSString::getJSON(int indent)
+{
+    return escapeString(m_text, true);
+}
+
+
+/**
  * Member access function overridden to have access to 'length' property.
  * @param name
  * @return 

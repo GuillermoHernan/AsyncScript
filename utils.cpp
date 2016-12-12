@@ -126,46 +126,41 @@ const char* skipHexadecimal(const char* input)
 
 /// convert the given string into a quoted string suitable for javascript
 
-std::string getJSString(const std::string &str)
+std::string escapeString(const std::string &str, bool quote)
 {
-    std::string nStr = str;
-    for (size_t i = 0; i < nStr.size(); i++)
+    std::string result;
+    
+    result.reserve((str.size() * 11) / 10);
+    
+    for (size_t i = 0; i < str.size(); i++)
     {
-        const char *replaceWith = "";
-        bool replace = true;
+        char        szTemp[16];
+        const char  c = str[i];
 
-        switch (nStr[i])
+        switch (c)
         {
-        case '\\': replaceWith = "\\\\";
-            break;
-        case '\n': replaceWith = "\\n";
-            break;
-        case '\r': replaceWith = "\\r";
-            break;
-        case '\a': replaceWith = "\\a";
-            break;
-        case '"': replaceWith = "\\\"";
-            break;
+        case '\\': result += "\\\\";    break;
+        case '\n': result += "\\n";     break;
+        case '\r': result += "\\r";     break;
+        case '\t': result += "\\t";     break;
+        case '\a': result += "\\a";     break;
+        case '\"': result += "\\\"";    break;
         default:
-        {
-            int nCh = ((int) nStr[i]) &0xFF;
-            if (nCh < 32 || nCh > 127)
+            if (c >0 && (c < 32 || c == 127))
             {
-                char buffer[16];
-                sprintf_s(buffer, "\\x%02X", nCh);
-                replaceWith = buffer;
+                sprintf_s(szTemp, "\\x%02X", (int)c);
+                result += szTemp;
             }
-            else replace = false;
-        }
-        }
-
-        if (replace)
-        {
-            nStr = nStr.substr(0, i) + replaceWith + nStr.substr(i + 1);
-            i += strlen(replaceWith) - 1;
-        }
+            else
+                result += c;
+            break;            
+        }//switch
     }
-    return "\"" + nStr + "\"";
+    
+    if (quote)
+        return "\"" + result + "\"";
+    else
+        return result;
 }
 
 /** Is the string alphanumeric */
