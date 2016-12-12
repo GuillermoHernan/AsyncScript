@@ -364,7 +364,7 @@ void callLog (Ref<FunctionScope> fnScope, ExecutionContext* ec)
     if (logFunction == fnScope->getFunction())
         return;
     
-    auto level = logFunction->memberAccess("callDepth");
+    auto level = logFunction->readField("callDepth");
     
     if (level->getType() != VT_NUMBER)
         level = jsInt(1);
@@ -404,7 +404,7 @@ void returnLog (Ref<FunctionScope> fnScope, Ref<JSValue> result, ExecutionContex
     if (logFunction == fnScope->getFunction())
         return;
     
-    auto level = logFunction->memberAccess("callDepth");
+    auto level = logFunction->readField("callDepth");
     
     if (level->getType() != VT_NUMBER)
         level = jsInt(0);
@@ -534,7 +534,7 @@ void execRdField (const int opCode, ExecutionContext* ec)
 {
     const Ref<JSValue>  name = ec->pop();
     const Ref<JSValue>  objVal = ec->pop();
-    const Ref<JSValue>  val = objVal->memberAccess(name->toString());
+    const Ref<JSValue>  val = objVal->readField(name->toString());
     
     ec->push(val);
 }

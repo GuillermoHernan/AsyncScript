@@ -55,7 +55,7 @@ public:
     virtual int toInt32()const = 0;
     virtual double toDouble()const = 0;
 
-    virtual Ref<JSValue> memberAccess(const std::string& name) = 0;
+    virtual Ref<JSValue> readField(const std::string& name) = 0;
     virtual Ref<JSValue> arrayAccess(Ref<JSValue> index) = 0;
 
     virtual std::string getJSON(int indent) = 0;
@@ -166,14 +166,14 @@ public:
         return getNaN();
     }
 
-    virtual Ref<JSValue> memberAccess(const std::string& name)
+    virtual Ref<JSValue> readField(const std::string& name)
     {
         return undefined();
     }
 
     virtual Ref<JSValue> arrayAccess(Ref<JSValue> index)
     {
-        return memberAccess(index->toString());
+        return readField(index->toString());
     }
 
     virtual std::string getJSON(int indent)
@@ -360,12 +360,12 @@ public:
         return 0;
     }
 
-    virtual Ref<JSValue> memberAccess(const std::string& name);
+    virtual Ref<JSValue> readField(const std::string& name);
 
     virtual Ref<JSValue> arrayAccess(Ref<JSValue> index)
     {
         if (index->isPrimitive())
-            return memberAccess(index->toString());
+            return readField(index->toString());
         else
             throw CScriptException("Invalid array index");
     }

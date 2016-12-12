@@ -375,7 +375,7 @@ Ref<JSValue> JSObject::set(const std::string& name, Ref<JSValue> value)
  * @param name  member name
  * @return 
  */
-Ref<JSValue> JSObject::memberAccess(const std::string& name)
+Ref<JSValue> JSObject::readField(const std::string& name)
 {
     return get(name);
 }
