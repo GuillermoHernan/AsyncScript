@@ -486,6 +486,7 @@ ExprResult parseConditional (CScriptToken token)
     {
         const Ref<AstExpression>  condition =r.result;
         
+        r = r.skip();
         r = r.then (parseAssignment).require(':');
         const Ref<AstExpression>  thenExpr =r.result;
         
