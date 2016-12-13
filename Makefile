@@ -5,7 +5,7 @@ LDFLAGS=-g -rdynamic
 SOURCES=  \
 TinyJS_Functions.cpp \
 TinyJS_MathFunctions.cpp \
-TinyJS_Lexer.cpp \
+jsLexer.cpp \
 utils.cpp \
 JsVars.cpp \
 jsOperators.cpp \

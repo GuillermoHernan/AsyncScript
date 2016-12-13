@@ -13,7 +13,7 @@
 #pragma once
 
 #include "RefCountObj.h"
-#include "TinyJS_Lexer.h"
+#include "jsLexer.h"
 #include "JsVars.h"
 #include <vector>
 #include <map>

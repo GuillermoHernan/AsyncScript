@@ -6,7 +6,7 @@
 
 #include "utils.h"
 #include "OS_support.h"
-#include "TinyJS_Lexer.h"
+#include "jsLexer.h"
 
 #include <string>
 #include <string.h>

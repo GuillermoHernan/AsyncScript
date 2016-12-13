@@ -1,8 +1,12 @@
-/*
- * Tiny JS lexer implementation file
+/* 
+ * File:   jsLexer.cpp
+ * Author: ghernan
+ * 
+ * Javascript lexical analysis code
+ *
  */
 
-#include "TinyJS_Lexer.h"
+#include "jsLexer.h"
 #include "utils.h"
 
 #include "OS_support.h"

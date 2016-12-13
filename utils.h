@@ -11,7 +11,7 @@
 #include <sstream>
 #include <stdarg.h>
 
-#include "TinyJS_Lexer.h"
+#include "jsLexer.h"
 
 struct ScriptPosition;
 

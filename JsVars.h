@@ -11,7 +11,7 @@
 
 #include <string>
 
-#include "TinyJS_Lexer.h"
+#include "jsLexer.h"
 #include "utils.h"
 #include "RefCountObj.h"
 #include <map>

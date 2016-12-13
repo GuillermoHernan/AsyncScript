@@ -13,7 +13,7 @@
 #pragma once
 
 #include "RefCountObj.h"
-#include "TinyJS_Lexer.h"
+#include "jsLexer.h"
 #include "utils.h"
 #include "JsVars.h"
 #include "ast.h"
