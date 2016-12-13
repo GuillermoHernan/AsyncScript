@@ -214,6 +214,15 @@ Ref<JSValue> stringConstructor(FunctionScope* pScope)
 
 //TODO: Reactivate, but replacing them by standard javascript functions
 
+Ref<JSValue> scArrayPush(FunctionScope* pScope)
+{
+    auto    arr =  pScope->getThis().staticCast<JSArray>();
+    auto    val =  pScope->getParam("x");
+    
+    arr->push(val);
+    
+    return arr;
+}
 /*Ref<JSValue> scArrayContains(FunctionScope* pScope) {
   Ref<JSValue>  obj = pScope->getParam("obj");
   Ref<JSValue>  arr = pScope->getThis();
@@ -338,5 +347,6 @@ void registerFunctions(Ref<IScope> scope)
     //    addNative("function Array.contains(obj)", scArrayContains, scope);
     //    addNative("function Array.remove(obj)", scArrayRemove, scope);
     //    addNative("function Array.join(separator)", scArrayJoin, scope);
+    addNative("function Array.prototype.push(x)", scArrayPush, scope);
 }
 
