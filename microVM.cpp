@@ -377,6 +377,7 @@ void callLog (Ref<FunctionScope> fnScope, ExecutionContext* ec)
     obj->set("level", level);
     obj->set("name", jsString(fnScope->getFunction()->getName()));
     obj->set("params", fnScope->get("arguments"));
+    obj->set("this", fnScope->getThis());
     
     ec->push(undefined());      //this
     ec->push(obj);              //Log entry
