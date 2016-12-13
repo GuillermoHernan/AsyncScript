@@ -246,6 +246,7 @@ void varCodegen (Ref<AstStatement> statement, CodegenState* pState)
 void ifCodegen (Ref<AstStatement> statement, CodegenState* pState)
 {
     const int conditionBlock = curBlockId(pState)+1;
+    const bool conditional = statement->getType() == AST_CONDITIONAL;
     
     //Generate code for condition
     endBlock (conditionBlock, conditionBlock, pState);
@@ -256,14 +257,16 @@ void ifCodegen (Ref<AstStatement> statement, CodegenState* pState)
     
     //Generate code for 'then' block
     childCodegen(statement, 1, pState);
-    instruction8(OC_POP, pState);
+    if (!conditional)
+        instruction8(OC_POP, pState);
     const int thenFinalBlock = curBlockId(pState);    
     endBlock (thenFinalBlock+1, thenFinalBlock+1, pState);
     
     //Try to generate 'else'
     if (childCodegen(statement, 2, pState))
     {
-        instruction8(OC_POP, pState);
+        if (!conditional)
+            instruction8(OC_POP, pState);
         
         //'else' block index
         const int nextBlock = curBlockId(pState)+1;
@@ -278,7 +281,8 @@ void ifCodegen (Ref<AstStatement> statement, CodegenState* pState)
     setFalseJump (thenInitialBlock-1, thenFinalBlock+1, pState);
     
     //Non expression statements leave an 'undefined' on the stack.
-    pushUndefined(pState);
+    if (!conditional)
+        pushUndefined(pState);
 }
 
 /**
@@ -612,7 +616,7 @@ void memberAccessCodegen(Ref<AstStatement> statement, CodegenState* pState)
  */
 void conditionalCodegen (Ref<AstStatement> statement, CodegenState* pState)
 {
-    //The conditional operator is just a fancy way to write an 'if'
+    //The conditional operator is handled by 'ifCodegen', as it is very similar.
     ifCodegen(statement, pState);    
 }
 
