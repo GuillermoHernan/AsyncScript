@@ -267,8 +267,8 @@ void ifCodegen (Ref<AstStatement> statement, CodegenState* pState)
         endBlock (nextBlock, nextBlock, pState);
         
         //Fix 'then' jump destination
-        setTrueJump (thenFinalBlock+1, nextBlock, pState);
-        setFalseJump (thenFinalBlock+1, nextBlock, pState);
+        setTrueJump (thenFinalBlock, nextBlock, pState);
+        setFalseJump (thenFinalBlock, nextBlock, pState);
     }
 
     //Fix else jump
