@@ -417,10 +417,10 @@ void assignmentCodegen (Ref<AstStatement> statement, CodegenState* pState)
         
         //execute right side
         childCodegen(statement, 1, pState);
-        instruction8 (OC_CP_AUX, pState);
         
         //execute operation
         binaryOperatorCode (op - LEX_ASSIGN_BASE, pState);
+        instruction8 (OC_CP_AUX, pState);
 
         //Execute write.
         instruction8(wrInst, pState);
