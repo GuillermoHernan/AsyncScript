@@ -256,13 +256,16 @@ void ifCodegen (Ref<AstStatement> statement, CodegenState* pState)
     
     //Generate code for 'then' block
     childCodegen(statement, 1, pState);
-    const int thenFinalBlock = curBlockId(pState);
+    instruction8(OC_POP, pState);
+    const int thenFinalBlock = curBlockId(pState);    
     endBlock (thenFinalBlock+1, thenFinalBlock+1, pState);
     
     //Try to generate 'else'
     if (childCodegen(statement, 2, pState))
     {
-        //'else' block code
+        instruction8(OC_POP, pState);
+        
+        //'else' block index
         const int nextBlock = curBlockId(pState)+1;
         endBlock (nextBlock, nextBlock, pState);
         
