@@ -56,6 +56,8 @@ ExprResult parseObjectProperty (CScriptToken token, Ref<AstExpression> objExpr);
 
 ExprResult parseBinaryLROp (CScriptToken token, LEX_TYPES opType, ExprResult::ParseFunction childParser);
 ExprResult parseBinaryLROp (CScriptToken token, const int *types, ExprResult::ParseFunction childParser);
+ExprResult parseBinaryRLOp (CScriptToken token, LEX_TYPES opType, ExprResult::ParseFunction childParser);
+ExprResult parseBinaryRLOp (CScriptToken token, const int *types, ExprResult::ParseFunction childParser);
 
     
 bool isAssignment(CScriptToken token)
@@ -1037,7 +1039,50 @@ ExprResult parseBinaryLROp (CScriptToken token, LEX_TYPES opType, ExprResult::Pa
  */
 ExprResult parseBinaryLROp (CScriptToken token, const int* ids, ExprResult::ParseFunction childParser)
 {
-    //TODO: All binary operations can be parsed with a very similar code
+    ExprResult      r = childParser (token);
+    
+    while (r.ok() && oneOf (r.token, ids))
+    {
+        const Ref<AstExpression>    left = r.result;
+        const ScriptPosition        pos = r.token.getPosition();
+        const int                   op = r.token.type();
+        
+        r = r.skip();
+        if (r.error())
+            return r.final();
+        
+        r = r.then(childParser);
+            
+        if (r.ok())
+            r.result = AstBinaryOp::create (pos, op, left, r.result);
+    }
+
+    return r.final();
+}
+
+/**
+ * Parses a binary operator which associates from right to left.
+ * @param token     startup Token
+ * @param opType    Token identifier (from lexer) of the operator
+ * @param childParser   Parser for the child expressions.
+ * @return 
+ */
+ExprResult parseBinaryRLOp (CScriptToken token, LEX_TYPES opType, ExprResult::ParseFunction childParser)
+{
+    const int ids[] = {opType, 0};
+    
+    return parseBinaryRLOp (token, ids, childParser);
+}
+
+/**
+ * Parses a binary operator which associates from right to left.
+ * @param token         startup Token
+ * @param ids           array of operator ids. The last element must be zero.
+ * @param childParser   Parser for the child expressions.
+ * @return 
+ */
+ExprResult parseBinaryRLOp (CScriptToken token, const int* ids, ExprResult::ParseFunction childParser)
+{
     ExprResult      r = childParser (token);
     
     if (r.ok() && oneOf (r.token, ids))

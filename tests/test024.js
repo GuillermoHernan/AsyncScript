@@ -24,7 +24,7 @@ for (y=0;y<PY;y++) {
       iterations++;
     }
     if (iterations&1)
-	line += "*";
+        line += "*";
     else
         line += " ";    
    }
