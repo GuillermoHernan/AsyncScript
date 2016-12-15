@@ -366,8 +366,12 @@ void functionCodegen (Ref<AstNode> statement, CodegenState* pState)
     fnState.curScript = code;
     fnState.scopes.push_back(CodegenScope());
     
+    //Declare function reserver symbols.
+    fnState.scopes.back().declare("this");
+    fnState.scopes.back().declare("arguments");
+    
     for (size_t i = 0; i < params.size(); ++i)
-        fnState.scopes.rbegin()->declare(params[i]);
+        fnState.scopes.back().declare(params[i]);
     
     codegen (fnNode->getCode(), &fnState);
     
