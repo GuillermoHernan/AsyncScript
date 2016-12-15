@@ -23,8 +23,16 @@ using namespace std;
  */
 Ref<JSValue> mvmNewObj (FunctionScope* pScope)
 {
-    //TODO: Prototype???
-    return JSObject::create(JSObject::DefaultPrototype);
+    Ref<JSValue>    constructor = pScope->getThis();
+    Ref<JSValue>    prototype = undefined();
+
+    if (constructor->isFunction())
+        prototype = constructor.staticCast<JSFunction>()->get("prototype");
+    
+    if (!prototype->isObject())
+        return JSObject::create();      //No constructor provided. Use default prototype.
+    else
+        return JSObject::create(prototype.staticCast<JSObject>());
 }
 
 /**

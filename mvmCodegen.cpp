@@ -59,6 +59,7 @@ void functionCodegen (Ref<AstNode> statement, CodegenState* pState);
 void assignmentCodegen (Ref<AstNode> statement, CodegenState* pState);
 void fncallCodegen (Ref<AstNode> statement, CodegenState* pState);
 void thisCallCodegen (Ref<AstNode> statement, CodegenState* pState);
+void constructorCodegen (Ref<AstNode> statement, CodegenState* pState);
 void literalCodegen (Ref<AstNode> statement, CodegenState* pState);
 void identifierCodegen (Ref<AstNode> statement, CodegenState* pState);
 void arrayCodegen (Ref<AstNode> statement, CodegenState* pState);
@@ -450,10 +451,7 @@ void assignmentCodegen (Ref<AstNode> statement, CodegenState* pState)
 void fncallCodegen (Ref<AstNode> statement, CodegenState* pState)
 {
     if (statement->getType() == AST_NEWCALL)
-    {
-        //Create a new object, and pass it as 'this' reference.
-        callCodegen("@newObj", 0, pState);
-    }
+        constructorCodegen(statement, pState);
     else
     {
         const AstNodeTypes fnExprType = statement->children()[0]->getType();
@@ -461,23 +459,23 @@ void fncallCodegen (Ref<AstNode> statement, CodegenState* pState)
         //If the expression to get the function reference is an object member access,
         //then use generate a 'this' call.
         if (fnExprType == AST_MEMBER_ACCESS || fnExprType == AST_ARRAY_ACCESS)
-        {
             thisCallCodegen (statement, pState);
-            return;
-        }
         else
+        {
+            //Regular function call (no this pointer)
             pushUndefined(pState);      //No 'this' pointer.
-    }
-    
-    //Parameters evaluation
-    const int nChilds = (int)statement->children().size();
-    for (int i = 1; i < nChilds; ++i)
-        childCodegen(statement, i, pState);
+            
+            //Parameters evaluation
+            const int nChilds = (int)statement->children().size();
+            for (int i = 1; i < nChilds; ++i)
+                childCodegen(statement, i, pState);
 
-    //Evaluate function reference expression
-    childCodegen(statement, 0, pState);
-    
-    callInstruction (nChilds, pState);
+            //Evaluate function reference expression
+            childCodegen(statement, 0, pState);
+
+            callInstruction (nChilds, pState);
+        }
+    }
 }
 
 /**
@@ -506,6 +504,41 @@ void thisCallCodegen (Ref<AstNode> statement, CodegenState* pState)
     
     //Write call instruction
     callInstruction (nChilds, pState);
+}
+
+/**
+ * Generates code for a operator 'new' function call
+ * @param statement
+ * @param pState
+ */
+void constructorCodegen (Ref<AstNode> statement, CodegenState* pState)
+{
+    childCodegen(statement, 0, pState); //[function]
+    instruction8(OC_CP, pState);        //[function, function]
+
+    //Create a new object, to pass it as 'this' reference. '@newObj' receives as
+    //parameter the constructor function, from which it will read the object prototype.
+    callCodegen("@newObj", 1, pState);  //[function, this]
+    
+    instruction8(OC_SWAP, pState);      //[this, function]
+    instruction8(OC_CP+1, pState);      //[this, function, this]
+    instruction8(OC_SWAP, pState);      //[this, this, function]
+    
+    //Parameters evaluation
+    const int nChilds = (int)statement->children().size();
+    for (int i = 1; i < nChilds; ++i)
+    {
+        childCodegen(statement, i, pState);     //Parameter evaluation
+        instruction8(OC_SWAP, pState);          //Put function back on top        
+    }
+    
+    //stack: [this, this, param1, param2,... paramN, function]
+    
+    //Write call instruction
+    callInstruction (nChilds, pState);  //[this, result]
+    
+    //Discard function result, keep 'this' (the new object)
+    instruction8(OC_POP, pState);
 }
 
 /**
