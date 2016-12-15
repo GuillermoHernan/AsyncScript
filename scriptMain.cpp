@@ -32,7 +32,7 @@ CScriptToken parseFunctionArguments(Ref<JSFunction> function, CScriptToken token
 Ref<JSValue> evaluate (const char* script, Ref<IScope> globals)
 {
     CScriptToken    token (script);
-    StatementList   statements;
+    AstNodeList   statements;
 
     //Parsing loop
     token = token.next();

@@ -31,6 +31,7 @@ enum AstNodeTypes
     ,AST_FUNCTION
     ,AST_ASSIGNMENT
     ,AST_FNCALL
+    ,AST_NEWCALL
     ,AST_LITERAL
     ,AST_IDENTIFIER
     ,AST_ARRAY
@@ -44,31 +45,86 @@ enum AstNodeTypes
     ,AST_TYPES_COUNT
 };
 
-class AstStatement;
-typedef std::vector <Ref<AstStatement> > StatementList;
+class AstNode;
+typedef std::vector <Ref<AstNode> > AstNodeList;
 
 //AST conversion functions (mainly for AST /parser debugging)
-Ref<JSArray> toJSArray (const StatementList& statements);
-std::string toJSON (const StatementList& statements);
+Ref<JSArray> toJSArray (const AstNodeList& statements);
+std::string toJSON (const AstNodeList& statements);
 
 std::string astTypeToString(AstNodeTypes type);
 
+//Constructor functions
+Ref<AstNode> astCreateBlock(CScriptToken token);
+Ref<AstNode> astCreateIf (ScriptPosition pos, 
+                          Ref<AstNode> condition,
+                          Ref<AstNode> thenSt,
+                          Ref<AstNode> elseSt);
+Ref<AstNode> astCreateConditional ( ScriptPosition pos, 
+                                    Ref<AstNode> condition,
+                                    Ref<AstNode> thenExpr,
+                                    Ref<AstNode> elseExpr);
+Ref<AstNode> astCreateFor (ScriptPosition pos, 
+                          Ref<AstNode> initSt,
+                          Ref<AstNode> condition,
+                          Ref<AstNode> incrementSt,
+                          Ref<AstNode> body);
+Ref<AstNode> astCreateReturn (ScriptPosition pos, Ref<AstNode> expr);
+Ref<AstNode> astCreateAssignment(ScriptPosition pos, 
+                                 int opCode, 
+                                 Ref<AstNode> lexpr, 
+                                 Ref<AstNode> rexpr);
+Ref<AstNode> astCreatePrefixOp(CScriptToken token, Ref<AstNode> rexpr);
+Ref<AstNode> astCreatePostfixOp(CScriptToken token, Ref<AstNode> lexpr);
+Ref<AstNode> astCreateBinaryOp(CScriptToken token, 
+                                 Ref<AstNode> lexpr, 
+                                 Ref<AstNode> rexpr);
+Ref<AstNode> astCreateFnCall(ScriptPosition pos, Ref<AstNode> fnExpr, bool newCall);
+Ref<AstNode> astToNewCall(Ref<AstNode> callExpr);
+Ref<AstNode> astCreateArray(ScriptPosition pos);
+Ref<AstNode> astCreateArrayAccess(ScriptPosition pos,
+                                  Ref<AstNode> arrayExpr, 
+                                  Ref<AstNode> indexExpr);
+Ref<AstNode> astCreateMemberAccess(ScriptPosition pos,
+                                  Ref<AstNode> objExpr, 
+                                  Ref<AstNode> identifier);
+
+
 
 /**
- * Base class for statements
+ * Base class for AST nodes
  */
-class AstStatement : public RefCountObj
+class AstNode : public RefCountObj
 {
 public:
-    const StatementList& children()const
+
+    virtual const AstNodeList& children()const
     {
-        return m_children;
+        return ms_noChildren;
     }
     
-    bool childExists (size_t index)const
+    virtual const std::string getName()const
     {
-        if (index < m_children.size())
-            return m_children[index].notNull();
+        return "";
+    }
+    
+    virtual Ref<JSValue> getValue()const
+    {
+        return undefined();
+    }
+    
+    virtual void addChild(Ref<AstNode> child)
+    {
+        ASSERT(!"addChildren unsupported");
+    }
+
+
+    bool childExists(size_t index)const
+    {
+        const AstNodeList&  c = children();
+        
+        if (index < c.size())
+            return c[index].notNull();
         else
             return false;
     }
@@ -77,201 +133,88 @@ public:
     {
         return m_position;
     }
-    
-    virtual Ref<JSValue> toJSValue()const;
-    
-    virtual AstNodeTypes getType()const =0;
+
+    virtual Ref<JSValue> toJS()const;
+
+    AstNodeTypes getType()const
+    {
+        return m_type;
+    }
 
 protected:
-    StatementList m_children;
-    ScriptPosition m_position;
+    static const AstNodeList    ms_noChildren;
+    
+    const ScriptPosition m_position;
+    const AstNodeTypes m_type;
 
-    AstStatement(const ScriptPosition& pos) : m_position(pos)
+    AstNode(AstNodeTypes type, const ScriptPosition& pos) :
+    m_position(pos), m_type(type)
+    {
+    }
+
+    virtual ~AstNode()
     {
     }
 };
 
 /**
- * Base class for expressions.
+ * Base class for AST nodes which contain children nodes.
  */
-class AstExpression : public AstStatement
-{
-public:
-    typedef std::vector< Ref<AstExpression> > ExprList;
-
-    const ExprList& subExprs()const
-    {
-        return (const ExprList&) m_children;
-    }
-
-protected:
-
-    AstExpression(const ScriptPosition& pos) : AstStatement(pos)
-    {
-    }
-
-};
-
-/**
- * Code block ast node.
- */
-class AstBlock : public AstStatement
+class AstBranchNode : public AstNode
 {
 public:
 
-    static Ref<AstBlock> create(ScriptPosition position)
+    virtual const AstNodeList& children()const
     {
-        return refFromNew(new AstBlock(position));
+        return m_children;
     }
-
-    void add(Ref<AstStatement> child)
+    
+    virtual void addChild(Ref<AstNode> child)
     {
         m_children.push_back(child);
     }
     
-    virtual AstNodeTypes getType()const
+    AstBranchNode(AstNodeTypes type, const ScriptPosition& pos) : AstNode(type, pos)
     {
-        return AST_BLOCK;
     }
-
-
 protected:
-
-    AstBlock(const ScriptPosition& pos) : AstStatement(pos)
-    {
-    }
+    
+    AstNodeList     m_children;
+    
 };
 
 /**
  * AST node for variable declarations
  */
-class AstVar : public AstStatement
+class AstVar : public AstBranchNode
 {
 public:
 
-    static Ref<AstVar> create(ScriptPosition position, const std::string& name, Ref<AstExpression> expr)
+    static Ref<AstVar> create(ScriptPosition position, const std::string& name, Ref<AstNode> expr)
     {
         return refFromNew(new AstVar(position, name, expr));
     }
     
-    virtual AstNodeTypes getType()const
+    virtual const std::string getName()const
     {
-        return AST_VAR;
+        return m_name;
     }
     
-    virtual Ref<JSValue> toJSValue()const;
-
-    const std::string name;
 protected:
 
-    AstVar(const ScriptPosition& pos, const std::string& _name, Ref<AstExpression> expr)
-    : AstStatement(pos), name(_name)
+    AstVar(const ScriptPosition& pos, const std::string& _name, Ref<AstNode> expr)
+    : AstBranchNode(AST_VAR, pos), m_name(_name)
     {
         m_children.push_back(expr);
     }
-};
 
-/**
- * AST node for 'if' statements.
- */
-class AstIf : public AstStatement
-{
-public:
-    static Ref<AstIf> create(ScriptPosition position,
-                             Ref<AstExpression> condition,
-                             Ref<AstStatement> thenSt,
-                             Ref<AstStatement> elseSt)
-    {
-        return refFromNew(new AstIf(position, condition, thenSt, elseSt));
-    }
-    
-    virtual AstNodeTypes getType()const
-    {
-        return AST_IF;
-    }
-
-
-protected:
-    AstIf (ScriptPosition position,
-                             Ref<AstExpression> condition,
-                             Ref<AstStatement> thenSt,
-                             Ref<AstStatement> elseSt):
-    AstStatement(position)
-    {
-        m_children.push_back(condition);
-        m_children.push_back(thenSt);
-        m_children.push_back(elseSt);
-    }
-
-};
-
-/**
- * AST node for 'for' statements.
- */
-class AstFor : public AstStatement
-{
-public:
-    static Ref<AstFor> create(ScriptPosition position,
-                              Ref<AstStatement> initSt,
-                              Ref<AstExpression> condition,
-                              Ref<AstStatement> incrementSt,
-                              Ref<AstStatement> body)
-    {
-        return refFromNew (new AstFor(position, initSt, condition, incrementSt, body));
-    }
-    
-    AstNodeTypes getType()const
-    {
-        return AST_FOR;
-    }
-
-
-protected:
-    AstFor (ScriptPosition position,
-                              Ref<AstStatement> initSt,
-                              Ref<AstExpression> condition,
-                              Ref<AstStatement> incrementSt,
-                              Ref<AstStatement> body):
-    AstStatement(position)
-    {
-        m_children.push_back(initSt);
-        m_children.push_back(condition);
-        m_children.push_back(incrementSt);
-        m_children.push_back(body);
-    }
-        
-
-};
-
-/**
- * AST node for 'return' statements.
- */
-class AstReturn : public AstStatement
-{
-public:
-    static Ref<AstReturn> create(ScriptPosition position,
-                                 Ref<AstExpression> expr)
-    {
-        return refFromNew (new AstReturn(position, expr));
-    }
-    
-    virtual AstNodeTypes getType()const
-    {
-        return AST_RETURN;
-    }
-
-    
-protected:
-    AstReturn(ScriptPosition position, Ref<AstExpression> expr) : AstStatement(position)
-    {
-        m_children.push_back(expr);
-    }
+    const std::string m_name;
 };
 
 /**
  * AST node for function definitions
  */
-class AstFunction : public AstExpression
+class AstFunction : public AstNode
 {
 public:
     static Ref<AstFunction> create(ScriptPosition position,
@@ -280,17 +223,17 @@ public:
         return refFromNew (new AstFunction(position, name));
     }
 
-    void setCode(Ref<AstStatement> code)
+    void setCode(Ref<AstNode> code)
     {
         m_code = code;
     }
 
-    Ref<AstStatement> getCode()const
+    Ref<AstNode> getCode()const
     {
         return m_code;
     }
     
-    const std::string& getName()const
+    virtual const std::string getName()const
     {
         return m_name;
     }
@@ -306,155 +249,66 @@ public:
         return m_params;
     }
     
-    virtual AstNodeTypes getType()const
-    {
-        return AST_FUNCTION;
-    }
-    
-    virtual Ref<JSValue> toJSValue()const;
+    virtual Ref<JSValue> toJS()const;
 
 protected:
 
     AstFunction(ScriptPosition position, const std::string& name) :
-    AstExpression(position),
+    AstNode(AST_FUNCTION, position),
     m_name(name)
     {
     }
 
-    const std::string m_name;
-    Params m_params;
-    Ref<AstStatement> m_code;
+    const std::string   m_name;
+    Params              m_params;
+    Ref<AstNode>        m_code;
 };
 
 /**
  * Base class for all AST nodes which represent operators.
  */
-class AstOperator : public AstExpression
+class AstOperator : public AstBranchNode
 {
 public:
     const int code;
     
-    virtual Ref<JSValue> toJSValue()const;
+    virtual Ref<JSValue> toJS()const;
     
-protected:
-    AstOperator (ScriptPosition position, int opCode) : 
-    AstExpression (position),
-        code (opCode)
+    AstOperator (AstNodeTypes type, ScriptPosition position, int opCode) : 
+    AstBranchNode (type, position), code (opCode)
     {
     }
-};
-
-/**
- * AST node for assignment expressions
- */
-class AstAssignment : public AstOperator
-{
-public:
-    static Ref<AstAssignment> create(ScriptPosition position,
-                                     int opCode,
-                                     Ref<AstExpression> left,
-                                     Ref<AstExpression> right)
-    {
-        return refFromNew (new AstAssignment(position, opCode, left, right));
-    }
-    
-    virtual AstNodeTypes getType()const
-    {
-        return AST_ASSIGNMENT;
-    }
-
-protected:
-    AstAssignment(ScriptPosition position,
-                    int opCode,
-                    Ref<AstExpression> left,
-                    Ref<AstExpression> right):
-    AstOperator (position, opCode)
-    {
-        m_children.push_back(left);
-        m_children.push_back(right);
-    }
-
-};
-
-/**
- * AST node for function call expressions
- * @param position
- * @param fnExpression
- * @return 
- */
-class AstFunctionCall : public AstExpression
-{
-public:
-    static Ref<AstFunctionCall> create(ScriptPosition position,
-                                       Ref<AstExpression> fnExpression)
-    {
-        return refFromNew(new AstFunctionCall(position, fnExpression));
-    }
-
-    void addParam(Ref<AstExpression> paramExpression)
-    {
-        m_children.push_back(paramExpression);
-    }
-    
-    void setNewFlag()
-    {
-        m_bNew = true;
-    }
-    
-    bool getNewFlag()const
-    {
-        return m_bNew;
-    }
-    
-    virtual AstNodeTypes getType()const
-    {
-        return AST_FNCALL;
-    }
-
-    virtual Ref<JSValue> toJSValue()const;
-    
-protected:
-    AstFunctionCall(ScriptPosition position, Ref<AstExpression> fnExpression):
-        AstExpression(position),
-        m_bNew(false)
-    {
-        m_children.push_back(fnExpression);
-    }
-        
-    bool    m_bNew;
 };
 
 /**
  * AST node for primitive types literals (Number, String, Boolean)
  */
-class AstLiteral : public AstExpression
+class AstLiteral : public AstNode
 {
 public:
     static Ref<AstLiteral> create(CScriptToken token);
     static Ref<AstLiteral> create(ScriptPosition pos, int value);
     static Ref<AstLiteral> undefined(ScriptPosition pos);
     
-    const Ref<JSValue>  value;
-    
-    virtual AstNodeTypes getType()const
+    virtual Ref<JSValue> getValue()const
     {
-        return AST_LITERAL;
+        return m_value;
     }
-
-    virtual Ref<JSValue> toJSValue()const;
     
 protected:
     AstLiteral (ScriptPosition position, Ref<JSValue> val) : 
-    AstExpression(position),
-        value (val)
+    AstNode(AST_LITERAL, position),
+        m_value (val)
     {        
     }
+
+    const Ref<JSValue>  m_value;
 };
 
 /**
  * AST node for identifiers (variable names, function names, members...)
  */
-class AstIdentifier : public AstExpression
+class AstIdentifier : public AstNode
 {
 public:
     static Ref<AstIdentifier> create(CScriptToken token)
@@ -462,261 +316,64 @@ public:
         return refFromNew(new AstIdentifier(token));
     }
     
-    const std::string   name;
-    
-    virtual AstNodeTypes getType()const
+    virtual const std::string getName()const
     {
-        return AST_IDENTIFIER;
+        return m_name;
     }
 
-    virtual Ref<JSValue> toJSValue()const;
-    
 protected:
     AstIdentifier (CScriptToken token) : 
-    AstExpression(token.getPosition()),
-        name (token.text())
+    AstNode(AST_IDENTIFIER, token.getPosition()),
+        m_name (token.text())
     {        
     }
-};
 
-/**
- * AST node for array literals.
- */
-class AstArray : public AstExpression
-{
-public:
-    static Ref<AstArray> create(ScriptPosition pos)
-    {
-        return refFromNew (new AstArray(pos));
-    }
-
-    void addItem(Ref<AstExpression> expr)
-    {
-        m_children.push_back(expr);
-    }
-    
-    virtual AstNodeTypes getType()const
-    {
-        return AST_ARRAY;
-    }
-
-
-protected:
-    AstArray(ScriptPosition pos) : AstExpression(pos)
-    {
-    }
+    const std::string   m_name;
 };
 
 /**
  * AST node for object literals.
  */
-class AstObject : public AstExpression
+class AstObject : public AstNode
 {
 public:
+    /**
+     * Object property structure
+     */
+    struct Property
+    {
+        std::string     name;
+        Ref<AstNode>    expr;
+    };
+    typedef std::vector<Property>   PropertyList;
+    
     static Ref<AstObject> create(ScriptPosition pos)
     {
         return refFromNew (new AstObject(pos));
     }
     
-    void addProperty (const std::string name, Ref<AstExpression> value)
+    void addProperty (const std::string name, Ref<AstNode> expr)
     {
-        m_properties[name] = value;
+        Property prop;
+        prop.name = name;
+        prop.expr = expr;
+        
+        m_properties.push_back(prop);
     }
     
-    typedef std::map< std::string, Ref<AstExpression> >     PropsMap;
-    
-    const PropsMap & getProperties()const
+    const PropertyList & getProperties()const
     {
         return m_properties;
     }
     
-    virtual AstNodeTypes getType()const
-    {
-        return AST_OBJECT;
-    }
-    
-    virtual Ref<JSValue> toJSValue()const;
+    virtual Ref<JSValue> toJS()const;
 
 protected:
-    AstObject(ScriptPosition pos) : AstExpression(pos)
+    AstObject(ScriptPosition pos) : AstNode(AST_OBJECT, pos)
     {
     }
     
-    PropsMap m_properties;
-};
-
-/**
- * AST node for array access operator
- */
-class AstArrayAccess : public AstExpression
-{
-public:
-    static Ref<AstArrayAccess> create(ScriptPosition pos, Ref<AstExpression> array, Ref<AstExpression> index)
-    {
-        return refFromNew (new AstArrayAccess(pos, array, index));
-    }
-    
-    virtual AstNodeTypes getType()const
-    {
-        return AST_ARRAY_ACCESS;
-    }
-
-
-protected:
-    AstArrayAccess(ScriptPosition pos, Ref<AstExpression> array, Ref<AstExpression> index) :
-    AstExpression(pos)
-    {
-        m_children.push_back(array);
-        m_children.push_back(index);
-    }
-};
-
-/**
- * AST node for member access operator.
- */
-class AstMemberAccess : public AstExpression
-{
-public:
-    static Ref<AstMemberAccess> create(ScriptPosition pos, Ref<AstExpression> obj, Ref<AstExpression> field)
-    {
-        return refFromNew (new AstMemberAccess(pos, obj, field));
-    }
-    
-    virtual AstNodeTypes getType()const
-    {
-        return AST_MEMBER_ACCESS;
-    }
-    
-
-protected:
-    AstMemberAccess(ScriptPosition pos, Ref<AstExpression> obj, Ref<AstExpression> field) :
-    AstExpression(pos)
-    {
-        m_children.push_back(obj);
-        m_children.push_back(field);
-    }
-};
-
-/**
- * AST node for conditional expressions.
- */
-class AstConditional : public AstExpression
-{
-public:
-    static Ref<AstConditional> create(ScriptPosition position,
-                                      Ref<AstExpression> condition,
-                                      Ref<AstExpression> thenExpr,
-                                      Ref<AstExpression> elseExpr)
-    {
-        return refFromNew (new AstConditional(position, condition, thenExpr, elseExpr));
-    }
-    
-    virtual AstNodeTypes getType()const
-    {
-        return AST_CONDITIONAL;
-    }
-    
-    
-protected:
-    AstConditional(ScriptPosition position,
-                                      Ref<AstExpression> condition,
-                                      Ref<AstExpression> thenExpr,
-                                      Ref<AstExpression> elseExpr):
-    AstExpression(position)
-    {        
-        m_children.push_back(condition);
-        m_children.push_back(thenExpr);
-        m_children.push_back(elseExpr);
-    }
-
-};
-
-/**
- * AST node for binary operations.
- */
-class AstBinaryOp : public AstOperator
-{
-public:
-    static Ref<AstBinaryOp> create(ScriptPosition position,
-                                   int opType,
-                                   Ref<AstExpression> left,
-                                   Ref<AstExpression> right)
-    {
-        return refFromNew (new AstBinaryOp(position, opType, left, right));
-    }
-    
-    virtual AstNodeTypes getType()const
-    {
-        return AST_BINARYOP;
-    }
-    
-
-protected:
-    AstBinaryOp(ScriptPosition position,
-                int opType,
-                Ref<AstExpression> left,
-                Ref<AstExpression> right): AstOperator (position, opType)
-    {
-        m_children.push_back(left);
-        m_children.push_back(right);
-    }
-
-};
-
-/**
- * AST node for unary prefix operators.
- */
-class AstPrefixOp : public AstOperator
-{
-public:
-    static Ref<AstPrefixOp> create(ScriptPosition position,
-                                   int opType,
-                                   Ref<AstExpression> child)
-    {
-        return refFromNew (new AstPrefixOp(position, opType, child));
-    }
-    
-    virtual AstNodeTypes getType()const
-    {
-        return AST_PREFIXOP;
-    }
-
-
-protected:
-    AstPrefixOp(ScriptPosition position,
-                int opType,
-                Ref<AstExpression> child): AstOperator (position, opType)
-    {
-        m_children.push_back(child);
-    }
-};
-
-/**
- * AST node for unary postfix operators.
- */
-class AstPostfixOp : public AstOperator
-{
-public:
-    static Ref<AstPostfixOp> create(ScriptPosition position,
-                                    int opType,
-                                    Ref<AstExpression> child)
-    {
-        return refFromNew (new AstPostfixOp(position, opType, child));
-    }
-    
-    virtual AstNodeTypes getType()const
-    {
-        return AST_POSTFIXOP;
-    }
-
-
-protected:
-    AstPostfixOp(ScriptPosition position,
-                int opType,
-                Ref<AstExpression> child): AstOperator (position, opType)
-    {
-        m_children.push_back(child);
-    }
+    PropertyList m_properties;
 };
 
 #endif	/* AST_H */

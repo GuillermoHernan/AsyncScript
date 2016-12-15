@@ -12,7 +12,7 @@
 
 using namespace std;
 
-Ref<AstStatement>   emptyStatement(ScriptPosition pos);
+Ref<AstNode>   emptyStatement(ScriptPosition pos);
 
 ParseResult parseSimpleStatement (CScriptToken token);
 ParseResult parseBodyStatement (CScriptToken token);
@@ -49,10 +49,10 @@ ExprResult parsePrimaryExpr (CScriptToken token);
 ExprResult parseFunctionExpr (CScriptToken token);
 ExprResult parseArrayLiteral (CScriptToken token);
 ExprResult parseObjectLiteral (CScriptToken token);
-ExprResult parseCallArguments (CScriptToken token, Ref<AstExpression> fnExpr);
-ExprResult parseArrayAccess (CScriptToken token, Ref<AstExpression> arrayExpr);
-ExprResult parseMemberAccess (CScriptToken token, Ref<AstExpression> objExpr);
-ExprResult parseObjectProperty (CScriptToken token, Ref<AstExpression> objExpr);
+ExprResult parseCallArguments (CScriptToken token, Ref<AstNode> fnExpr);
+ExprResult parseArrayAccess (CScriptToken token, Ref<AstNode> arrayExpr);
+ExprResult parseMemberAccess (CScriptToken token, Ref<AstNode> objExpr);
+ExprResult parseObjectProperty (CScriptToken token, Ref<AstNode> objExpr);
 
 ExprResult parseBinaryLROp (CScriptToken token, LEX_TYPES opType, ExprResult::ParseFunction childParser);
 ExprResult parseBinaryLROp (CScriptToken token, const int *types, ExprResult::ParseFunction childParser);
@@ -95,7 +95,7 @@ bool oneOf (CScriptToken token, const int* ids)
  * Crates an empty statement
  * @return 
  */
-Ref<AstStatement> emptyStatement(ScriptPosition pos)
+Ref<AstNode> emptyStatement(ScriptPosition pos)
 {
     return AstLiteral::undefined(pos);
 }
@@ -205,7 +205,7 @@ ParseResult parseBodyStatement (CScriptToken token)
 ParseResult parseBlock (CScriptToken token)
 {
     //TODO: Better handling of ';'
-    Ref<AstBlock>   block = AstBlock::create(token.getPosition());
+    Ref<AstNode>    block = astCreateBlock(token);
     
     token = token.match('{');
     
@@ -213,7 +213,7 @@ ParseResult parseBlock (CScriptToken token)
     {
         ParseResult r = parseStatement(token);
         
-        block->add (r.ast);
+        block->addChild (r.ast);
         token = r.nextToken;
     }
     
@@ -236,7 +236,7 @@ ParseResult parseVar (CScriptToken token)
     
     token = token.match(LEX_ID);
     
-    Ref<AstExpression> initExp;
+    Ref<AstNode> initExp;
     
     if (token.type() == '=')
     {
@@ -271,8 +271,8 @@ ParseResult parseIf (CScriptToken token)
     token = rCondition.token;
     
     ParseResult r = parseBodyStatement(token.match(')'));
-    Ref<AstStatement>   thenSt = r.ast;
-    Ref<AstStatement>   elseSt;
+    Ref<AstNode>   thenSt = r.ast;
+    Ref<AstNode>   elseSt;
     
     token = r.nextToken;
     
@@ -283,7 +283,7 @@ ParseResult parseIf (CScriptToken token)
         token = r.nextToken;
     }
     
-    Ref<AstIf> result = AstIf::create (pos, rCondition.result, thenSt, elseSt);
+    auto result = astCreateIf (pos, rCondition.result, thenSt, elseSt);
     
     return ParseResult (token, result);
 }
@@ -307,11 +307,11 @@ ParseResult parseWhile (CScriptToken token)
     
     ParseResult r = parseBodyStatement(token.match(')'));
     
-    Ref<AstFor> result = AstFor::create (pos, 
-                                         Ref<AstStatement>(),
-                                         rCondition.result, 
-                                         Ref<AstStatement>(),
-                                         r.ast);
+    auto result = astCreateFor (pos, 
+                                Ref<AstNode>(), 
+                                rCondition.result, 
+                                Ref<AstNode>(), 
+                                r.ast);
     
     return ParseResult (r.nextToken, result);
 }
@@ -325,10 +325,10 @@ ParseResult parseFor (CScriptToken token)
 {
     //TODO: Better handling of ';'
     ScriptPosition      pos = token.getPosition();
-    Ref<AstStatement>   init;
-    Ref<AstStatement>   increment;
-    Ref<AstStatement>   body;
-    Ref<AstExpression>  condition;
+    Ref<AstNode>   init;
+    Ref<AstNode>   increment;
+    Ref<AstNode>   body;
+    Ref<AstNode>  condition;
 
     token = token.match(LEX_R_FOR);
     token = token.match('(');
@@ -362,11 +362,7 @@ ParseResult parseFor (CScriptToken token)
     body = r.ast;
     token = r.nextToken;
 
-    Ref<AstFor> result = AstFor::create (pos, 
-                                         init,
-                                         condition, 
-                                         increment,
-                                         body);
+    auto result = astCreateFor (pos, init, condition, increment, body);
     
     return ParseResult (token, result);
 }
@@ -379,7 +375,7 @@ ParseResult parseFor (CScriptToken token)
 ParseResult parseReturn (CScriptToken token)
 {
     ScriptPosition      pos = token.getPosition();
-    Ref<AstExpression>  result;
+    Ref<AstNode>  result;
 
     token = token.match(LEX_R_RETURN);
     
@@ -396,7 +392,7 @@ ParseResult parseReturn (CScriptToken token)
             token = token.next();
     }
     
-    Ref<AstReturn>  ret = AstReturn::create(pos, result);
+    auto  ret = astCreateReturn(pos, result);
     return ParseResult(token, ret);    
 }
 
@@ -445,14 +441,14 @@ ExprResult parseAssignment (CScriptToken token)
 {
     ExprResult r = parseLeftExpr(token);
 
-    const Ref<AstExpression>    lexpr = r.result;
+    const Ref<AstNode>    lexpr = r.result;
     const int                   op = r.token.type();
     const ScriptPosition        pos = r.token.getPosition();
 
     r = r.require(isAssignment).then (parseAssignment);
     if (r.ok())
     {
-        Ref<AstAssignment> result = AstAssignment::create(pos, op, lexpr, r.result);
+        auto result = astCreateAssignment(pos, op, lexpr, r.result);
         r.result = result;
         return r.final();
     }
@@ -484,17 +480,17 @@ ExprResult parseConditional (CScriptToken token)
     
     if (r.ok() && r.token.type() == '?')
     {
-        const Ref<AstExpression>  condition =r.result;
+        const Ref<AstNode>  condition =r.result;
         
         r = r.skip();
         r = r.then (parseAssignment).require(':');
-        const Ref<AstExpression>  thenExpr =r.result;
+        const Ref<AstNode>  thenExpr =r.result;
         
         r = r.then (parseAssignment);
-        const Ref<AstExpression>  elseExpr =r.result;
+        const Ref<AstNode>  elseExpr =r.result;
         
         if (r.ok())
-            r.result = AstConditional::create (token.getPosition(),
+            r.result = astCreateConditional (token.getPosition(),
                                                condition,
                                                thenExpr,
                                                elseExpr);
@@ -626,7 +622,7 @@ ExprResult parseUnaryExpr (CScriptToken token)
         
         if (r.ok())
         {
-            r.result = AstPrefixOp::create(token.getPosition(), token.type(), r.result);
+            r.result = astCreatePrefixOp(token, r.result);
             return r.final();
         }
         else
@@ -648,9 +644,7 @@ ExprResult parsePostFixExpr (CScriptToken token)
     
     if (r.ok() && oneOf(r.token, operators))
     {
-        const int               op = r.token.type();
-        
-        r.result = AstPostfixOp::create(r.token.getPosition(), op, r.result);
+        r.result = astCreatePostfixOp(r.token, r.result);
         r = r.skip();
     }
     
@@ -692,8 +686,7 @@ ExprResult parseNewExpr (CScriptToken token)
         
         if (r.ok())
         {
-            Ref<AstFunctionCall>    call = AstFunctionCall::create(newPos, r.result);
-            call->setNewFlag();
+            auto    call = astCreateFnCall(newPos, r.result, true);
             
             r.result = call;
         }
@@ -744,7 +737,7 @@ ExprResult parseMemberExpr (CScriptToken token)
         r = r.require(LEX_R_NEW).then(parseMemberExpr).then(parseCallArguments);
         
         if (!r.error())
-            r.result.staticCast<AstFunctionCall>()->setNewFlag();
+            r.result = astToNewCall(r.result);
         return r.final();
     }
     else
@@ -848,14 +841,14 @@ ExprResult parseArrayLiteral (CScriptToken token)
     
     r = r.require('[');
     
-    Ref<AstArray>   array = AstArray::create(token.getPosition());
+    auto    array = astCreateArray(token.getPosition());
     
     while (r.ok() && r.token.type() != ']')
     {
         //Skip empty entries
         while (r.token.type() == ',')
         {
-            array->addItem( AstLiteral::undefined(r.token.getPosition()));
+            array->addChild( AstLiteral::undefined(r.token.getPosition()));
             r = r.require(',');
         }
         
@@ -864,7 +857,7 @@ ExprResult parseArrayLiteral (CScriptToken token)
             r = r.then(parseAssignment);
             if (r.ok())
             {
-                array->addItem(r.result);
+                array->addChild(r.result);
                 if (r.token.type() != ']')
                     r = r.require(',');
             }
@@ -911,12 +904,12 @@ ExprResult parseObjectLiteral (CScriptToken token)
  * @param fnExpr    Expression from which the function reference is obtained
  * @return 
  */
-ExprResult parseCallArguments (CScriptToken token, Ref<AstExpression> fnExpr)
+ExprResult parseCallArguments (CScriptToken token, Ref<AstNode> fnExpr)
 {
     ExprResult      r(token);
 
     r = r.require('(');
-    Ref<AstFunctionCall>    call = AstFunctionCall::create(token.getPosition(), fnExpr);
+    auto    call = astCreateFnCall(token.getPosition(), fnExpr, false);
     
     while (r.ok() && r.token.type() != ')')
     {
@@ -924,7 +917,7 @@ ExprResult parseCallArguments (CScriptToken token, Ref<AstExpression> fnExpr)
         
         if (r.ok())
         {
-            call->addParam(r.result);
+            call->addChild(r.result);
             if (r.token.type() != ')')
             {
                 r = r.require(',');
@@ -947,14 +940,14 @@ ExprResult parseCallArguments (CScriptToken token, Ref<AstExpression> fnExpr)
  * @param arrayExpr
  * @return 
  */
-ExprResult parseArrayAccess (CScriptToken token, Ref<AstExpression> arrayExpr)
+ExprResult parseArrayAccess (CScriptToken token, Ref<AstNode> arrayExpr)
 {
     ExprResult     r(token);
     
     r = r.require('[').then(parseExpression).require(']');
     
     if (r.ok())
-        r.result = AstArrayAccess::create(token.getPosition(), arrayExpr, r.result);
+        r.result = astCreateArrayAccess(token.getPosition(), arrayExpr, r.result);
     
     return r.final();
 }
@@ -965,14 +958,14 @@ ExprResult parseArrayAccess (CScriptToken token, Ref<AstExpression> arrayExpr)
  * @param arrayExpr
  * @return 
  */
-ExprResult parseMemberAccess (CScriptToken token, Ref<AstExpression> arrayExpr)
+ExprResult parseMemberAccess (CScriptToken token, Ref<AstNode> arrayExpr)
 {
     ExprResult     r(token);
     
     r = r.require('.').then(parseIdentifier);
     
     if (r.ok())
-        r.result = AstMemberAccess::create(token.getPosition(), arrayExpr, r.result);
+        r.result = astCreateMemberAccess(token.getPosition(), arrayExpr, r.result);
     
     return r.final();
 }
@@ -983,7 +976,7 @@ ExprResult parseMemberAccess (CScriptToken token, Ref<AstExpression> arrayExpr)
  * @param objExpr
  * @return 
  */
-ExprResult parseObjectProperty (CScriptToken token, Ref<AstExpression> objExpr)
+ExprResult parseObjectProperty (CScriptToken token, Ref<AstNode> objExpr)
 {
     string name;
     ExprResult  r(token);
@@ -1044,9 +1037,8 @@ ExprResult parseBinaryLROp (CScriptToken token, const int* ids, ExprResult::Pars
     
     while (r.ok() && oneOf (r.token, ids))
     {
-        const Ref<AstExpression>    left = r.result;
-        const ScriptPosition        pos = r.token.getPosition();
-        const int                   op = r.token.type();
+        const Ref<AstNode>  left = r.result;
+        CScriptToken        opToken = r.token;
         
         r = r.skip();
         if (r.error())
@@ -1055,7 +1047,7 @@ ExprResult parseBinaryLROp (CScriptToken token, const int* ids, ExprResult::Pars
         r = r.then(childParser);
             
         if (r.ok())
-            r.result = AstBinaryOp::create (pos, op, left, r.result);
+            r.result = astCreateBinaryOp (opToken, left, r.result);
     }
 
     return r.final();
@@ -1088,9 +1080,8 @@ ExprResult parseBinaryRLOp (CScriptToken token, const int* ids, ExprResult::Pars
     
     if (r.ok() && oneOf (r.token, ids))
     {
-        const Ref<AstExpression>    left = r.result;
-        const ScriptPosition        pos = r.token.getPosition();
-        const int                   op = r.token.type();
+        const Ref<AstNode>  left = r.result;
+        CScriptToken        opToken = r.token;
         
         r = r.skip();
         if (r.error())
@@ -1099,7 +1090,7 @@ ExprResult parseBinaryRLOp (CScriptToken token, const int* ids, ExprResult::Pars
         r = parseBinaryLROp(r.token, ids, childParser);
             
         if (r.ok())
-            r.result = AstBinaryOp::create (pos, op, left, r.result);
+            r.result = astCreateBinaryOp (opToken, left, r.result);
         
         return r.final();
     }

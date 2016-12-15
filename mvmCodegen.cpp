@@ -44,32 +44,32 @@ struct CodegenState
 
 //Forward declarations
 
-typedef void (*CodegenFN)(Ref<AstStatement> statement, CodegenState* pState);
+typedef void (*CodegenFN)(Ref<AstNode> statement, CodegenState* pState);
 
-void codegen (Ref<AstStatement> statement, CodegenState* pState);
-int  childrenCodegen (Ref<AstStatement> statement, CodegenState* pState);
-bool childCodegen (Ref<AstStatement> statement, int index, CodegenState* pState);
+void codegen (Ref<AstNode> statement, CodegenState* pState);
+int  childrenCodegen (Ref<AstNode> statement, CodegenState* pState);
+bool childCodegen (Ref<AstNode> statement, int index, CodegenState* pState);
 
-void blockCodegen (Ref<AstStatement> statement, CodegenState* pState);
-void varCodegen (Ref<AstStatement> statement, CodegenState* pState);
-void ifCodegen (Ref<AstStatement> statement, CodegenState* pState);
-void forCodegen (Ref<AstStatement> statement, CodegenState* pState);
-void returnCodegen (Ref<AstStatement> statement, CodegenState* pState);
-void functionCodegen (Ref<AstStatement> statement, CodegenState* pState);
-void assignmentCodegen (Ref<AstStatement> statement, CodegenState* pState);
-void fncallCodegen (Ref<AstStatement> statement, CodegenState* pState);
-void thisCallCodegen (Ref<AstStatement> statement, CodegenState* pState);
-void literalCodegen (Ref<AstStatement> statement, CodegenState* pState);
-void identifierCodegen (Ref<AstStatement> statement, CodegenState* pState);
-void arrayCodegen (Ref<AstStatement> statement, CodegenState* pState);
-void objectCodegen (Ref<AstStatement> statement, CodegenState* pState);
-void arrayAccessCodegen (Ref<AstStatement> statement, CodegenState* pState);
-void memberAccessCodegen (Ref<AstStatement> statement, CodegenState* pState);
-void conditionalCodegen (Ref<AstStatement> statement, CodegenState* pState);
-void binaryOpCodegen (Ref<AstStatement> statement, CodegenState* pState);
-void prefixOpCodegen (Ref<AstStatement> statement, CodegenState* pState);
-void postfixOpCodegen (Ref<AstStatement> statement, CodegenState* pState);
-void logicalOpCodegen (const int opCode, Ref<AstStatement> statement, CodegenState* pState);
+void blockCodegen (Ref<AstNode> statement, CodegenState* pState);
+void varCodegen (Ref<AstNode> statement, CodegenState* pState);
+void ifCodegen (Ref<AstNode> statement, CodegenState* pState);
+void forCodegen (Ref<AstNode> statement, CodegenState* pState);
+void returnCodegen (Ref<AstNode> statement, CodegenState* pState);
+void functionCodegen (Ref<AstNode> statement, CodegenState* pState);
+void assignmentCodegen (Ref<AstNode> statement, CodegenState* pState);
+void fncallCodegen (Ref<AstNode> statement, CodegenState* pState);
+void thisCallCodegen (Ref<AstNode> statement, CodegenState* pState);
+void literalCodegen (Ref<AstNode> statement, CodegenState* pState);
+void identifierCodegen (Ref<AstNode> statement, CodegenState* pState);
+void arrayCodegen (Ref<AstNode> statement, CodegenState* pState);
+void objectCodegen (Ref<AstNode> statement, CodegenState* pState);
+void arrayAccessCodegen (Ref<AstNode> statement, CodegenState* pState);
+void memberAccessCodegen (Ref<AstNode> statement, CodegenState* pState);
+void conditionalCodegen (Ref<AstNode> statement, CodegenState* pState);
+void binaryOpCodegen (Ref<AstNode> statement, CodegenState* pState);
+void prefixOpCodegen (Ref<AstNode> statement, CodegenState* pState);
+void postfixOpCodegen (Ref<AstNode> statement, CodegenState* pState);
+void logicalOpCodegen (const int opCode, Ref<AstNode> statement, CodegenState* pState);
 
 void pushConstant (Ref<JSValue> value, CodegenState* pState);
 void pushConstant (const std::string& str, CodegenState* pState);
@@ -98,7 +98,7 @@ int  curBlockId (CodegenState* pState);
  * @param statements    The script is received as a sequence (vector) of compiled statements.
  * @return 
  */
-Ref<MvmScript> scriptCodegen (const StatementList& statements)
+Ref<MvmScript> scriptCodegen (const AstNodeList& statements)
 {
     CodegenState    state;
     
@@ -119,7 +119,7 @@ Ref<MvmScript> scriptCodegen (const StatementList& statements)
 }
 
 
-void codegen (Ref<AstStatement> statement, CodegenState* pState)
+void codegen (Ref<AstNode> statement, CodegenState* pState)
 {
     static CodegenFN types[AST_TYPES_COUNT] = {NULL, NULL};
     
@@ -133,6 +133,7 @@ void codegen (Ref<AstStatement> statement, CodegenState* pState)
         types [AST_FUNCTION] = functionCodegen;
         types [AST_ASSIGNMENT] = assignmentCodegen;
         types [AST_FNCALL] = fncallCodegen;
+        types [AST_NEWCALL] = fncallCodegen;
         types [AST_LITERAL] = literalCodegen;
         types [AST_IDENTIFIER] = identifierCodegen;
         types [AST_ARRAY] = arrayCodegen;
@@ -153,9 +154,9 @@ void codegen (Ref<AstStatement> statement, CodegenState* pState)
  * @param statement
  * @param pState
  */
-int childrenCodegen (Ref<AstStatement> statement, CodegenState* pState)
+int childrenCodegen (Ref<AstNode> statement, CodegenState* pState)
 {
-    const StatementList&  children = statement->children();
+    const AstNodeList&  children = statement->children();
     int count = 0;
     
     for (size_t i=0; i < children.size(); ++i)
@@ -177,9 +178,9 @@ int childrenCodegen (Ref<AstStatement> statement, CodegenState* pState)
  * @param pState
  * @return 
  */
-bool childCodegen (Ref<AstStatement> statement, int index, CodegenState* pState)
+bool childCodegen (Ref<AstNode> statement, int index, CodegenState* pState)
 {
-    const StatementList&  children = statement->children();
+    const AstNodeList&  children = statement->children();
     
     if (index >= (int)children.size() || index < 0)
         return false;
@@ -198,9 +199,9 @@ bool childCodegen (Ref<AstStatement> statement, int index, CodegenState* pState)
  * @param statement
  * @param pState
  */
-void blockCodegen (Ref<AstStatement> statement, CodegenState* pState)
+void blockCodegen (Ref<AstNode> statement, CodegenState* pState)
 {
-    const StatementList&  children = statement->children();
+    const AstNodeList&  children = statement->children();
     
     for (size_t i=0; i < children.size(); ++i)
     {
@@ -220,9 +221,9 @@ void blockCodegen (Ref<AstStatement> statement, CodegenState* pState)
  * @param statement
  * @param pState
  */
-void varCodegen (Ref<AstStatement> statement, CodegenState* pState)
+void varCodegen (Ref<AstNode> statement, CodegenState* pState)
 {
-    const std::string& name = statement.staticCast<AstVar>()->name;
+    const string name = statement->getName();
     //TODO: If block scopes are implemented, next line should be modified to
     //target function scope specifically.
     pState->scopes.back().declare(name);
@@ -243,7 +244,7 @@ void varCodegen (Ref<AstStatement> statement, CodegenState* pState)
  * @param statement
  * @param pState
  */
-void ifCodegen (Ref<AstStatement> statement, CodegenState* pState)
+void ifCodegen (Ref<AstNode> statement, CodegenState* pState)
 {
     const int conditionBlock = curBlockId(pState)+1;
     const bool conditional = statement->getType() == AST_CONDITIONAL;
@@ -292,7 +293,7 @@ void ifCodegen (Ref<AstStatement> statement, CodegenState* pState)
  * @param statement
  * @param pState
  */
-void forCodegen (Ref<AstStatement> statement, CodegenState* pState)
+void forCodegen (Ref<AstNode> statement, CodegenState* pState)
 {
     //Loop initialization
     if (childCodegen (statement, 0, pState))
@@ -331,7 +332,7 @@ void forCodegen (Ref<AstStatement> statement, CodegenState* pState)
  * @param statement
  * @param pState
  */
-void returnCodegen (Ref<AstStatement> statement, CodegenState* pState)
+void returnCodegen (Ref<AstNode> statement, CodegenState* pState)
 {
     //It just pushes return expression value on the stack, and sets next block 
     //indexes to (-1), which means that the current function shall end.
@@ -350,7 +351,7 @@ void returnCodegen (Ref<AstStatement> statement, CodegenState* pState)
  * @param statement
  * @param pState
  */
-void functionCodegen (Ref<AstStatement> statement, CodegenState* pState)
+void functionCodegen (Ref<AstNode> statement, CodegenState* pState)
 {
     Ref<AstFunction>    fnNode = statement.staticCast<AstFunction>();
     Ref<JSFunction>     function = JSFunction::createJS(fnNode->getName());
@@ -388,10 +389,10 @@ void functionCodegen (Ref<AstStatement> statement, CodegenState* pState)
  * @param statement
  * @param pState
  */
-void assignmentCodegen (Ref<AstStatement> statement, CodegenState* pState)
+void assignmentCodegen (Ref<AstNode> statement, CodegenState* pState)
 {
-    Ref<AstAssignment>  assign = statement.staticCast<AstAssignment>();
-    const int           op = assign->code;
+    Ref<AstOperator>  assign = statement.staticCast<AstOperator>();
+    const int         op = assign->code;
     
     childCodegen(statement, 0, pState);
     const int           rdInst = removeLastInstruction (pState);
@@ -442,11 +443,9 @@ void assignmentCodegen (Ref<AstStatement> statement, CodegenState* pState)
  * @param statement
  * @param pState
  */
-void fncallCodegen (Ref<AstStatement> statement, CodegenState* pState)
+void fncallCodegen (Ref<AstNode> statement, CodegenState* pState)
 {
-    Ref<AstFunctionCall>    callNode = statement.staticCast<AstFunctionCall>();
-    
-    if (callNode->getNewFlag())
+    if (statement->getType() == AST_NEWCALL)
     {
         //Create a new object, and pass it as 'this' reference.
         callCodegen("@newObj", 0, pState);
@@ -467,7 +466,7 @@ void fncallCodegen (Ref<AstStatement> statement, CodegenState* pState)
     }
     
     //Parameters evaluation
-    const int nChilds = (int)callNode->children().size();
+    const int nChilds = (int)statement->children().size();
     for (int i = 1; i < nChilds; ++i)
         childCodegen(statement, i, pState);
 
@@ -482,7 +481,7 @@ void fncallCodegen (Ref<AstStatement> statement, CodegenState* pState)
  * @param statement
  * @param pState
  */
-void thisCallCodegen (Ref<AstStatement> statement, CodegenState* pState)
+void thisCallCodegen (Ref<AstNode> statement, CodegenState* pState)
 {
     childCodegen(statement, 0, pState);
     
@@ -510,11 +509,9 @@ void thisCallCodegen (Ref<AstStatement> statement, CodegenState* pState)
  * @param statement
  * @param pState
  */
-void literalCodegen (Ref<AstStatement> statement, CodegenState* pState)
+void literalCodegen (Ref<AstNode> statement, CodegenState* pState)
 {
-    Ref<AstLiteral>     literal = statement.staticCast<AstLiteral>();
-    
-    pushConstant(literal->value, pState);
+    pushConstant(statement->getValue(), pState);
 }
 
 /**
@@ -524,12 +521,14 @@ void literalCodegen (Ref<AstStatement> statement, CodegenState* pState)
  * @param statement
  * @param pState
  */
-void identifierCodegen (Ref<AstStatement> statement, CodegenState* pState)
+void identifierCodegen (Ref<AstNode> statement, CodegenState* pState)
 {
-    Ref<AstIdentifier>  id = statement.staticCast<AstIdentifier>();
+    const string name = statement->getName();
     
-    pushConstant(id->name, pState);
-    if (pState->scopes.back().isDeclared(id->name))
+    ASSERT (!name.empty());
+    
+    pushConstant(name, pState);
+    if (pState->scopes.back().isDeclared(name))
         instruction8 (OC_RD_LOCAL, pState);
     else
         instruction8 (OC_RD_GLOBAL, pState);
@@ -540,9 +539,9 @@ void identifierCodegen (Ref<AstStatement> statement, CodegenState* pState)
  * @param statement
  * @param pState
  */
-void arrayCodegen (Ref<AstStatement> statement, CodegenState* pState)
+void arrayCodegen (Ref<AstNode> statement, CodegenState* pState)
 {
-    const StatementList children = statement->children();
+    const AstNodeList children = statement->children();
     
     pushConstant((int)children.size(), pState);
     callCodegen("@newArray", 1, pState);
@@ -563,21 +562,21 @@ void arrayCodegen (Ref<AstStatement> statement, CodegenState* pState)
  * @param statement
  * @param pState
  */
-void objectCodegen (Ref<AstStatement> statement, CodegenState* pState)
+void objectCodegen (Ref<AstNode> statement, CodegenState* pState)
 {
-    Ref<AstObject>              obj = statement.staticCast<AstObject>();
-    const AstObject::PropsMap   properties= obj->getProperties();
+    Ref<AstObject>                  obj = statement.staticCast<AstObject>();
+    const AstObject::PropertyList   properties= obj->getProperties();
     
     callCodegen("@newObj", 0, pState);
 
     //TODO: Properties are not evaluated in definition order, but in 
     //alphabetical order, as they are defined in a map.
-    AstObject::PropsMap::const_iterator     it;
+    AstObject::PropertyList::const_iterator     it;
     for (it = properties.begin(); it != properties.end(); ++it)
     {
         instruction8(OC_CP, pState);        //Copy object reference
-        pushConstant(it->first, pState);    //Property name
-        codegen(it->second, pState);        //Value expression
+        pushConstant(it->name, pState);    //Property name
+        codegen(it->expr, pState);        //Value expression
         instruction8(OC_WR_FIELD, pState);
     }
     
@@ -589,7 +588,7 @@ void objectCodegen (Ref<AstStatement> statement, CodegenState* pState)
  * @param statement
  * @param pState
  */
-void arrayAccessCodegen (Ref<AstStatement> statement, CodegenState* pState)
+void arrayAccessCodegen (Ref<AstNode> statement, CodegenState* pState)
 {
     childrenCodegen(statement, pState);
     instruction8 (OC_RD_FIELD, pState);
@@ -600,12 +599,12 @@ void arrayAccessCodegen (Ref<AstStatement> statement, CodegenState* pState)
  * @param statement
  * @param pState
  */
-void memberAccessCodegen(Ref<AstStatement> statement, CodegenState* pState)
+void memberAccessCodegen(Ref<AstNode> statement, CodegenState* pState)
 {
     childCodegen(statement, 0, pState);
     
-    Ref<AstIdentifier>  fieldId = statement->children()[1].staticCast<AstIdentifier>();
-    pushConstant(fieldId->name, pState);
+    const string  fieldId = statement->children()[1]->getName();
+    pushConstant(fieldId, pState);
     instruction8 (OC_RD_FIELD, pState);
 }
 
@@ -614,7 +613,7 @@ void memberAccessCodegen(Ref<AstStatement> statement, CodegenState* pState)
  * @param statement
  * @param pState
  */
-void conditionalCodegen (Ref<AstStatement> statement, CodegenState* pState)
+void conditionalCodegen (Ref<AstNode> statement, CodegenState* pState)
 {
     //The conditional operator is handled by 'ifCodegen', as it is very similar.
     ifCodegen(statement, pState);    
@@ -625,9 +624,9 @@ void conditionalCodegen (Ref<AstStatement> statement, CodegenState* pState)
  * @param statement
  * @param pState
  */
-void binaryOpCodegen (Ref<AstStatement> statement, CodegenState* pState)
+void binaryOpCodegen (Ref<AstNode> statement, CodegenState* pState)
 {
-    Ref<AstBinaryOp>    op = statement.staticCast<AstBinaryOp>();
+    Ref<AstOperator>    op = statement.staticCast<AstOperator>();
     const int           opCode = op->code;
     
     if (opCode == LEX_OROR || opCode == LEX_ANDAND)
@@ -648,19 +647,19 @@ void binaryOpCodegen (Ref<AstStatement> statement, CodegenState* pState)
  * @param statement
  * @param pState
  */
-void prefixOpCodegen(Ref<AstStatement> statement, CodegenState* pState)
+void prefixOpCodegen(Ref<AstNode> statement, CodegenState* pState)
 {
-    Ref<AstPrefixOp>    op = statement.staticCast<AstPrefixOp>();
+    Ref<AstOperator>    op = statement.staticCast<AstOperator>();
     const int           opCode = op->code;
     
     if (opCode == LEX_PLUSPLUS || opCode == LEX_MINUSMINUS)
     {
         //It is translated into a '+=' or '-=' equivalent operation
-        Ref<AstLiteral>     l = AstLiteral::create(op->position(), 1);
-        Ref<AstAssignment>  newOp = AstAssignment::create(op->position(),
-                                                         op->code == LEX_PLUSPLUS ? '+' : '-',
-                                                         op->subExprs()[0], 
-                                                         l);
+        Ref<AstLiteral> l = AstLiteral::create(op->position(), 1);
+        Ref<AstNode>    newOp = astCreateAssignment(op->position(),
+                                                    op->code == LEX_PLUSPLUS ? '+' : '-',
+                                                    op->children()[0], 
+                                                    l);
         codegen(newOp, pState);
     }
     else if (opCode != '+')     //Plus unary operator does nothing, so no code is generated
@@ -687,9 +686,9 @@ void prefixOpCodegen(Ref<AstStatement> statement, CodegenState* pState)
  * @param statement
  * @param pState
  */
-void postfixOpCodegen (Ref<AstStatement> statement, CodegenState* pState)
+void postfixOpCodegen (Ref<AstNode> statement, CodegenState* pState)
 {
-    Ref<AstPostfixOp>    op = statement.staticCast<AstPostfixOp>();
+    Ref<AstOperator>    op = statement.staticCast<AstOperator>();
  
     childrenCodegen(statement, pState);
     const int rdInst = removeLastInstruction(pState);
@@ -705,7 +704,7 @@ void postfixOpCodegen (Ref<AstStatement> statement, CodegenState* pState)
     
     instruction8(rdInst, pState);
     instruction8(OC_CP, pState);        //Save previous
-    callCodegen(LEX_PLUSPLUS ? "@inc": "@dec", 1, pState);
+    callCodegen(op->code == LEX_PLUSPLUS ? "@inc": "@dec", 1, pState);
     
     //Move previous value to aux
     instruction8(OC_SWAP, pState);
@@ -725,7 +724,7 @@ void postfixOpCodegen (Ref<AstStatement> statement, CodegenState* pState)
  * @param statement
  * @param pState
  */
-void logicalOpCodegen (const int opCode, Ref<AstStatement> statement, CodegenState* pState)
+void logicalOpCodegen (const int opCode, Ref<AstNode> statement, CodegenState* pState)
 {
     childCodegen(statement, 0, pState);
     instruction8(OC_CP, pState);

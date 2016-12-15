@@ -25,9 +25,9 @@ class JSValue;
 struct ParseResult
 {
     CScriptToken nextToken;
-    Ref<AstStatement> ast;
+    Ref<AstNode> ast;
 
-    ParseResult(const CScriptToken &token, const Ref<AstStatement> _ast)
+    ParseResult(const CScriptToken &token, const Ref<AstNode> _ast)
     : nextToken(token), ast(_ast)
     {
     }
@@ -69,11 +69,11 @@ class ExprResult
 {
 public:
     CScriptToken token;
-    Ref<AstExpression> result;
+    Ref<AstNode> result;
     ParseError errorDesc;
 
     ExprResult(const CScriptToken &nextToken,
-                    const Ref<AstExpression> expr)
+                    const Ref<AstNode> expr)
     : token(nextToken), result(expr), m_initialToken(token)
     {
     }
@@ -90,7 +90,7 @@ public:
     }
 
     typedef ExprResult(*ParseFunction)(CScriptToken token);
-    typedef ExprResult(*ChainParseFunction)(CScriptToken token, Ref<AstExpression> prev);
+    typedef ExprResult(*ChainParseFunction)(CScriptToken token, Ref<AstNode> prev);
     typedef bool (*TokenCheck)(CScriptToken token);
 
     ExprResult orElse(ParseFunction parseFn);

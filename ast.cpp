@@ -12,6 +12,170 @@
 
 using namespace std;
 
+//Empty children list constant
+const AstNodeList AstNode::ms_noChildren;
+
+//  Constructor functions.
+//
+////////////////////////////////
+Ref<AstNode> astCreateBlock(CScriptToken token)
+{
+    return refFromNew( new AstBranchNode(AST_BLOCK, token.getPosition()));    
+}
+
+Ref<AstNode> astCreateIf (ScriptPosition pos, 
+                          Ref<AstNode> condition,
+                          Ref<AstNode> thenSt,
+                          Ref<AstNode> elseSt)
+{
+    
+    auto result = refFromNew( new AstBranchNode(AST_IF, pos));
+    
+    result->addChild(condition);
+    result->addChild(thenSt);
+    result->addChild(elseSt);
+    
+    return result;
+}
+
+Ref<AstNode> astCreateConditional ( ScriptPosition pos, 
+                                    Ref<AstNode> condition,
+                                    Ref<AstNode> thenExpr,
+                                    Ref<AstNode> elseExpr)
+{    
+    auto result = refFromNew( new AstBranchNode(AST_CONDITIONAL, pos));
+    
+    result->addChild(condition);
+    result->addChild(thenExpr);
+    result->addChild(elseExpr);
+
+    return result;
+}
+
+Ref<AstNode> astCreateFor (ScriptPosition pos, 
+                          Ref<AstNode> initSt,
+                          Ref<AstNode> condition,
+                          Ref<AstNode> incrementSt,
+                          Ref<AstNode> body)
+{    
+    auto result = refFromNew( new AstBranchNode(AST_FOR, pos));
+    
+    result->addChild(initSt);
+    result->addChild(condition);
+    result->addChild(incrementSt);
+    result->addChild(body);
+
+    return result;
+}
+
+Ref<AstNode> astCreateReturn (ScriptPosition pos, Ref<AstNode> expr)
+{
+    auto result = refFromNew( new AstBranchNode(AST_RETURN, pos));
+    
+    result->addChild(expr);
+    return result;
+}
+
+Ref<AstNode> astCreateAssignment(ScriptPosition pos, 
+                                 int opCode, 
+                                 Ref<AstNode> lexpr, 
+                                 Ref<AstNode> rexpr)
+{
+    auto result = refFromNew( new AstOperator(AST_ASSIGNMENT, pos, opCode));
+    
+    result->addChild(lexpr);
+    result->addChild(rexpr);
+    return result;
+}
+
+Ref<AstNode> astCreatePrefixOp(CScriptToken token, Ref<AstNode> rexpr)
+{
+    auto result = refFromNew( new AstOperator(AST_PREFIXOP, 
+                                              token.getPosition(),
+                                              token.type()));
+    
+    result->addChild(rexpr);
+    return result;
+}
+
+Ref<AstNode> astCreatePostfixOp(CScriptToken token, Ref<AstNode> lexpr)
+{
+    auto result = refFromNew( new AstOperator(AST_POSTFIXOP, 
+                                              token.getPosition(),
+                                              token.type()));
+    
+    result->addChild(lexpr);
+    return result;
+}
+
+Ref<AstNode> astCreateBinaryOp(CScriptToken token, 
+                                 Ref<AstNode> lexpr, 
+                                 Ref<AstNode> rexpr)
+{
+    auto result = refFromNew( new AstOperator(AST_BINARYOP, 
+                                              token.getPosition(),
+                                              token.type()));
+    
+    result->addChild(lexpr);
+    result->addChild(rexpr);
+    return result;
+}
+                                 
+Ref<AstNode> astCreateFnCall(ScriptPosition pos, Ref<AstNode> fnExpr, bool newCall)
+{
+    const AstNodeTypes  type = newCall ? AST_NEWCALL: AST_FNCALL;
+    auto result = refFromNew( new AstBranchNode(type, pos));
+    
+    result->addChild(fnExpr);
+    return result;
+}
+
+/**
+ * Transforms a regular function call into a 'new' operator call.
+ * @param callExpr
+ * @return 
+ */
+Ref<AstNode> astToNewCall(Ref<AstNode> callExpr)
+{
+    return astCreateFnCall(callExpr->position(), 
+                           callExpr->children()[0], true);
+}
+
+/**
+ * Creates an array literal AST node.
+ * @param pos
+ * @return 
+ */
+Ref<AstNode> astCreateArray(ScriptPosition pos)
+{
+    return refFromNew( new AstBranchNode(AST_ARRAY, pos));
+}
+
+Ref<AstNode> astCreateArrayAccess(ScriptPosition pos,
+                                  Ref<AstNode> arrayExpr, 
+                                  Ref<AstNode> indexExpr)
+{    
+    auto result = refFromNew( new AstBranchNode(AST_ARRAY_ACCESS, pos));
+    
+    result->addChild(arrayExpr);
+    result->addChild(indexExpr);
+
+    return result;
+}
+
+Ref<AstNode> astCreateMemberAccess(ScriptPosition pos,
+                                  Ref<AstNode> objExpr, 
+                                  Ref<AstNode> identifier)
+{    
+    auto result = refFromNew( new AstBranchNode(AST_MEMBER_ACCESS, pos));
+    
+    result->addChild(objExpr);
+    result->addChild(identifier);
+
+    return result;
+}
+
+
 /**
  * Creates an 'AstLiteral' object from a source token.
  * @param token
@@ -56,40 +220,38 @@ Ref<AstLiteral> AstLiteral::create(ScriptPosition pos, int value)
  * This particular version creates an object containing all its children
  * @return 
  */
-Ref<JSValue> AstStatement::toJSValue()const
+Ref<JSValue> AstNode::toJS()const
 {
     Ref<JSObject>   obj = JSObject::create();
     
     obj->set("a_type", jsString(astTypeToString(getType())));
-    obj->set("z_children", toJSArray(m_children));
+
+    const string name = getName();
+    if (!name.empty())
+        obj->set("b_name", jsString(name));
     
+    const AstNodeList&  c = children();
+    if (!c.empty())
+        obj->set("z_children", toJSArray(c));
+
+    const auto value = getValue();
+    if (!value->isUndefined())
+        obj->set("v_value", value);
+
     return obj;
 }
 
-/**
- * Var declaration to JSValue
- * @return 
- */
-Ref<JSValue> AstVar::toJSValue()const
-{
-    Ref<JSObject>   obj = AstStatement::toJSValue().staticCast<JSObject>();
-    
-    obj->set("b_name", jsString(name));
-    
-    return obj;
-}
 
 /**
  * Function declaration to JSValue
  * @return 
  */
-Ref<JSValue> AstFunction::toJSValue()const
+Ref<JSValue> AstFunction::toJS()const
 {
-    Ref<JSObject>   obj = AstExpression::toJSValue().staticCast<JSObject>();
+    Ref<JSObject>   obj = AstNode::toJS().staticCast<JSObject>();
     
-    obj->set("b_name", jsString(m_name));
     obj->set("c_parameters", JSArray::createStrArray(m_params));
-    obj->set("d_code", m_code->toJSValue());
+    obj->set("d_code", m_code->toJS());
     
     return obj;
 }
@@ -98,49 +260,11 @@ Ref<JSValue> AstFunction::toJSValue()const
  * Operator to JSValue
  * @return 
  */
-Ref<JSValue> AstOperator::toJSValue()const
+Ref<JSValue> AstOperator::toJS()const
 {
-    Ref<JSObject>   obj = AstExpression::toJSValue().staticCast<JSObject>();
+    Ref<JSObject>   obj = AstBranchNode::toJS().staticCast<JSObject>();
 
     obj->set("d_operator", jsString(getTokenStr(code)));
-    return obj;
-}
-
-/**
- * Function call to JSValue
- * @return 
- */
-Ref<JSValue> AstFunctionCall::toJSValue()const
-{
-    Ref<JSObject>   obj = AstExpression::toJSValue().staticCast<JSObject>();
-
-    obj->set("d_isNew", jsBool(m_bNew));
-    return obj;
-}
-
-/**
- * Literal to JSValue
- * @return 
- */
-Ref<JSValue> AstLiteral::toJSValue()const
-{
-    Ref<JSObject>   obj = JSObject::create();
-    
-    obj->set("a_type", jsString(astTypeToString(getType())));
-    obj->set("v_value", value);
-    return obj;
-}
-
-/**
- * Identifier to JSValue
- * @return 
- */
-Ref<JSValue> AstIdentifier::toJSValue()const
-{
-    Ref<JSObject>   obj = JSObject::create();
-    
-    obj->set("a_type", jsString(astTypeToString(getType())));
-    obj->set("b_name", jsString(name));
     return obj;
 }
 
@@ -148,7 +272,7 @@ Ref<JSValue> AstIdentifier::toJSValue()const
  * Object literal to JSValue
  * @return 
  */
-Ref<JSValue> AstObject::toJSValue()const
+Ref<JSValue> AstObject::toJS()const
 {
     Ref<JSObject>   obj = JSObject::create();
     Ref<JSObject>   props = JSObject::create();
@@ -156,9 +280,9 @@ Ref<JSValue> AstObject::toJSValue()const
     obj->set("a_type", jsString(astTypeToString(getType())));
     obj->set("b_properties", props);
     
-    PropsMap::const_iterator it;
+    PropertyList::const_iterator it;
     for (it = m_properties.begin(); it != m_properties.end(); ++it)
-        props->set(it->first, it->second->toJSValue());
+        props->set(it->name, it->expr->toJS());
     
     return obj;
 }
@@ -174,18 +298,18 @@ Ref<AstLiteral> AstLiteral::undefined(ScriptPosition pos)
 }
 
 /**
- * Transforms a list of AstStatements into a Javascript Array.
+ * Transforms a list of AstNodes into a Javascript Array.
  * @param statements
  * @return 
  */
-Ref<JSArray> toJSArray (const StatementList& statements)
+Ref<JSArray> toJSArray (const AstNodeList& statements)
 {
     Ref<JSArray>    result = JSArray::create();
     
     for (size_t i = 0; i < statements.size(); ++i)
     {
         if (statements[i].notNull())
-            result->push( statements[i]->toJSValue() );
+            result->push( statements[i]->toJS() );
         else
             result->push(jsNull());
     }
@@ -198,7 +322,7 @@ Ref<JSArray> toJSArray (const StatementList& statements)
  * @param statements
  * @return 
  */
-std::string toJSON (const StatementList& statements)
+std::string toJSON (const AstNodeList& statements)
 {
     return toJSArray(statements)->getJSON(0);
 }
@@ -223,6 +347,7 @@ std::string astTypeToString(AstNodeTypes type)
         types[AST_FUNCTION] = "AST_FUNCTION";
         types[AST_ASSIGNMENT] = "AST_ASSIGNMENT";
         types[AST_FNCALL] = "AST_FNCALL";
+        types[AST_NEWCALL] = "AST_NEWCALL";
         types[AST_LITERAL] = "AST_LITERAL";
         types[AST_IDENTIFIER] = "AST_IDENTIFIER";
         types[AST_ARRAY] = "AST_ARRAY";
