@@ -330,15 +330,19 @@ Ref<JSValue> mvmGequal (FunctionScope* pScope)
  * @param pScope
  * @return 
  */
-Ref<JSValue> mvmIsEqual (FunctionScope* pScope)
+bool mvmAreEqual (Ref<JSValue> opA, Ref<JSValue> opB)
+{
+    if (opA->isUndefined() || opB->isUndefined())
+        return opA->isNull() && opB->isNull();
+    else
+        return jsCompare(opA, opB) == 0;
+}
+Ref<JSValue> mvmAreEqual (FunctionScope* pScope)
 {
     Ref<JSValue> opA = pScope->getThis();
     Ref<JSValue> opB = pScope->getParam("b");
-    
-    if (opA->isUndefined() || opB->isUndefined())
-        return jsBool( opA->isNull() && opB->isNull() );
-    else
-        return jsBool (jsCompare(opA, opB) == 0);
+ 
+    return jsBool (mvmAreEqual(opA, opB));
 }
 
 /**
@@ -346,17 +350,21 @@ Ref<JSValue> mvmIsEqual (FunctionScope* pScope)
  * @param pScope
  * @return 
  */
-Ref<JSValue> mvmIsTypeEqual (FunctionScope* pScope)
+bool mvmAreTypeEqual (Ref<JSValue> opA, Ref<JSValue> opB)
+{
+    if (opA->getType() != opB->getType() )
+        return false;
+    else if (opA->isUndefined())
+        return true;        //Both are undefined, because they have the same types.
+    else
+        return jsCompare(opA, opB) == 0;
+}
+Ref<JSValue> mvmAreTypeEqual (FunctionScope* pScope)
 {
     Ref<JSValue> opA = pScope->getThis();
     Ref<JSValue> opB = pScope->getParam("b");
-    
-    if (opA->getType() != opB->getType() )
-        return jsFalse();
-    else if (opA->isUndefined())
-        return jsTrue();        //Both are undefined, because they have the same types.
-    else
-        return jsBool (jsCompare(opA, opB) == 0);
+
+    return jsBool (mvmAreTypeEqual(opA, opB));
 }
 
 /**
@@ -425,8 +433,8 @@ void registerMvmFunctions(Ref<IScope> scope)
 
     addNative1("@less", "b", mvmLess, scope);
     addNative1("@greater", "b", mvmGreater, scope);
-    addNative1("@isEqual", "b", mvmIsEqual, scope);
-    addNative1("@isTypeEqual", "b", mvmIsTypeEqual, scope);
+    addNative1("@areEqual", "b", mvmAreEqual, scope);
+    addNative1("@areTypeEqual", "b", mvmAreTypeEqual, scope);
     addNative1("@notEqual", "b", mvmNotEqual, scope);
     addNative1("@notTypeEqual", "b", mvmNotTypeEqual, scope);
     addNative1("@lequal", "b", mvmLequal, scope);

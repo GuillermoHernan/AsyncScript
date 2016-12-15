@@ -466,6 +466,8 @@ public:
         return m_length;
     }
 
+    Ref<JSValue> getAt(size_t index)const;
+
     // IScope
     /////////////////////////////////////////
     virtual Ref<JSValue> get(const std::string& name)const;

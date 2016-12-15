@@ -961,8 +961,8 @@ void binaryOperatorCode (int tokenCode, CodegenState* pState)
         operators[LEX_RSHIFTUNSIGNED] = "@rshiftu";
         operators['<'] =                "@less";
         operators['>'] =                "@greater";
-        operators[LEX_EQUAL] =          "@isEqual";
-        operators[LEX_TYPEEQUAL] =      "@isTypeEqual";
+        operators[LEX_EQUAL] =          "@areEqual";
+        operators[LEX_TYPEEQUAL] =      "@areTypeEqual";
         operators[LEX_NEQUAL] =         "@notEqual";
         operators[LEX_NTYPEEQUAL] =     "@notTypeEqual";
         operators[LEX_LEQUAL] =         "@lequal";

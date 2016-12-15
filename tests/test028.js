@@ -2,4 +2,5 @@
 var a = [1,2,4,5,7];
 var b = ["bread","cheese","sandwich"];
 
-result = a.contains(1) && !a.contains(42) && b.contains("cheese") && !b.contains("eggs");
+result = a.indexOf(1) == 0 && a.indexOf(42) < 0 
+        && b.indexOf("cheese")==1 && b.indexOf("eggs") < 0;

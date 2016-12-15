@@ -487,6 +487,17 @@ size_t JSArray::push(Ref<JSValue> value)
 }
 
 /**
+ * Gets an element located at an array position
+ * @param index
+ * @return 
+ */
+Ref<JSValue> JSArray::getAt(size_t index)const
+{
+    return get (to_string(index));
+}
+
+
+/**
  * JSArray 'get' override, to implement 'length' property read.
  * @param name
  * @param exception

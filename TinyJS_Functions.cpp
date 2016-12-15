@@ -30,6 +30,7 @@
 
 #include "TinyJS_Functions.h"
 #include "scriptMain.h"
+#include "mvmFunctions.h"
 
 #include <math.h>
 #include <cstdlib>
@@ -212,8 +213,6 @@ Ref<JSValue> stringConstructor(FunctionScope* pScope)
     return jsString (obj->toString());
 }
 
-//TODO: Reactivate, but replacing them by standard javascript functions
-
 Ref<JSValue> scArrayPush(FunctionScope* pScope)
 {
     auto    arr =  pScope->getThis().staticCast<JSArray>();
@@ -222,6 +221,38 @@ Ref<JSValue> scArrayPush(FunctionScope* pScope)
     arr->push(val);
     
     return arr;
+}
+
+Ref<JSValue> scArrayIndexOf(FunctionScope* pScope)
+{
+    auto    arrVal =  pScope->getThis();
+    auto    arr =  arrVal.staticCast<JSArray>();
+    auto    searchElement =  pScope->getParam("searchElement");
+    auto    fromIndex =  pScope->getParam("fromIndex");
+
+    if (arrVal->isNull()) 
+        return jsInt(-1);
+
+    const size_t len = arr->length();
+    
+    if (len <= 0)
+        return jsInt(-1);
+
+    size_t n = 0;
+    
+    if (!fromIndex->isNull())
+        n = (size_t)floor(fromIndex->toDouble());
+
+    if (n >= len)
+        return jsInt(-1);
+
+    for (; n < len; n++) {
+        auto item = arr->getAt (n);
+        
+        if (mvmAreTypeEqual (item, searchElement))
+            return jsInt(n);
+    }
+    return jsInt(-1);
 }
 /*Ref<JSValue> scArrayContains(FunctionScope* pScope) {
   Ref<JSValue>  obj = pScope->getParam("obj");
@@ -348,5 +379,6 @@ void registerFunctions(Ref<IScope> scope)
     //    addNative("function Array.remove(obj)", scArrayRemove, scope);
     //    addNative("function Array.join(separator)", scArrayJoin, scope);
     addNative("function Array.prototype.push(x)", scArrayPush, scope);
+    addNative("function Array.prototype.indexOf(searchElement, fromIndex)", scArrayIndexOf, scope);
 }
 

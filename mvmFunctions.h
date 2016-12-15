@@ -16,5 +16,10 @@
 
 void registerMvmFunctions(Ref<IScope> scope);
 
+bool mvmAreEqual (Ref<JSValue> opA, Ref<JSValue> opB);
+bool mvmAreTypeEqual (Ref<JSValue> opA, Ref<JSValue> opB);
+
+
+
 #endif	/* MVMFUNCTIONS_H */
 
