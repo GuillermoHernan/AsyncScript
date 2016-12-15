@@ -539,11 +539,6 @@ public:
         return m_name;
     }
 
-    void setCode(CScriptToken token)
-    {
-        m_code = token;
-    }
-
     void setCodeMVM(Ref<RefCountObj> code)
     {
         m_codeMVM = code;
@@ -562,11 +557,6 @@ public:
     JSNativeFn nativePtr()const
     {
         return m_pNative;
-    }
-
-    CScriptToken codeBlock()const
-    {
-        return m_code;
     }
 
     // JSValue
@@ -592,18 +582,11 @@ public:
 
 private:
 
-    JSFunction(const std::string& name, JSNativeFn pNative) :
-    JSObject(DefaultPrototype),
-    m_name(name),
-    m_code(""),
-    m_pNative(pNative)
-    {
-    }
+    JSFunction(const std::string& name, JSNativeFn pNative);
     
     ~JSFunction();
 
     const std::string m_name;
-    CScriptToken m_code;
     Ref<RefCountObj> m_codeMVM;
     const JSNativeFn m_pNative;
     ParametersList m_params;

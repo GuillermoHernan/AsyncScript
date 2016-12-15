@@ -643,7 +643,6 @@ Ref<JSFunction> JSFunction::createNative(const std::string& name, JSNativeFn fnP
 JSFunction::JSFunction(const std::string& name, JSNativeFn pNative) :
     JSObject(DefaultPrototype),
     m_name(name),
-    m_code(""),
     m_pNative(pNative)
 {
     //Prototype object, used when the function acts as a constructor.
