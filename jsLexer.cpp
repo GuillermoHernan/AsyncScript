@@ -24,9 +24,13 @@ string getTokenStr(int token)
 {
     if (token > 32 && token < 128)
     {
-        char buf[4] = "' '";
-        buf[1] = (char) token;
+        char buf[2] = "x";
+        buf[0] = (char)token;
         return buf;
+    }
+    else if (token > LEX_ASSIGN_BASE && token < LEX_R_WORDS_BASE)
+    {
+        return getTokenStr(token - LEX_ASSIGN_BASE) + "=";
     }
     switch (token)
     {
@@ -41,20 +45,14 @@ string getTokenStr(int token)
     case LEX_NTYPEEQUAL: return "!==";
     case LEX_LEQUAL: return "<=";
     case LEX_LSHIFT: return "<<";
-    case LEX_LSHIFTEQUAL: return "<<=";
     case LEX_GEQUAL: return ">=";
     case LEX_RSHIFT: return ">>";
     case LEX_RSHIFTUNSIGNED: return ">>";
-    case LEX_RSHIFTEQUAL: return ">>=";
-    case LEX_PLUSEQUAL: return "+=";
-    case LEX_MINUSEQUAL: return "-=";
     case LEX_PLUSPLUS: return "++";
     case LEX_MINUSMINUS: return "--";
-    case LEX_ANDEQUAL: return "&=";
     case LEX_ANDAND: return "&&";
-    case LEX_OREQUAL: return "|=";
     case LEX_OROR: return "||";
-    case LEX_XOREQUAL: return "^=";
+    case LEX_POWER: return "**";
         // reserved words
     case LEX_R_IF: return "if";
     case LEX_R_ELSE: return "else";
@@ -387,7 +385,7 @@ CScriptToken CScriptToken::parseString(const char * code)const
 struct SOperatorDef
 {
     const char * text;
-    const LEX_TYPES code;
+    const int code;
     const int len;
 };
 
@@ -396,26 +394,29 @@ struct SOperatorDef
  * before sorter ones.
  */
 const SOperatorDef s_operators [] = {
+    {">>>=", LEX_ASSIGN_BASE + LEX_RSHIFTUNSIGNED, 4},
     {"===", LEX_TYPEEQUAL, 3},
     {"!==", LEX_NTYPEEQUAL, 3},
-    {"<<=", LEX_LSHIFTEQUAL, 3},
-    {">>=", LEX_RSHIFTEQUAL, 3},
     {">>>", LEX_RSHIFTUNSIGNED, 3},
+    {"<<=", LEX_ASSIGN_BASE + LEX_LSHIFT, 3},
+    {">>=", LEX_ASSIGN_BASE + LEX_RSHIFT, 3},
+    {"**=", LEX_ASSIGN_BASE + LEX_POWER, 3},
     {"==", LEX_EQUAL, 2},
     {"!=", LEX_NEQUAL, 2},
     {"<=", LEX_LEQUAL, 2},
     {">=", LEX_GEQUAL, 2},
     {"<<", LEX_LSHIFT, 2},
     {">>", LEX_RSHIFT, 2},
-    {"+=", LEX_PLUSEQUAL, 2},
-    {"-=", LEX_MINUSEQUAL, 2},
-    //{"*=", , 2},
-    //{"/=", , 2},
-    //{"%&=", , 2},
-    {"&=", LEX_ANDEQUAL, 2},
-    {"|=", LEX_OREQUAL, 2},
+    {"**", LEX_POWER, 2},
+    {"+=", LEX_ASSIGN_BASE + '+', 2},
+    {"-=", LEX_ASSIGN_BASE + '-', 2},
+    {"*=", LEX_ASSIGN_BASE + '*', 2},
+    {"/=", LEX_ASSIGN_BASE + '/', 2},
+    {"%=", LEX_ASSIGN_BASE + '%', 2},
+    {"&=", LEX_ASSIGN_BASE + '&', 2},
+    {"|=", LEX_ASSIGN_BASE + '|', 2},
+    {"^=", LEX_ASSIGN_BASE + '^', 2},
     {"||", LEX_OROR, 2},
-    {"^=", LEX_XOREQUAL, 2},
     {"&&", LEX_ANDAND, 2},
     {"++", LEX_PLUSPLUS, 2},
     {"--", LEX_MINUSMINUS, 2},
@@ -433,7 +434,7 @@ CScriptToken CScriptToken::parseOperator(const char * code)const
     for (int i = 0; s_operators[i].len > 0; ++i)
     {
         if (strncmp(code, s_operators[i].text, s_operators[i].len) == 0)
-            return buildNextToken(s_operators[i].code, code, s_operators[i].len);
+            return buildNextToken((LEX_TYPES)s_operators[i].code, code, s_operators[i].len);
     }
 
     //Take it as a single char operator

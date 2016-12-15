@@ -141,6 +141,19 @@ Ref<JSValue> mvmModulus (FunctionScope* pScope)
 }
 
 /**
+ * Power operation
+ * @param pScope
+ * @return 
+ */
+Ref<JSValue> mvmPower (FunctionScope* pScope)
+{
+    const double valA = pScope->getThis()->toDouble();
+    const double valB = pScope->getParam("b")->toDouble();
+    
+    return jsDouble( pow(valA, valB) );
+}
+
+/**
  * Binary 'NOT' operation
  * @param pScope
  * @return 
@@ -419,6 +432,7 @@ void registerMvmFunctions(Ref<IScope> scope)
     addNative1("@multiply", "b", mvmMultiply, scope);
     addNative1("@divide", "b", mvmDivide, scope);
     addNative1("@modulus", "b", mvmModulus, scope);
+    addNative1("@power", "b", mvmPower, scope);
 
     addNative0("@binNot", mvmBinNot, scope);
     addNative1("@binAnd", "b", mvmBinAnd, scope);

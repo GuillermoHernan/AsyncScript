@@ -656,8 +656,9 @@ void prefixOpCodegen(Ref<AstNode> statement, CodegenState* pState)
     {
         //It is translated into a '+=' or '-=' equivalent operation
         Ref<AstLiteral> l = AstLiteral::create(op->position(), 1);
+        const int       newOpCode = LEX_ASSIGN_BASE + (op->code == LEX_PLUSPLUS ? '+' : '-');
         Ref<AstNode>    newOp = astCreateAssignment(op->position(),
-                                                    op->code == LEX_PLUSPLUS ? LEX_PLUSEQUAL : LEX_MINUSEQUAL,
+                                                    newOpCode,
                                                     op->children()[0], 
                                                     l);
         codegen(newOp, pState);
@@ -952,6 +953,7 @@ void binaryOperatorCode (int tokenCode, CodegenState* pState)
         operators['*'] =                "@multiply";
         operators['/'] =                "@divide";
         operators['%'] =                "@modulus";
+        operators[LEX_POWER] =          "@power";
         operators['&'] =                "@binAnd";
         operators['|'] =                "@binOr";
         operators['^'] =                "@binXor";

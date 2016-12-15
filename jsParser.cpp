@@ -63,7 +63,7 @@ ExprResult parseBinaryRLOp (CScriptToken token, const int *types, ExprResult::Pa
 bool isAssignment(CScriptToken token)
 {
     const LEX_TYPES t = token.type();
-    return t == '=' || (t > LEX_ASSIGN_BASE && t < LEX_ID);
+    return t == '=' || (t > LEX_ASSIGN_BASE && t < LEX_ASSIGN_MAX);
 }
 
 bool oneOf (CScriptToken token, const char* chars)

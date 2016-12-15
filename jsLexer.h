@@ -15,15 +15,6 @@ enum LEX_TYPES
     LEX_EOF = 0,
     LEX_INITIAL,
     LEX_COMMENT,
-    LEX_ASSIGN_BASE = 128,
-
-    LEX_LSHIFTEQUAL,
-    LEX_RSHIFTEQUAL,
-    LEX_PLUSEQUAL = LEX_ASSIGN_BASE + '+',
-    LEX_MINUSEQUAL = LEX_ASSIGN_BASE + '-',
-    LEX_ANDEQUAL = LEX_ASSIGN_BASE + '&',
-    LEX_OREQUAL = LEX_ASSIGN_BASE + '|',
-    LEX_XOREQUAL = LEX_ASSIGN_BASE + '^',
     
     LEX_ID = 256,
     LEX_INT,
@@ -43,8 +34,21 @@ enum LEX_TYPES
     LEX_MINUSMINUS,
     LEX_ANDAND,
     LEX_OROR,
+    LEX_POWER,
+
+    LEX_ASSIGN_BASE = 512,
+
+//    LEX_PLUSEQUAL = LEX_ASSIGN_BASE + '+',
+//    LEX_MINUSEQUAL = LEX_ASSIGN_BASE + '-',
+//    LEX_ANDEQUAL = LEX_ASSIGN_BASE + '&',
+//    LEX_OREQUAL = LEX_ASSIGN_BASE + '|',
+//    LEX_XOREQUAL = LEX_ASSIGN_BASE + '^',
+//    LEX_LSHIFTEQUAL,
+//    LEX_RSHIFTEQUAL,
+    LEX_ASSIGN_MAX = 1023,
+    
     // reserved words
-#define LEX_R_LIST_START LEX_R_IF
+    LEX_R_WORDS_BASE = 1024,
     LEX_R_IF,
     LEX_R_ELSE,
     LEX_R_DO,
@@ -131,11 +135,6 @@ public:
         return m_type;
     }
     
-    bool isAssignment()const
-    {
-        return m_type == '=' || (m_type > LEX_ASSIGN_BASE && m_type < LEX_ID);
-    }
-
     bool eof()const
     {
         return m_type == LEX_EOF;
