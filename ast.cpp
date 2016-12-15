@@ -142,7 +142,7 @@ Ref<AstNode> astToNewCall(Ref<AstNode> callExpr)
     
     auto children = callExpr->children();
     
-    for (size_t i = 0; i < children.size(); ++i)
+    for (size_t i = 1; i < children.size(); ++i)
         result->addChild(children[i]);
     
     return result;
