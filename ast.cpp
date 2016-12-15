@@ -137,8 +137,15 @@ Ref<AstNode> astCreateFnCall(ScriptPosition pos, Ref<AstNode> fnExpr, bool newCa
  */
 Ref<AstNode> astToNewCall(Ref<AstNode> callExpr)
 {
-    return astCreateFnCall(callExpr->position(), 
-                           callExpr->children()[0], true);
+    auto result = astCreateFnCall(callExpr->position(), 
+                                  callExpr->children()[0], true);
+    
+    auto children = callExpr->children();
+    
+    for (size_t i = 0; i < children.size(); ++i)
+        result->addChild(children[i]);
+    
+    return result;
 }
 
 /**
