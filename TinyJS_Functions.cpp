@@ -299,20 +299,28 @@ Ref<JSValue> scArrayRemove(FunctionScope* pScope) {
       v = v->nextSibling;
   }
 }
+ */
 
-Ref<JSValue>scArrayJoin(FunctionScope* pScope) {
-  string sep = pScope->getParam("separator")->toString();
-  CScriptVar *arr = pScope->getThis();
+Ref<JSValue>scArrayJoin(FunctionScope* pScope)
+{
+    Ref<JSArray>    arr = pScope->getThis().staticCast<JSArray>();
+    auto            sep = pScope->getParam("separator");
+    string          sepStr = ",";
 
-  ostringstream sstr;
-  int l = arr->getArrayLength();
-  for (int i=0;i<l;i++) {
-    if (i>0) sstr << sep;
-    sstr << arr->getArrayIndex(i)->toString();
-  }
+    if (!sep->isNull())
+        sepStr = sep->toString();
 
-  return jsString(sstr.str());
-}*/
+    ostringstream output;
+    const size_t n = arr->length();
+    for (size_t i = 0; i < n; i++)
+    {
+        if (i > 0) 
+            output << sepStr;
+        output << arr->getAt(i)->toString();
+    }
+
+    return jsString(output.str());
+}
 
 // ----------------------------------------------- Register Functions
 
@@ -377,7 +385,7 @@ void registerFunctions(Ref<IScope> scope)
     // JSON.parse is left out as you can (unsafely!) use eval instead
     //    addNative("function Array.contains(obj)", scArrayContains, scope);
     //    addNative("function Array.remove(obj)", scArrayRemove, scope);
-    //    addNative("function Array.join(separator)", scArrayJoin, scope);
+    addNative("function Array.prototype.join(separator)", scArrayJoin, scope);
     addNative("function Array.prototype.push(x)", scArrayPush, scope);
     addNative("function Array.prototype.indexOf(searchElement, fromIndex)", scArrayIndexOf, scope);
 }
