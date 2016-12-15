@@ -639,6 +639,18 @@ Ref<JSFunction> JSFunction::createNative(const std::string& name, JSNativeFn fnP
     return refFromNew(new JSFunction(name, fnPtr));
 }
 
+
+JSFunction::JSFunction(const std::string& name, JSNativeFn pNative) :
+    JSObject(DefaultPrototype),
+    m_name(name),
+    m_code(""),
+    m_pNative(pNative)
+{
+    //Prototype object, used when the function acts as a constructor.
+    set("prototype", JSObject::create());
+}
+
+
 JSFunction::~JSFunction()
 {
 //    printf ("Destroying function: %s\n", m_name.c_str());
