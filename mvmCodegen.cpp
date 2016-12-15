@@ -657,7 +657,7 @@ void prefixOpCodegen(Ref<AstNode> statement, CodegenState* pState)
         //It is translated into a '+=' or '-=' equivalent operation
         Ref<AstLiteral> l = AstLiteral::create(op->position(), 1);
         Ref<AstNode>    newOp = astCreateAssignment(op->position(),
-                                                    op->code == LEX_PLUSPLUS ? '+' : '-',
+                                                    op->code == LEX_PLUSPLUS ? LEX_PLUSEQUAL : LEX_MINUSEQUAL,
                                                     op->children()[0], 
                                                     l);
         codegen(newOp, pState);
