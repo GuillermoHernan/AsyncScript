@@ -45,7 +45,8 @@
 using namespace std;
 
 /**
- * Generic 
+ * Generic JSON format logger.
+ * It is used to generate call log.
  */
 class JsonLogger
 {
@@ -86,6 +87,27 @@ private:
     bool    m_first;
 };
 
+
+/**
+ * Assertion function exported to tests
+ * @param pScope
+ * @return 
+ */
+Ref<JSValue> assertFunction(FunctionScope* pScope)
+{
+    auto    value =  pScope->getParam("value");
+    
+    if (!value->toBoolean())
+    {
+        auto    text =  pScope->getParam("text")->toString();
+        
+        error("Assertion failed: %s", text.c_str());
+    }
+    
+    return undefined();
+}
+
+
 JsonLogger*  s_curFunctionLogger = NULL;
 
 bool run_test(const std::string& szFile, const string &testDir, const string& resultsDir)
@@ -107,12 +129,13 @@ bool run_test(const std::string& szFile, const string &testDir, const string& re
     Ref<IScope> globals = ObjectScope::create(globalsObj);
     
     globals->set("result", jsInt(0));
+    addNative("function assert(value, text)", assertFunction, globals);
     try
     {
         //This code is copied from 'evaluate', to log the intermediate results 
         //generated from each state
         CScriptToken    token (script.c_str());
-        StatementList   statements;
+        AstNodeList   statements;
 
         //Parsing loop
         token = token.next();
@@ -144,7 +167,7 @@ bool run_test(const std::string& szFile, const string &testDir, const string& re
             s_curFunctionLogger->log(entry->getJSON(0));
             return undefined();
         };
-        addNative("function callLogger(x)", logFn, globals);
+        //addNative("function callLogger(x)", logFn, globals);
 
         //Execution
         mvmExecute(code, globals);
