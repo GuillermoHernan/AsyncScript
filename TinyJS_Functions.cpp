@@ -254,52 +254,6 @@ Ref<JSValue> scArrayIndexOf(FunctionScope* pScope)
     }
     return jsInt(-1);
 }
-/*Ref<JSValue> scArrayContains(FunctionScope* pScope) {
-  Ref<JSValue>  obj = pScope->getParam("obj");
-  Ref<JSValue>  arr = pScope->getThis();
-  
-  if (!arr->isArray())
-      return jsFalse();
-
-  Ref<JSArray>  v = arr.staticCast();
-
-  while (v) {
-      if (v->var->equals(obj)) {
-        contains = true;
-        break;
-      }
-      v = v->nextSibling;
-  }
-
-  return jsFalse();
-}
-
-Ref<JSValue> scArrayRemove(FunctionScope* pScope) {
-  CScriptVar *obj = pScope->getParam("obj");
-  vector<int> removedIndices;
-  CScriptVarLink *v;
-  // remove
-  v = pScope->getThis()->firstChild;
-  while (v) {
-      if (v->var->equals(obj)) {
-        removedIndices.push_back(v->getIntName());
-      }
-      v = v->nextSibling;
-  }
-  // renumber
-  v = pScope->getThis()->firstChild;
-  while (v) {
-      int n = v->getIntName();
-      int newn = n;
-      for (size_t i=0;i<removedIndices.size();i++)
-        if (n>=removedIndices[i])
-          newn--;
-      if (newn!=n)
-        v->setIntName(newn);
-      v = v->nextSibling;
-  }
-}
- */
 
 Ref<JSValue>scArrayJoin(FunctionScope* pScope)
 {
@@ -320,6 +274,33 @@ Ref<JSValue>scArrayJoin(FunctionScope* pScope)
     }
 
     return jsString(output.str());
+}
+
+/**
+ * Creates a 'alice' of the array. A contiguous subset of array elements
+ * defined by a initial index (included) and a final index (not included)
+ * @param pScope
+ * @return 
+ */
+Ref<JSValue>scArraySlice(FunctionScope* pScope)
+{
+    Ref<JSArray>    arr = pScope->getThis().staticCast<JSArray>();
+    auto            begin = pScope->getParam("begin");
+    auto            end = pScope->getParam("end");
+    const size_t    iBegin = begin->toInt32();
+    size_t          iEnd = arr->length();
+    
+    if (!end->isNull() && end->toInt32() >= 0)
+        iEnd = end->toInt32();
+    
+    iEnd = max (iEnd, iBegin);
+    
+    auto result = JSArray::create();
+    
+    for (size_t i = iBegin; i < iEnd; ++i)
+        result->push(arr->getAt(i));
+
+    return result;
 }
 
 // ----------------------------------------------- Register Functions
@@ -382,9 +363,8 @@ void registerFunctions(Ref<IScope> scope)
     addNative("function parseInt(str)", scIntegerParseInt, scope); // string to int
     addNative("function Integer.valueOf(str)", scIntegerValueOf, scope); // value of a single character
     addNative("function JSON.stringify(obj, replacer)", scJSONStringify, scope); // convert to JSON. replacer is ignored at the moment
-    // JSON.parse is left out as you can (unsafely!) use eval instead
-    //    addNative("function Array.contains(obj)", scArrayContains, scope);
-    //    addNative("function Array.remove(obj)", scArrayRemove, scope);
+    //TODO: Add JSON.parse()
+    addNative("function Array.prototype.slice(begin, end)", scArraySlice, scope);
     addNative("function Array.prototype.join(separator)", scArrayJoin, scope);
     addNative("function Array.prototype.push(x)", scArrayPush, scope);
     addNative("function Array.prototype.indexOf(searchElement, fromIndex)", scArrayIndexOf, scope);
