@@ -87,6 +87,8 @@ private:
     bool    m_first;
 };
 
+JsonLogger*  s_curFunctionLogger = NULL;
+
 
 /**
  * Assertion function exported to tests
@@ -107,8 +109,20 @@ Ref<JSValue> assertFunction(FunctionScope* pScope)
     return undefined();
 }
 
+/**
+ * Function to write on standard output
+ * @param pScope
+ * @return 
+ */
+Ref<JSValue> printLn(FunctionScope* pScope)
+{
+    auto    text =  pScope->getParam("text");
+    
+    printf ("%s\n", text->toString().c_str());
+    
+    return undefined();
+}
 
-JsonLogger*  s_curFunctionLogger = NULL;
 
 bool run_test(const std::string& szFile, const string &testDir, const string& resultsDir)
 {
@@ -129,6 +143,7 @@ bool run_test(const std::string& szFile, const string &testDir, const string& re
     
     globals->newVar("result", jsInt(0));
     addNative("function assert(value, text)", assertFunction, globals);
+    addNative("function printLn(text)", printLn, globals);
     try
     {
         //This code is copied from 'evaluate', to log the intermediate results 
