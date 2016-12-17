@@ -151,7 +151,7 @@ bool run_test(const std::string& szFile, const string &testDir, const string& re
         writeTextFile(testResultsDir + testName + ".ast.json", astJSON);
 
         //Code generation.
-        const Ref<MvmScript>    code = scriptCodegen(statements);
+        const Ref<MvmRoutine>    code = scriptCodegen(statements);
 
         //Write disassembly
         writeTextFile(testResultsDir + testName + ".asm.json", mvmDisassembly(code));

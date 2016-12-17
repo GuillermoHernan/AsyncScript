@@ -63,7 +63,7 @@ struct ExecutionContext
 typedef void (*OpFunction) (const int opCode, ExecutionContext* ec);
 
 
-Ref<JSValue> execScript (Ref<MvmScript> code, ExecutionContext* ec);
+Ref<JSValue> execScript (Ref<MvmRoutine> code, ExecutionContext* ec);
 int execBlock (const MvmBlock& block, ExecutionContext* ec);
 void execInstruction16 (const int opCode, ExecutionContext* ec);
 void execInstruction8 (const int opCode, ExecutionContext* ec);
@@ -136,7 +136,7 @@ static const OpFunction s_instructions[64] =
  * @param globals
  * @return 
  */
-Ref<JSValue> mvmExecute (Ref<MvmScript> code, Ref<IScope> globals)
+Ref<JSValue> mvmExecute (Ref<MvmRoutine> code, Ref<IScope> globals)
 {
     ExecutionContext    ec;
     
@@ -152,7 +152,7 @@ Ref<JSValue> mvmExecute (Ref<MvmScript> code, Ref<IScope> globals)
  * @param ec        Execution context
  * @return 
  */
-Ref<JSValue> execScript (Ref<MvmScript> code, ExecutionContext* ec)
+Ref<JSValue> execScript (Ref<MvmRoutine> code, ExecutionContext* ec)
 {
     if (code->blocks.empty())
         return undefined();
@@ -343,7 +343,7 @@ void execCall (const int nArgs, ExecutionContext* ec)
         result = function->nativePtr()(fnScope.getPointer());
     else
     {
-        const Ref<MvmScript>    code = function->getCodeMVM().staticCast<MvmScript>();
+        const Ref<MvmRoutine>    code = function->getCodeMVM().staticCast<MvmRoutine>();
         const size_t            initialStack = ec->stack.size();
         
         result = execScript(code, ec);
@@ -837,7 +837,7 @@ Ref<JSObject> blocksToJS (const BlockVector& blocks, const ValueVector& constant
  * @param code
  * @return 
  */
-string mvmDisassembly (Ref<MvmScript> code)
+string mvmDisassembly (Ref<MvmRoutine> code)
 {
     return toJSObject(code)->getJSON(0);
 }
@@ -848,7 +848,7 @@ string mvmDisassembly (Ref<MvmScript> code)
  * @param code
  * @return 
  */
-Ref<JSObject> toJSObject (Ref<MvmScript> code)
+Ref<JSObject> toJSObject (Ref<MvmRoutine> code)
 {
     Ref<JSObject>   obj = JSObject::create();
     
@@ -872,7 +872,7 @@ Ref<JSObject> disassemblyFunction (Ref<JSFunction> function)
     if (function->isNative())
         obj->set("code", jsString("native"));
     else
-        obj->set("code", toJSObject(function->getCodeMVM().staticCast<MvmScript>()));
+        obj->set("code", toJSObject(function->getCodeMVM().staticCast<MvmRoutine>()));
 
     return obj;
 }

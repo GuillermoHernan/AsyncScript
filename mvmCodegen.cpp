@@ -16,6 +16,9 @@
 
 using namespace std;
 
+/**
+ * Code generation scope
+ */
 class CodegenScope 
 {
 public:
@@ -34,12 +37,26 @@ private:
 };
 
 /**
+ * Value comparer function class, to be able to use 'JSValue' objects as map keys.
+ */
+struct JsValueLessComp
+{
+    bool operator ()(Ref<JSValue> a, Ref<JSValue> b)const
+    {
+        return jsValuesCompare(a, b) < 0;
+    }
+};
+
+typedef map<Ref<JSValue>, int, JsValueLessComp> ConstantsMap;
+
+/**
  * State of a codegen operation
  */
 struct CodegenState
 {
-    Ref<MvmScript>              curScript;
-    std::vector<CodegenScope>   scopes;    
+    Ref<MvmRoutine>         curRoutine;
+    vector<CodegenScope>    scopes;
+    ConstantsMap            constants;
 };
 
 //Forward declarations
@@ -99,13 +116,13 @@ int  curBlockId (CodegenState* pState);
  * @param statements    The script is received as a sequence (vector) of compiled statements.
  * @return 
  */
-Ref<MvmScript> scriptCodegen (const AstNodeList& statements)
+Ref<MvmRoutine> scriptCodegen (const AstNodeList& statements)
 {
     CodegenState    state;
     
     ASSERT (!statements.empty());
     
-    state.curScript = MvmScript::create(ScriptPosition(1,1));
+    state.curRoutine = MvmRoutine::create(ScriptPosition(1,1));
     state.scopes.push_back(CodegenScope());
     
     for (size_t i = 0; i < statements.size(); ++i)
@@ -116,7 +133,7 @@ Ref<MvmScript> scriptCodegen (const AstNodeList& statements)
         codegen (statements[i], &state);
     }
     
-    return state.curScript;    
+    return state.curRoutine;    
 }
 
 
@@ -367,15 +384,14 @@ void functionCodegen (Ref<AstNode> statement, CodegenState* pState)
 {
     Ref<AstFunction>    fnNode = statement.staticCast<AstFunction>();
     Ref<JSFunction>     function = JSFunction::createJS(fnNode->getName());
-    Ref<MvmScript>      code = MvmScript::create(fnNode->position());
+    Ref<MvmRoutine>      code = MvmRoutine::create(fnNode->position());
     const AstFunction::Params& params = fnNode->getParams();
     
     function->setParams (params);
     function->setCodeMVM (code);
     
-    //TODO: review state & scope structures.
-    CodegenState    fnState = *pState;
-    fnState.curScript = code;
+    CodegenState    fnState;// = *pState;
+    fnState.curRoutine = code;
     fnState.scopes.push_back(CodegenScope());
     
     //Declare function reserver symbols.
@@ -806,12 +822,17 @@ void logicalOpCodegen (const int opCode, Ref<AstNode> statement, CodegenState* p
  */
 void pushConstant (Ref<JSValue> value, CodegenState* pState)
 {
-    //TODO: Definitively, there is an optimization opportunity, by avoiding repeated 
-    //values into the constant tables of the functions. Or even, by not repeating constants
-    //in the whole script.
-    const int id = (int)pState->curScript->constants.size();
+    //TODO: It can be further optimized, by deduplicating constants at script level.
+    int                             id = (int)pState->curRoutine->constants.size();
+    ConstantsMap::const_iterator    it = pState->constants.find(value);
     
-    pState->curScript->constants.push_back(value);
+    if (it != pState->constants.end())
+        id = it->second;
+    else
+    {
+        pState->constants[value] = id;
+        pState->curRoutine->constants.push_back(value);
+    }
     
     if (id < OC_PUSHC)
         instruction8(OC_PUSHC + id, pState);
@@ -821,7 +842,7 @@ void pushConstant (Ref<JSValue> value, CodegenState* pState)
 
         //TODO: 32 bit instructions, to have more constants.
         if (id16 >= OC16_PUSHC)
-            errorAt (pState->curScript->position,  "Too much constants. Maximum is 8256 per function");
+            errorAt (pState->curRoutine->position,  "Too much constants. Maximum is 8256 per function");
         else
             instruction16(id16 + OC16_PUSHC, pState);
     }
@@ -914,7 +935,7 @@ void instruction8 (int opCode, CodegenState* pState)
 {
     ASSERT (opCode < 128 && opCode >=0);
     
-    pState->curScript->blocks.rbegin()->instructions.push_back(opCode);
+    pState->curRoutine->blocks.rbegin()->instructions.push_back(opCode);
 }
 
 /**
@@ -928,7 +949,7 @@ void instruction16 (int opCode, CodegenState* pState)
     
     opCode |= 0x8000;   //16 bits indicator
     
-    ByteVector&     block = pState->curScript->blocks.rbegin()->instructions;
+    ByteVector&     block = pState->curRoutine->blocks.rbegin()->instructions;
     
     block.push_back((unsigned char)(opCode >> 8));
     block.push_back((unsigned char)(opCode & 0xff));
@@ -941,7 +962,7 @@ void instruction16 (int opCode, CodegenState* pState)
  */
 int  getLastInstruction (CodegenState* pState)
 {
-    const ByteVector& block = pState->curScript->blocks.rbegin()->instructions;
+    const ByteVector& block = pState->curRoutine->blocks.rbegin()->instructions;
     
     if (block.size() > 1)
     {
@@ -973,7 +994,7 @@ int  getLastInstruction (CodegenState* pState)
  */
 int removeLastInstruction (CodegenState* pState)
 {
-    ByteVector& block = pState->curScript->blocks.rbegin()->instructions;
+    ByteVector& block = pState->curRoutine->blocks.rbegin()->instructions;
     const int   lastInstruction = getLastInstruction(pState);
     
     if (lastInstruction & 0x8000)
@@ -1032,12 +1053,12 @@ void binaryOperatorCode (int tokenCode, CodegenState* pState)
  */
 void endBlock (int trueJump, int falseJump, CodegenState* pState)
 {
-    MvmBlock    &curBlock = pState->curScript->blocks.back();
+    MvmBlock    &curBlock = pState->curRoutine->blocks.back();
     
     curBlock.nextBlocks[1] = trueJump;
     curBlock.nextBlocks[0] = falseJump;
 
-    pState->curScript->blocks.push_back(MvmBlock());
+    pState->curRoutine->blocks.push_back(MvmBlock());
 }
 
 /**
@@ -1048,7 +1069,7 @@ void endBlock (int trueJump, int falseJump, CodegenState* pState)
  */
 void setTrueJump (int blockId, int destinationId, CodegenState* pState)
 {
-    pState->curScript->blocks[blockId].nextBlocks[1] = destinationId;
+    pState->curRoutine->blocks[blockId].nextBlocks[1] = destinationId;
 }
 
 /**
@@ -1059,7 +1080,7 @@ void setTrueJump (int blockId, int destinationId, CodegenState* pState)
  */
 void setFalseJump (int blockId, int destinationId, CodegenState* pState)
 {
-    pState->curScript->blocks[blockId].nextBlocks[0] = destinationId;
+    pState->curRoutine->blocks[blockId].nextBlocks[0] = destinationId;
 }
 
 /**
@@ -1067,5 +1088,5 @@ void setFalseJump (int blockId, int destinationId, CodegenState* pState)
  */
 int curBlockId (CodegenState* pState)
 {
-    return (int)pState->curScript->blocks.size() - 1;
+    return (int)pState->curRoutine->blocks.size() - 1;
 }

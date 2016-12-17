@@ -45,7 +45,7 @@ Ref<JSValue> evaluate (const char* script, Ref<IScope> globals)
     }
     
     //Code generation.
-    const Ref<MvmScript>    code = scriptCodegen(statements);
+    const Ref<MvmRoutine>    code = scriptCodegen(statements);
     
     //Execution
     return mvmExecute(code, globals);

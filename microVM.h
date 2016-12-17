@@ -16,11 +16,11 @@
 #include <vector>
 #include <string>
 
-struct MvmScript;
+struct MvmRoutine;
 
-Ref<JSValue>    mvmExecute (Ref<MvmScript> code, Ref<IScope> globals);
-std::string     mvmDisassembly (Ref<MvmScript> code);
-Ref<JSObject>   toJSObject (Ref<MvmScript> code);
+Ref<JSValue>    mvmExecute (Ref<MvmRoutine> code, Ref<IScope> globals);
+std::string     mvmDisassembly (Ref<MvmRoutine> code);
+Ref<JSObject>   toJSObject (Ref<MvmRoutine> code);
 
 /**
  * 8 bit instruction codes.
@@ -87,12 +87,12 @@ struct MvmBlock
 
 typedef std::vector<MvmBlock>  BlockVector;
 
-class MvmScript : public RefCountObj
+class MvmRoutine : public RefCountObj
 {
 public:
-    static Ref<MvmScript> create(const ScriptPosition& pos)
+    static Ref<MvmRoutine> create(const ScriptPosition& pos)
     {
-        return refFromNew(new MvmScript(pos));
+        return refFromNew(new MvmRoutine(pos));
     }
 
     const ScriptPosition position;    
@@ -101,7 +101,7 @@ public:
     BlockVector blocks;
     
 protected:
-    MvmScript(const ScriptPosition& pos):position (pos)    
+    MvmRoutine(const ScriptPosition& pos):position (pos)    
     {
         blocks.push_back(MvmBlock());
     }

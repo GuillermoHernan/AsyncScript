@@ -12,6 +12,7 @@
 #include "utils.h"
 
 #include <cstdlib>
+#include <math.h>
 
 using namespace std;
 
@@ -218,9 +219,60 @@ bool nullCheck (Ref<JSValue> value)
         return value->isNull();
 }
 
+/**
+ * Compares two javascript values.
+ * @param a
+ * @param b
+ * @return 
+ */
+double jsValuesCompare (Ref<JSValue> a, Ref<JSValue> b)
+{
+    auto typeA = a->getType();
+    auto typeB = b->getType();
+    
+    if (typeA != typeB)
+        return typeA - typeB;
+    else
+    {
+        if (typeA <= VT_NULL)
+            return 0;
+        else if (typeA <= VT_BOOL)
+            return a->toDouble() - b->toDouble();
+        else if (typeA == VT_STRING)
+            return a->toString().compare( b->toString() );
+        else
+            return a.getPointer() - b.getPointer();
+    }
+}
 
+/**
+ * Converts a value into a 64 bit integer.
+ * @param a
+ * @return The integer value. In case of failure, it returns the largest 
+ * number representable by a 64 bit integer (0xFFFFFFFFFFFFFFFF), which cannot
+ * be represented by a double.
+ */
+unsigned long long toUint64 (Ref<JSValue> a)
+{
+    const double v = a->toDouble();
+    
+    if (isnan(v))
+        return 0xFFFFFFFFFFFFFFFF;
+    else
+        return (unsigned long long)v;
+}
 
-
+/**
+ * Checks if a value is an integer number
+ * @param a
+ * @return 
+ */
+unsigned long long isInteger (Ref<JSValue> a)
+{
+    const double v = a->toDouble();
+    
+    return floor(v) == v;
+}
 
 // JSNumber
 //

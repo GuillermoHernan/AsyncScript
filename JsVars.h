@@ -133,6 +133,9 @@ Ref<DestType> castTo (Ref<SrcType> value)
         return Ref<DestType>( static_cast<DestType*> ( value.getPointer() ) );
 }
 
+double jsValuesCompare (Ref<JSValue> a, Ref<JSValue> b);
+unsigned long long toUint64 (Ref<JSValue> a);
+unsigned long long isInteger (Ref<JSValue> a);
 
 
 //////////////////////////////////////////
