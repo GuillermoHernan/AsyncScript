@@ -171,19 +171,11 @@ Ref<JSValue> scJSONStringify(FunctionScope* pScope)
     return jsString(result);
 }
 
-Ref<JSValue> scExec(FunctionScope* pScope)
-{
-    std::string str = pScope->getParam("jsCode")->toString();
-    Ref<IScope> globals = createDefaultGlobals();
-
-    return evaluate (str.c_str(), globals);
-}
-
 Ref<JSValue> scEval(FunctionScope* pScope)
 {
     std::string str = pScope->getParam("jsCode")->toString();
 
-    return evaluate (str.c_str(), pScope->getGlobals());
+    return evaluate (str.c_str(), createDefaultGlobals());
 }
 
 Ref<JSValue> objectConstructor(FunctionScope* pScope)
@@ -348,7 +340,6 @@ void registerFunctions(Ref<IScope> scope)
 {
     createDefaultPrototypes (scope);
     
-    addNative("function exec(jsCode)", scExec, scope); // execute the given code
     addNative("function eval(jsCode)", scEval, scope); // execute the given string (an expression) and return the result
     //    addNative("function trace()", scTrace, scope);
     //    addNative("function Object.dump()", scObjectDump, scope);
