@@ -17,13 +17,15 @@ assert (v[5] == 11, "v[5] == " + v[1]);
 
 v[8.0] = 31;
 assert (v.length == 9, "expected length(9): "+ v.length);
-assert (v[8.0] == 31, "v[6.0] == " + v[8.0]);
+assert (v[8.0] == 31, "v[8.0] == " + v[8.0]);
 
 v[19.9] = 127;
 assert (v.length == 9, "expected length(9): "+ v.length);
 assert (v[19.9] == 127, "v[19.9] == " + v[19.9]);
 
-assert (v.join() == "2,9,10,17,19,11,31", "Array content: " + v.join());
+v[6.0] = 29;
+v[7] = 30;
+assert (v.join() == "2,9,10,17,19,11,29,30,31", "Array content: " + v.join());
 
 
 result = 1;

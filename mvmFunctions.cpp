@@ -27,7 +27,7 @@ Ref<JSValue> mvmNewObj (FunctionScope* pScope)
     Ref<JSValue>    prototype = undefined();
 
     if (constructor->isFunction())
-        prototype = constructor.staticCast<JSFunction>()->get("prototype");
+        prototype = constructor->readFieldStr("prototype");
     
     if (!prototype->isObject())
         return JSObject::create();      //No constructor provided. Use default prototype.
@@ -42,7 +42,7 @@ Ref<JSValue> mvmNewObj (FunctionScope* pScope)
  */
 Ref<JSValue> mvmNewArray (FunctionScope* pScope)
 {
-    const int size = pScope->getThis()->toInt32();
+    const size_t size = toSizeT( pScope->getThis() );
     
     return JSArray::create(size);
 }
@@ -168,7 +168,7 @@ Ref<JSValue> mvmPower (FunctionScope* pScope)
  */
 Ref<JSValue> mvmBinNot (FunctionScope* pScope)
 {
-    const int valA = pScope->getThis()->toInt32();
+    const int valA = toInt32( pScope->getThis() );
     
     return jsInt(~valA);
 }
@@ -180,8 +180,8 @@ Ref<JSValue> mvmBinNot (FunctionScope* pScope)
  */
 Ref<JSValue> mvmBinAnd (FunctionScope* pScope)
 {
-    const int valA = pScope->getThis()->toInt32();
-    const int valB = pScope->getParam("b")->toInt32();
+    const int valA = toInt32( pScope->getThis() );
+    const int valB = toInt32( pScope->getParam("b") );
     
     return jsInt (valA & valB);
 }
@@ -193,8 +193,8 @@ Ref<JSValue> mvmBinAnd (FunctionScope* pScope)
  */
 Ref<JSValue> mvmBinOr (FunctionScope* pScope)
 {
-    const int valA = pScope->getThis()->toInt32();
-    const int valB = pScope->getParam("b")->toInt32();
+    const int valA = toInt32( pScope->getThis() );
+    const int valB = toInt32( pScope->getParam("b") );
     
     return jsInt (valA | valB);
 }
@@ -206,8 +206,8 @@ Ref<JSValue> mvmBinOr (FunctionScope* pScope)
  */
 Ref<JSValue> mvmBinXor (FunctionScope* pScope)
 {
-    const int valA = pScope->getThis()->toInt32();
-    const int valB = pScope->getParam("b")->toInt32();
+    const int valA = toInt32( pScope->getThis() );
+    const int valB = toInt32( pScope->getParam("b") );
     
     return jsInt (valA ^ valB);
 }
@@ -231,8 +231,8 @@ Ref<JSValue> mvmLogicNot (FunctionScope* pScope)
  */
 Ref<JSValue> mvmLshift (FunctionScope* pScope)
 {
-    const int valA = pScope->getThis()->toInt32();
-    const unsigned valB = unsigned(pScope->getParam("b")->toInt32());
+    const int valA = toInt32( pScope->getThis() );
+    const unsigned valB = unsigned(toInt32( pScope->getParam("b")));
     
     return jsInt (valA << valB);
 }
@@ -244,8 +244,8 @@ Ref<JSValue> mvmLshift (FunctionScope* pScope)
  */
 Ref<JSValue> mvmRshift (FunctionScope* pScope)
 {
-    const int valA = pScope->getThis()->toInt32();
-    const unsigned valB = unsigned(pScope->getParam("b")->toInt32());
+    const int valA = toInt32( pScope->getThis() );
+    const unsigned valB = unsigned(toInt32 (pScope->getParam("b")));
     
     return jsInt (valA >> valB);
 }
@@ -257,8 +257,8 @@ Ref<JSValue> mvmRshift (FunctionScope* pScope)
  */
 Ref<JSValue> mvmRshiftu (FunctionScope* pScope)
 {
-    const unsigned valA = unsigned(pScope->getThis()->toInt32());
-    const unsigned valB = unsigned(pScope->getParam("b")->toInt32());
+    const unsigned valA = unsigned(toInt32( pScope->getThis() ));
+    const unsigned valB = unsigned(toInt32( pScope->getParam("b")));
     
     return jsDouble (double(valA >> valB));
 }

@@ -231,19 +231,19 @@ Ref<JSValue> AstNode::toJS()const
 {
     Ref<JSObject>   obj = JSObject::create();
     
-    obj->set("a_type", jsString(astTypeToString(getType())));
+    obj->writeFieldStr("a_type", jsString(astTypeToString(getType())));
 
     const string name = getName();
     if (!name.empty())
-        obj->set("b_name", jsString(name));
+        obj->writeFieldStr("b_name", jsString(name));
     
     const AstNodeList&  c = children();
     if (!c.empty())
-        obj->set("z_children", toJSArray(c));
+        obj->writeFieldStr("z_children", toJSArray(c));
 
     const auto value = getValue();
     if (!value->isUndefined())
-        obj->set("v_value", value);
+        obj->writeFieldStr("v_value", value);
 
     return obj;
 }
@@ -257,8 +257,8 @@ Ref<JSValue> AstFunction::toJS()const
 {
     Ref<JSObject>   obj = AstNode::toJS().staticCast<JSObject>();
     
-    obj->set("c_parameters", JSArray::createStrArray(m_params));
-    obj->set("d_code", m_code->toJS());
+    obj->writeFieldStr("c_parameters", JSArray::createStrArray(m_params));
+    obj->writeFieldStr("d_code", m_code->toJS());
     
     return obj;
 }
@@ -271,7 +271,7 @@ Ref<JSValue> AstOperator::toJS()const
 {
     Ref<JSObject>   obj = AstBranchNode::toJS().staticCast<JSObject>();
 
-    obj->set("d_operator", jsString(getTokenStr(code)));
+    obj->writeFieldStr("d_operator", jsString(getTokenStr(code)));
     return obj;
 }
 
@@ -284,12 +284,12 @@ Ref<JSValue> AstObject::toJS()const
     Ref<JSObject>   obj = JSObject::create();
     Ref<JSObject>   props = JSObject::create();
     
-    obj->set("a_type", jsString(astTypeToString(getType())));
-    obj->set("b_properties", props);
+    obj->writeFieldStr("a_type", jsString(astTypeToString(getType())));
+    obj->writeFieldStr("b_properties", props);
     
     PropertyList::const_iterator it;
     for (it = m_properties.begin(); it != m_properties.end(); ++it)
-        props->set(it->name, it->expr->toJS());
+        props->writeFieldStr(it->name, it->expr->toJS());
     
     return obj;
 }

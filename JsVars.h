@@ -49,20 +49,19 @@ std::string getTypeName(JSValueTypes vType);
 class JSValue : public RefCountObj
 {
 public:
+    virtual JSValueTypes getType()const = 0;
 
     virtual std::string toString()const = 0;
     virtual bool toBoolean()const = 0;
-    virtual int toInt32()const = 0;
     virtual double toDouble()const = 0;
 
-    virtual Ref<JSValue> readField(const std::string& name) = 0;
-    virtual Ref<JSValue> arrayAccess(Ref<JSValue> index) = 0;
-
+    virtual Ref<JSValue> readField(Ref<JSValue> key)const = 0;
+    virtual Ref<JSValue> writeField(Ref<JSValue> key, Ref<JSValue> value) = 0;
+    virtual Ref<JSValue> deleteField(Ref<JSValue> key) = 0;
     virtual std::string getJSON(int indent) = 0;
-
-
-    virtual bool isReference()const = 0;
-    virtual JSValueTypes getType()const = 0;
+    
+    Ref<JSValue> readFieldStr(const std::string& strKey)const;
+    Ref<JSValue> writeFieldStr(const std::string& strKey, Ref<JSValue> value);
 
     virtual std::string getTypeName()const
     {
@@ -134,8 +133,12 @@ Ref<DestType> castTo (Ref<SrcType> value)
 }
 
 double jsValuesCompare (Ref<JSValue> a, Ref<JSValue> b);
+
+int toInt32 (Ref<JSValue> a);
 unsigned long long toUint64 (Ref<JSValue> a);
-unsigned long long isInteger (Ref<JSValue> a);
+size_t toSizeT (Ref<JSValue> a);
+bool isInteger (Ref<JSValue> a);
+bool isUint (Ref<JSValue> a);
 
 
 //////////////////////////////////////////
@@ -159,24 +162,24 @@ public:
         return false;
     }
 
-    virtual int toInt32()const
-    {
-        return 0;
-    }
-
     virtual double toDouble()const
     {
         return getNaN();
     }
 
-    virtual Ref<JSValue> readField(const std::string& name)
+    virtual Ref<JSValue> readField(Ref<JSValue> key)const
     {
         return undefined();
     }
-
-    virtual Ref<JSValue> arrayAccess(Ref<JSValue> index)
+    
+    virtual Ref<JSValue> writeField(Ref<JSValue> key, Ref<JSValue> value)
     {
-        return readField(index->toString());
+        return undefined();
+    }
+    
+    virtual Ref<JSValue> deleteField(Ref<JSValue> key)
+    {
+        return undefined();
     }
 
     virtual std::string getJSON(int indent)
@@ -185,11 +188,6 @@ public:
             return "null";
         else
             return "";
-    }
-
-    virtual bool isReference()const
-    {
-        return false;
     }
 
     virtual JSValueTypes getType()const
@@ -250,11 +248,6 @@ public:
         return m_value != 0.0;
     }
 
-    virtual int toInt32()const
-    {
-        return (int) m_value;
-    }
-
     virtual double toDouble()const
     {
         return m_value;
@@ -286,11 +279,6 @@ public:
     virtual bool toBoolean()const
     {
         return m_value;
-    }
-
-    virtual int toInt32()const
-    {
-        return m_value ? 1 : 0;
     }
 
     virtual double toDouble()const
@@ -336,14 +324,6 @@ public:
         m_frozen = true;
     }
 
-    //TODO: Remove 'IScope' old functions, as they are duplicate. Also, make
-    //a virtual function to write a field in 'JSValue'
-    // IScope (old)
-    /////////////////////////////////////////
-    virtual Ref<JSValue> get(const std::string& name)const;
-    virtual Ref<JSValue> set(const std::string& name, Ref<JSValue> value);
-    /////////////////////////////////////////
-
     // JSValue
     /////////////////////////////////////////
 
@@ -355,34 +335,18 @@ public:
     virtual bool toBoolean()const
     {
         return true;
-    } //TODO: Should 'undefined'. Check the spec.
-
-    virtual int toInt32()const
-    {
-        return 0;
-    }
+    } //TODO: Should be 'undefined'. Check the spec.
 
     virtual double toDouble()const
     {
         return 0;
     }
 
-    virtual Ref<JSValue> readField(const std::string& name);
-
-    virtual Ref<JSValue> arrayAccess(Ref<JSValue> index)
-    {
-        if (index->isPrimitive())
-            return readField(index->toString());
-        else
-            throw CScriptException("Invalid array index");
-    }
+    virtual Ref<JSValue> readField(Ref<JSValue> key)const;
+    virtual Ref<JSValue> writeField(Ref<JSValue> key, Ref<JSValue> value);
+    virtual Ref<JSValue> deleteField(Ref<JSValue> key);
 
     virtual std::string getJSON(int indent);
-
-    virtual bool isReference()const
-    {
-        return false;
-    }
 
     virtual JSValueTypes getType()const
     {
@@ -400,6 +364,8 @@ protected:
     }
 
     ~JSObject();
+    
+    static std::string key2Str(Ref<JSValue> key);
 
 private:
     typedef std::map <std::string, Ref<JSValue> > MembersMap;
@@ -422,13 +388,14 @@ public:
     {
         return !m_text.empty();
     }
-    virtual int toInt32()const;
     virtual double toDouble()const;
 
     virtual std::string toString()const
     {
         return m_text;
     }
+
+    virtual Ref<JSValue> readField(Ref<JSValue> key)const;
 
     virtual std::string getJSON(int indent);
 
@@ -437,8 +404,6 @@ public:
         return VT_STRING;
     }
     
-    virtual Ref<JSValue> get(const std::string& name)const;
-
     /// 'JSString' default prototype.
     static Ref<JSObject> DefaultPrototype;
 
@@ -473,11 +438,6 @@ public:
 
     Ref<JSValue> getAt(size_t index)const;
 
-    // IScope
-    /////////////////////////////////////////
-    virtual Ref<JSValue> get(const std::string& name)const;
-    virtual Ref<JSValue> set(const std::string& name, Ref<JSValue> value);
-
     // JSValue
     /////////////////////////////////////////
     virtual std::string toString()const;
@@ -488,6 +448,9 @@ public:
     {
         return VT_ARRAY;
     }
+
+    virtual Ref<JSValue> readField(Ref<JSValue> key)const;
+    virtual Ref<JSValue> writeField(Ref<JSValue> key, Ref<JSValue> value);
     /////////////////////////////////////////
 
 

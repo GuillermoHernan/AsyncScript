@@ -62,8 +62,8 @@ Ref<JSValue> scMathRand(FunctionScope* pScope)
 
 Ref<JSValue> scMathRandInt(FunctionScope* pScope)
 {
-    const int min = pScope->getParam("min")->toInt32();
-    const int max = pScope->getParam("max")->toInt32();
+    const int min = toInt32(pScope->getParam("min"));
+    const int max = toInt32(pScope->getParam("max"));
     const int val = min + (int) (rand() % (1 + max - min));
     return jsInt(val);
 }
@@ -89,11 +89,11 @@ Ref<JSValue> scStringIndexOf(FunctionScope* pScope)
 Ref<JSValue> scStringSubstring(FunctionScope* pScope)
 {
     string str = pScope->getThis()->toString();
-    int lo = pScope->getParam("lo")->toInt32();
-    int hi = pScope->getParam("hi")->toInt32();
+    const size_t lo = toSizeT(pScope->getParam("lo"));
+    const size_t hi = toSizeT(pScope->getParam("hi"));
 
-    int l = hi - lo;
-    if (l > 0 && lo >= 0 && lo + l <= (int) str.length())
+    size_t l = hi - lo;
+    if (l > 0 && lo >= 0 && lo + l <= str.length())
         return jsString(str.substr(lo, l));
     else
         return jsString("");
@@ -101,20 +101,18 @@ Ref<JSValue> scStringSubstring(FunctionScope* pScope)
 
 Ref<JSValue> scStringCharAt(FunctionScope* pScope)
 {
-    string str = pScope->getThis()->toString();
-    int p = pScope->getParam("pos")->toInt32();
-    if (p >= 0 && p < (int) str.length())
-        return jsString(str.substr(p, 1));
-    else
-        return jsString("");
+    Ref<JSString> str = pScope->getThis().staticCast<JSString>();
+    
+    size_t pos = toSizeT( pScope->getParam("pos") );
+    
+    return str->readField (jsDouble(pos));
 }
 
 Ref<JSValue> scStringCharCodeAt(FunctionScope* pScope)
 {
-    string str = pScope->getThis()->toString();
-    int p = pScope->getParam("pos")->toInt32();
-    if (p >= 0 && p < (int) str.length())
-        return jsInt(str.at(p));
+    string str = scStringCharAt(pScope)->toString();
+    if (!str.empty())
+        return jsInt(str[0]);
     else
         return jsInt(0);
 }
@@ -142,7 +140,7 @@ Ref<JSValue> scStringSplit(FunctionScope* pScope)
 Ref<JSValue> scStringFromCharCode(FunctionScope* pScope)
 {
     char str[2];
-    str[0] = pScope->getParam("char")->toInt32();
+    str[0] = (char)toInt32( pScope->getParam("char"));
     str[1] = 0;
     return jsString(str);
 }
@@ -255,10 +253,8 @@ Ref<JSValue> scArrayIndexOf(FunctionScope* pScope)
     return jsInt(-1);
 }
 
-Ref<JSValue>scArrayJoin(FunctionScope* pScope)
+std::string scArrayJoin(Ref<JSArray> arr, Ref<JSValue> sep)
 {
-    Ref<JSArray>    arr = pScope->getThis().staticCast<JSArray>();
-    auto            sep = pScope->getParam("separator");
     string          sepStr = ",";
 
     if (!sep->isNull())
@@ -273,7 +269,15 @@ Ref<JSValue>scArrayJoin(FunctionScope* pScope)
         output << arr->getAt(i)->toString();
     }
 
-    return jsString(output.str());
+    return output.str();
+}
+
+Ref<JSValue>scArrayJoin(FunctionScope* pScope)
+{
+    auto    arr = pScope->getThis().staticCast<JSArray>();
+    auto    sep = pScope->getParam("separator");
+
+    return jsString( scArrayJoin(arr, sep) );
 }
 
 /**
@@ -287,11 +291,11 @@ Ref<JSValue>scArraySlice(FunctionScope* pScope)
     Ref<JSArray>    arr = pScope->getThis().staticCast<JSArray>();
     auto            begin = pScope->getParam("begin");
     auto            end = pScope->getParam("end");
-    const size_t    iBegin = begin->toInt32();
+    const size_t    iBegin = toSizeT( begin );
     size_t          iEnd = arr->length();
     
-    if (!end->isNull() && end->toInt32() >= 0)
-        iEnd = end->toInt32();
+    if (isUint(end))                
+        iEnd = toSizeT( end );
     
     iEnd = max (iEnd, iBegin);
     
@@ -314,7 +318,7 @@ Ref<JSObject> createClass(const char* className,
     Ref<JSObject>   prototype = JSObject::create(parentPrototype);
     Ref<JSFunction> constructor = addNative(fnHeader + className, constructorFn, scope);
     
-    constructor->set("prototype", prototype);
+    constructor->writeField(jsString("prototype"), prototype);
     return prototype;
 }
 

@@ -32,8 +32,12 @@
 #pragma once
 
 #include "JsVars.h"
+#include <string>
 
 /// Register useful functions with the TinyJS interpreter
 void registerFunctions(Ref<IScope> scope);
+
+std::string scArrayJoin(Ref<JSArray> arr, Ref<JSValue> sep);
+
 
 #endif

@@ -10,6 +10,7 @@
 #include "JsVars.h"
 #include "OS_support.h"
 #include "utils.h"
+#include "TinyJS_Functions.h"
 
 #include <cstdlib>
 #include <math.h>
@@ -21,7 +22,17 @@ Ref<JSObject>   JSObject::DefaultPrototype;
 Ref<JSObject>   JSString::DefaultPrototype;
 Ref<JSObject>   JSArray::DefaultPrototype;
 Ref<JSObject>   JSFunction::DefaultPrototype;
-//Ref<JSObject>   JSObject::DefaultPrototype;
+
+Ref<JSValue> JSValue::readFieldStr(const std::string& strKey)const
+{
+    return readField (jsString(strKey));
+}    
+
+Ref<JSValue> JSValue::writeFieldStr(const std::string& strKey, Ref<JSValue> value)
+{
+    return writeField (jsString(strKey), value);
+}
+
 
 /**
  * Gives an string representation of the type name
@@ -246,6 +257,23 @@ double jsValuesCompare (Ref<JSValue> a, Ref<JSValue> b)
 }
 
 /**
+ * Converts a 'JSValue' into a 32 bit signed integer.
+ * If the conversion is not posible, it returns zero. Therefore, the use
+ * of 'isInteger' function is advised.
+ * @param a
+ * @return 
+ */
+int toInt32 (Ref<JSValue> a)
+{
+    const double v = a->toDouble();
+    
+    if (isnan(v))
+        return 0;
+    else
+        return (int)v;
+}
+
+/**
  * Converts a value into a 64 bit integer.
  * @param a
  * @return The integer value. In case of failure, it returns the largest 
@@ -262,16 +290,37 @@ unsigned long long toUint64 (Ref<JSValue> a)
         return (unsigned long long)v;
 }
 
+size_t toSizeT (Ref<JSValue> a)
+{
+    return (size_t)toUint64(a);
+}
+
+
 /**
  * Checks if a value is an integer number
  * @param a
  * @return 
  */
-unsigned long long isInteger (Ref<JSValue> a)
+bool isInteger (Ref<JSValue> a)
 {
     const double v = a->toDouble();
     
     return floor(v) == v;
+}
+
+/**
+ * Checks if a value is a unsigned integer number.
+ * @param a
+ * @return 
+ */
+bool isUint (Ref<JSValue> a)
+{
+    const double v = a->toDouble();
+    
+    if ( v < 0)
+        return false;
+    else
+        return floor(v) == v;
 }
 
 // JSNumber
@@ -309,15 +358,6 @@ Ref<JSString> JSString::create(const std::string & value)
 }
 
 /**
- * Tries to transform the string into a int32
- * @return 
- */
-int JSString::toInt32()const
-{
-    return strtol(m_text.c_str(), NULL, 0);
-}
-
-/**
  * Tries to transform a string into a double value
  * @return 
  */
@@ -343,16 +383,26 @@ std::string JSString::getJSON(int indent)
 
 
 /**
- * Member access function overridden to have access to 'length' property.
+ * Member access function overridden to have access to 'length' property, and to
+ * have access to individual characters.
  * @param name
  * @return 
  */
-Ref<JSValue> JSString::get(const std::string& name)const
+Ref<JSValue> JSString::readField(Ref<JSValue> key)const
 {
-    if (name == "length")
+    if (isUint(key))
+    {
+        const size_t    index = toSizeT(key);
+        
+        if (index >= m_text.length())
+            return undefined();
+        else
+            return jsString(m_text.substr(index, 1));
+    }
+    else if (key->toString() == "length")
         return jsDouble (m_text.size());
     else
-        return JSObject::get(name);
+        return JSObject::readField(key);
 }
 
 
@@ -384,17 +434,23 @@ Ref<JSObject> JSObject::create(Ref<JSObject> prototype)
 }
 
 /**
- * Gets the value of a member.
+ * Object field read function
  * @return 
  */
-Ref<JSValue> JSObject::get(const std::string& name)const
+
+/**
+ * Reads a field of the object. If it does not exist, it returns 'undefined'
+ * @param key
+ * @return 
+ */
+Ref<JSValue> JSObject::readField(Ref<JSValue> key)const
 {
-    MembersMap::const_iterator it = m_members.find(name);
+    MembersMap::const_iterator it = m_members.find(key2Str(key));
 
     if (it != m_members.end())
         return it->second;
     else if (!nullCheck(m_prototype))
-        return m_prototype->get (name);
+        return m_prototype->readField (key);
     else
         return undefined();
 }
@@ -405,31 +461,55 @@ Ref<JSValue> JSObject::get(const std::string& name)const
  * @param value
  * @return 
  */
-Ref<JSValue> JSObject::set(const std::string& name, Ref<JSValue> value)
+Ref<JSValue> JSObject::writeField(Ref<JSValue> key, Ref<JSValue> value)
 {
     if (m_frozen)
-        return get(name);
+        return readField(key);
     
-    if (value->isUndefined())
-    {
-        //'undefined' means not present in the object. So it is deleted.
-        m_members.erase(name);
-    }
-    else
-        m_members[name] = value;
+    m_members[key2Str(key)] = value;
 
     return value;
-
 }
 
 /**
- * Member access. Returns a reference, in order to be able to modify the object.
- * @param name  member name
+ * Deletes a field from the object
+ * @param key
  * @return 
  */
-Ref<JSValue> JSObject::readField(const std::string& name)
+Ref<JSValue> JSObject::deleteField(Ref<JSValue> key)
 {
-    return get(name);
+    if (m_frozen)
+        return readField(key);
+    
+    const string strKey = key2Str(key);
+    MembersMap::iterator it = m_members.find(strKey);
+    
+    if (it == m_members.end())
+        return undefined();
+    else
+    {
+        auto result = it->second;
+        m_members.erase(it);
+        return result;
+    }
+}
+
+
+/**
+ * Transforms a 'JSValue' into a string which can be used to search the store.
+ * @param key
+ * @return 
+ */
+std::string JSObject::key2Str(Ref<JSValue> key)
+{
+    if (!key->isPrimitive())
+        error ("Invalid array index: %s", key->toString().c_str());
+    else if (key->getType() == VT_NUMBER)
+        return double_to_string(key->toDouble());
+    else
+        return key->toString();
+    
+    return "";
 }
 
 std::string indentText(int indent)
@@ -534,7 +614,7 @@ Ref<JSArray> JSArray::createStrArray(const std::vector<std::string>& strList)
 size_t JSArray::push(Ref<JSValue> value)
 {
     //TODO: String conversion may be more efficient.
-    this->set(jsInt(m_length++)->toString(), value);
+    this->writeField(jsInt(m_length++), value);
     return m_length;
 }
 
@@ -545,45 +625,45 @@ size_t JSArray::push(Ref<JSValue> value)
  */
 Ref<JSValue> JSArray::getAt(size_t index)const
 {
-    return get (to_string(index));
+    return readField (jsDouble(index));
 }
 
 
 /**
- * JSArray 'get' override, to implement 'length' property read.
+ * JSArray 'get' override, to implement 'length' property reading.
  * @param name
  * @param exception
  * @return 
  */
-Ref<JSValue> JSArray::get(const std::string& name)const
+Ref<JSValue> JSArray::readField(Ref<JSValue> key)const
 {
-    if (name == "length")
+    if (key->toString() == "length")
         return jsInt(m_length);
     else
-        return JSObject::get(name);
+        return JSObject::readField(key);
 }
 
 /**
- * Array 'set' method override. Handles:
+ * Array 'writeField' method override. Handles:
  * - Length overwrite, which changes array length
  * - Write an element past the last one, which enlarges the array.
- * @param name
+ * @param key
  * @param value
  * @return 
  */
-Ref<JSValue> JSArray::set(const std::string& name, Ref<JSValue> value)
+Ref<JSValue> JSArray::writeField(Ref<JSValue> key, Ref<JSValue> value)
 {
-    if (name == "length")
+    if (key->toString() == "length")
     {
         setLength(value);
-        return value;
+        return key;
     }
     else
     {
-        value = JSObject::set(name, value);
-        if (isNumber(name))
+        value = JSObject::writeField(key, value);
+        if (isUint(key))
         {
-            const size_t index = strtoul(name.c_str(), NULL, 10);
+            const size_t index = toSizeT(key);
 
             m_length = max(m_length, index + 1);
         }
@@ -598,21 +678,7 @@ Ref<JSValue> JSArray::set(const std::string& name, Ref<JSValue> value)
  */
 std::string JSArray::toString()const
 {
-    //TODO: This is basically 'String.join()' implementation. We should share code.
-
-    ostringstream output;
-    for (size_t i = 0; i < m_length; ++i)
-    {
-        if (i > 0)
-            output << ',';
-
-        const Ref<JSValue>  val = this->get(to_string(i));
-        
-        if (!val.isNull())
-            output << val->toString();
-    }
-
-    return output.str();
+    return scArrayJoin(Ref<JSArray>(const_cast<JSArray*>(this)), jsString(","));
 }
 
 /**
@@ -634,7 +700,7 @@ std::string JSArray::getJSON(int indent)
         if (i > 0)
             output << ',';
 
-        const std::string childJSON = this->arrayAccess(jsInt(i))->getJSON(indent);
+        const std::string childJSON = this->readField(jsInt(i))->getJSON(indent);
 
         if (childJSON.empty())
             output << "null";
@@ -655,15 +721,17 @@ std::string JSArray::getJSON(int indent)
  */
 void JSArray::setLength(Ref<JSValue> value)
 {
+    if (!isUint(value))
+        error ("Invalid array index: %s", value->toString().c_str());
+    
     //TODO: Not fully standard compliant
-    const size_t length = (size_t) value->toInt32();
+    const size_t length = toSizeT(value);
 
     for (size_t i = length; i < m_length; ++i)
-        this->set(to_string(i), undefined());
+        this->deleteField(jsDouble(i));
 
     m_length = length;
 }
-
 
 
 // JSFunction
@@ -698,7 +766,7 @@ JSFunction::JSFunction(const std::string& name, JSNativeFn pNative) :
     m_pNative(pNative)
 {
     //Prototype object, used when the function acts as a constructor.
-    set("prototype", JSObject::create());
+    writeField(jsString("prototype"), JSObject::create());
 }
 
 
@@ -1017,7 +1085,7 @@ Ref<JSObject> GlobalScope::toObject()
     
     SymbolMap::const_iterator it;
     for (it = m_symbols.begin(); it != m_symbols.end(); ++it)
-        result->set(it->first, it->second);
+        result->writeField(jsString(it->first), it->second);
     
     return result;
 }

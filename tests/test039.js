@@ -51,7 +51,7 @@ x >>= 1;
 assert (-9 == x, ">>=");
 
 x >>>= 22;
-assert (0x3FF == x, ">>>=");
+assert (0x3FF == x, ">>>=, x=" + x);
 
 x &= 0x1019;
 assert (0x19 == x, "&=");

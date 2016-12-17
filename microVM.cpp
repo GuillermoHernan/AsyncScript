@@ -376,20 +376,20 @@ void callLog (Ref<FunctionScope> fnScope, ExecutionContext* ec)
     if (logFunction == fnScope->getFunction())
         return;
     
-    auto level = logFunction->readField("callDepth");
+    auto level = logFunction->readFieldStr("callDepth");
     
     if (level->getType() != VT_NUMBER)
         level = jsInt(1);
     else
-        level = jsInt(level->toInt32() + 1);
+        level = jsInt(toInt32( level ) + 1);
     
-    logFunction.staticCast<JSFunction>()->set("callDepth", level);
+    logFunction->writeFieldStr("callDepth", level);
     
     auto obj = JSObject::create();
-    obj->set("level", level);
-    obj->set("name", jsString(fnScope->getFunction()->getName()));
-    obj->set("params", fnScope->get("arguments"));
-    obj->set("this", fnScope->getThis());
+    obj->writeFieldStr("level", level);
+    obj->writeFieldStr("name", jsString(fnScope->getFunction()->getName()));
+    obj->writeFieldStr("params", fnScope->get("arguments"));
+    obj->writeFieldStr("this", fnScope->getThis());
     
     ec->push(undefined());      //this
     ec->push(obj);              //Log entry
@@ -421,21 +421,21 @@ void returnLog (Ref<FunctionScope> fnScope, Ref<JSValue> result, ExecutionContex
     if (logFunction == fnScope->getFunction())
         return;
     
-    auto level = logFunction->readField("callDepth");
+    auto level = logFunction->readFieldStr("callDepth");
     
     if (level->getType() != VT_NUMBER)
         level = jsInt(0);
     
-    if (level->toInt32() < 0)
+    if (toInt32 (level) < 0)
         globals->set("callLogger", undefined());    //Remove call logger
     else
     {
-        logFunction.staticCast<JSFunction>()->set("callDepth", jsInt(level->toInt32()-1));
+        logFunction->writeFieldStr("callDepth", jsInt(toInt32( level )-1));
     
         auto obj = JSObject::create();
-        obj->set("level", level);
-        obj->set("name", jsString(fnScope->getFunction()->getName()));
-        obj->set("result", result);
+        obj->writeFieldStr("level", level);
+        obj->writeFieldStr("name", jsString(fnScope->getFunction()->getName()));
+        obj->writeFieldStr("result", result);
 
         ec->push(undefined());      //this
         ec->push(obj);              //log entry
@@ -580,7 +580,7 @@ void execRdField (const int opCode, ExecutionContext* ec)
 {
     const Ref<JSValue>  name = ec->pop();
     const Ref<JSValue>  objVal = ec->pop();
-    const Ref<JSValue>  val = objVal->readField(name->toString());
+    const Ref<JSValue>  val = objVal->readField(name);
     
     ec->push(val);
 }
@@ -596,9 +596,7 @@ void execWrField (const int opCode, ExecutionContext* ec)
     const Ref<JSValue>  name = ec->pop();
     const Ref<JSValue>  objVal = ec->pop();
     
-    //TODO: Is silent failure appropriate?
-    if (objVal->isObject())
-        objVal.staticCast<JSObject>()->set (name->toString(), val);
+    objVal->writeField (name, val);
 }
 
 /**
@@ -685,7 +683,7 @@ Ref<JSObject> constantsToJS (const ValueVector& constants)
         else
             value = constants[i];
         
-        obj->set(name, value);
+        obj->writeFieldStr(name, value);
     }
     
     return obj;
@@ -820,11 +818,11 @@ Ref<JSObject> blocksToJS (const BlockVector& blocks, const ValueVector& constant
         sprintf_s (name, "Block%04lu", i);
         Ref<JSObject>   blockObj = JSObject::create();
 
-        obj->set(name, blockObj);
+        obj->writeFieldStr(name, blockObj);
         
-        blockObj->set("a_nextTrue", jsInt(blocks[i].nextBlocks[1]));
-        blockObj->set("a_nextFalse", jsInt(blocks[i].nextBlocks[0]));
-        blockObj->set("instructions", disassemblyInstructions (blocks[i].instructions, constants));
+        blockObj->writeFieldStr("a_nextTrue", jsInt(blocks[i].nextBlocks[1]));
+        blockObj->writeFieldStr("a_nextFalse", jsInt(blocks[i].nextBlocks[0]));
+        blockObj->writeFieldStr("instructions", disassemblyInstructions (blocks[i].instructions, constants));
         
     }
     
@@ -852,8 +850,8 @@ Ref<JSObject> toJSObject (Ref<MvmRoutine> code)
 {
     Ref<JSObject>   obj = JSObject::create();
     
-    obj->set ("a_constants", constantsToJS(code->constants));
-    obj->set ("b_blocks", blocksToJS(code->blocks, code->constants));
+    obj->writeFieldStr ("a_constants", constantsToJS(code->constants));
+    obj->writeFieldStr ("b_blocks", blocksToJS(code->blocks, code->constants));
     
     return obj;
 }
@@ -868,11 +866,11 @@ Ref<JSObject> disassemblyFunction (Ref<JSFunction> function)
 {
     Ref<JSObject>   obj = JSObject::create();
 
-    obj->set ("a_header", jsString(function->toString() ));
+    obj->writeFieldStr ("a_header", jsString(function->toString() ));
     if (function->isNative())
-        obj->set("code", jsString("native"));
+        obj->writeFieldStr("code", jsString("native"));
     else
-        obj->set("code", toJSObject(function->getCodeMVM().staticCast<MvmRoutine>()));
+        obj->writeFieldStr("code", toJSObject(function->getCodeMVM().staticCast<MvmRoutine>()));
 
     return obj;
 }
