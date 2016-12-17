@@ -820,8 +820,8 @@ Ref<JSObject> blocksToJS (const BlockVector& blocks, const ValueVector& constant
 
         obj->writeFieldStr(name, blockObj);
         
-        blockObj->writeFieldStr("a_nextTrue", jsInt(blocks[i].nextBlocks[1]));
-        blockObj->writeFieldStr("a_nextFalse", jsInt(blocks[i].nextBlocks[0]));
+        blockObj->writeFieldStr("nextTrue", jsInt(blocks[i].nextBlocks[1]));
+        blockObj->writeFieldStr("nextFalse", jsInt(blocks[i].nextBlocks[0]));
         blockObj->writeFieldStr("instructions", disassemblyInstructions (blocks[i].instructions, constants));
         
     }
