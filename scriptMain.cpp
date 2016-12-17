@@ -15,6 +15,7 @@
 #include "TinyJS_Functions.h"
 #include "TinyJS_MathFunctions.h"
 #include "mvmFunctions.h"
+#include "semanticCheck.h"
 
 using namespace std;
 
@@ -43,6 +44,9 @@ Ref<JSValue> evaluate (const char* script, Ref<IScope> globals)
         statements.push_back(parseRes.ast);
         token = parseRes.nextToken;
     }
+    
+    //Semantic check
+    semanticCheck(statements);
     
     //Code generation.
     const Ref<MvmRoutine>    code = scriptCodegen(statements);

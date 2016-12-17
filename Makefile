@@ -14,7 +14,8 @@ parserResults.cpp \
 microVM.cpp \
 mvmCodegen.cpp \
 scriptMain.cpp \
-mvmFunctions.cpp
+mvmFunctions.cpp \
+semanticCheck.cpp
 
 OBJECTS=$(SOURCES:.cpp=.o)
 

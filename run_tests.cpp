@@ -35,6 +35,8 @@
 #include "scriptMain.h"
 #include "mvmCodegen.h"
 #include "jsParser.h"
+#include "semanticCheck.h"
+#include "TinyJS_Functions.h"
 
 #include <assert.h>
 #include <sys/stat.h>
@@ -110,6 +112,32 @@ Ref<JSValue> assertFunction(FunctionScope* pScope)
 }
 
 /**
+ * Executes some code using eval, and expects that it throws a 'CScriptException'.
+ * It catches the exception, and returns 'true'. If no exception is throw, it 
+ * throws an exception to indicate a test failure.
+ * @param pScope
+ * @return 
+ */
+Ref<JSValue> expectError(FunctionScope* pScope)
+{
+    string  code =  pScope->getParam("code")->toString();
+    
+    try
+    {
+        evaluate (code.c_str(), createDefaultGlobals());
+    }
+    catch (CScriptException& error)
+    {
+        return jsTrue();
+    }
+    
+    error ("No exception thrown: %s", code.c_str());
+    
+    return jsFalse();
+}
+
+
+/**
  * Function to write on standard output
  * @param pScope
  * @return 
@@ -144,6 +172,7 @@ bool run_test(const std::string& szFile, const string &testDir, const string& re
     globals->newVar("result", jsInt(0));
     addNative("function assert(value, text)", assertFunction, globals);
     addNative("function printLn(text)", printLn, globals);
+    addNative("function expectError(code)", expectError, globals);
     try
     {
         //This code is copied from 'evaluate', to log the intermediate results 
@@ -164,6 +193,9 @@ bool run_test(const std::string& szFile, const string &testDir, const string& re
         //Write Abstract Syntax Tree
         const string astJSON = toJSON (statements);
         writeTextFile(testResultsDir + testName + ".ast.json", astJSON);
+        
+        //Semantic analysis
+        semanticCheck(statements);
 
         //Code generation.
         const Ref<MvmRoutine>    code = scriptCodegen(statements);
