@@ -1,15 +1,5 @@
 //Forbidden variable names
 
-//This code is valid
-/*function test()
-{
-    ++this;
-    var l = ~arguments;
-    return !this;
-}
-
-!eval;*/
-
 expectError ("var this = 1");
 expectError ("var arguments = 1");
 expectError ("var eval = 1");
@@ -26,11 +16,19 @@ expectError ("function() {eval = 40;}");
 expectError ("function() {this += 41;}");
 expectError ("function() {arguments *= 2;}");
 
-expectError ("++arguments");
-expectError ("this++");
-expectError ("this--");
-expectError ("--eval");
-expectError ("!this");
+expectError ("function() {++arguments}");
+expectError ("function() {this++}");
+expectError ("function() {this--}");
+expectError ("function() {--eval}");
+
+//This code is valid
+function test()
+{
+    var u = -eval;
+    var l = ~arguments;
+    return !this;
+}
+
 
 
 result = 1;

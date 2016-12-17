@@ -173,7 +173,11 @@ void postfixOpSemCheck (Ref<AstNode> node, SemCheckState* pState)
  */
 void prefixOpSemCheck (Ref<AstNode> node, SemCheckState* pState)
 {
-    checkReservedNames (node->children().front(), "Cannot write to: %s");
+    const auto  opNode = node.staticCast<AstOperator>();
+    const auto  opCode = opNode->code;
+    
+    if (opCode == LEX_PLUSPLUS || opCode == LEX_MINUSMINUS )
+        checkReservedNames (node->children().front(), "Cannot write to: %s");
 
     childrenSemCheck(node, pState);
 }
