@@ -139,7 +139,7 @@ void functionSemCheck (Ref<AstNode> node, SemCheckState* pState)
     for (size_t i = 0; i < params.size(); ++i)
         checkReservedNames (params[i], node->position(), "Invalid parameter name: %s");
     
-    childrenSemCheck(node, pState);
+    semCheck (fnNode->getCode(), pState);
 }
 
 /**
