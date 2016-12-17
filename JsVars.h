@@ -202,14 +202,16 @@ struct IScope : public RefCountObj
 {
     /**
      * Looks for a symbol. 
-     * It always look for it at the current scope, at may look for it at
+     * It always looks for it at the current scope, at may look for it at
      * higher level scopes. This depends on the kind of scope.
      * @param name Symbol name
      * @return The requested value or a NULL pointer if not found.
      */
+    virtual bool isDefined(const std::string& name)const = 0;
     virtual Ref<JSValue> get(const std::string& name)const = 0;
-    virtual Ref<JSValue> set(const std::string& name, Ref<JSValue> value, bool forceLocal=false) = 0;
-    virtual Ref<IScope> getFunctionScope() = 0;
+    virtual Ref<JSValue> set(const std::string& name, Ref<JSValue> value) = 0;
+    virtual Ref<JSValue> newVar(const std::string& name, Ref<JSValue> value) = 0;
+    virtual bool isBlockScope()const = 0;
     
 protected:
     virtual ~IScope(){};
@@ -607,19 +609,22 @@ public:
         return refFromNew(new BlockScope(parent));
     }
 
+    virtual bool isDefined(const std::string& name)const;
     virtual Ref<JSValue> get(const std::string& name)const;
-    virtual Ref<JSValue> set(const std::string& name, Ref<JSValue> value, bool forceLocal=false);
-    virtual Ref<IScope> getFunctionScope();
+    virtual Ref<JSValue> set(const std::string& name, Ref<JSValue> value);
+    virtual Ref<JSValue> newVar(const std::string& name, Ref<JSValue> value);
+    virtual bool isBlockScope()const
+    {
+        return true;
+    }
 
 private:
-    BlockScope(Ref<IScope> parent) : m_pParent(parent)
-    {
-    }
+    BlockScope(Ref<IScope> parent);
     
     Ref<IScope> m_pParent;
 
     typedef std::map<std::string, Ref<JSValue> > SymbolMap;
-    SymbolMap m_symbols;
+    SymbolMap   m_symbols;
 };
 
 /**
@@ -649,23 +654,17 @@ public:
     
     Ref<JSValue> getParam(const std::string& name)const;
 
-    Ref<JSValue> getResult()const
-    {
-        return m_result;
-    }
-
-    void setResult(Ref<JSValue> value)
-    {
-        m_result = value;
-    }
-
+    // IScope
+    ////////////////////////////////////
+    virtual bool isDefined(const std::string& name)const;
     virtual Ref<JSValue> get(const std::string& name)const;
-    virtual Ref<JSValue> set(const std::string& name, Ref<JSValue> value, bool forceLocal=false);
-
-    virtual Ref<IScope> getFunctionScope()
+    virtual Ref<JSValue> set(const std::string& name, Ref<JSValue> value);
+    virtual Ref<JSValue> newVar(const std::string& name, Ref<JSValue> value);
+    virtual bool isBlockScope()const
     {
-        return ref(this);
+        return false;
     }
+    ////////////////////////////////////
 
     Ref<IScope> getGlobals()const
     {
@@ -685,43 +684,43 @@ private:
     Ref<JSFunction> m_function;
     Ref<JSArray> m_arguments;
     Ref<JSValue> m_this;
-    Ref<JSValue> m_result;
     Ref<IScope> m_globals;
     
     FunctionScope(Ref<IScope> globals, Ref<JSFunction> targetFn);
 };
 
 /**
- * Scope which just access the members of an object.
- * It do not has reference to a parent scope
+ * Class to manage the global scope.
+ * @param name
+ * @return 
  */
-class ObjectScope : public IScope
+class GlobalScope : public IScope
 {
 public:
-    static Ref<ObjectScope> create(Ref<JSObject> object)
+    static Ref<GlobalScope> create()
     {
-        return refFromNew(new ObjectScope(object));
-    }
-
-    virtual Ref<JSValue> get(const std::string& name)const
-    {
-        return m_object->get(name);
+        return refFromNew(new GlobalScope);
     }
     
-    virtual Ref<JSValue> set(const std::string& name, Ref<JSValue> value, bool forceLocal=false)
+    // IScope
+    /////////////////////////////////
+    virtual bool isDefined(const std::string& name)const;
+    virtual Ref<JSValue> get(const std::string& name)const;
+    virtual Ref<JSValue> set(const std::string& name, Ref<JSValue> value);
+    virtual Ref<JSValue> newVar(const std::string& name, Ref<JSValue> value);
+    virtual bool isBlockScope()const
     {
-        return m_object->set(name, value);
+        return false;
     }
+    /////////////////////////////////
     
-    virtual Ref<IScope> getFunctionScope()
-    {
-        return Ref<IScope>();
-    }
-
+    Ref<JSObject>   toObject();
+    
 private:
-    ObjectScope (Ref<JSObject> object) : m_object(object)
-    {
+    GlobalScope()
+    {        
     }
-    
-    const Ref<JSObject>   m_object;
+
+    typedef std::map<std::string, Ref<JSValue> > SymbolMap;
+    SymbolMap   m_symbols;
 };

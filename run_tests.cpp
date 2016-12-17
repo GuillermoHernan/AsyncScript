@@ -125,10 +125,9 @@ bool run_test(const std::string& szFile, const string &testDir, const string& re
     const string testName = removeExt( fileFromPath(relPath));
     string testResultsDir = resultsDir + removeExt(relPath) + '/';
 
-    Ref<JSObject> globalsObj = createDefaultGlobalsObj();
-    Ref<IScope> globals = ObjectScope::create(globalsObj);
+    auto globals = createDefaultGlobals();
     
-    globals->set("result", jsInt(0));
+    globals->newVar("result", jsInt(0));
     addNative("function assert(value, text)", assertFunction, globals);
     try
     {
@@ -178,7 +177,7 @@ bool run_test(const std::string& szFile, const string &testDir, const string& re
     }
 
     //Write globals
-    writeTextFile(testResultsDir + testName + ".globals.json", globalsObj->getJSON(0));
+    writeTextFile(testResultsDir + testName + ".globals.json", globals->toObject()->getJSON(0));
 
     bool pass = null2undef( globals->get("result") )->toBoolean();
 

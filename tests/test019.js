@@ -1,18 +1,18 @@
 // built-in functions
 
-foo = "foo bar stuff";
-r = Math.rand();
+var foo = "foo bar stuff";
+var r = Math.rand();
 
-parsed = parseInt("42");
+var parsed = parseInt("42");
 
-aStr = "ABCD";
-aChar = aStr.charAt(0);
+var aStr = "ABCD";
+var aChar = aStr.charAt(0);
 
-obj1 = new Object();
+var obj1 = new Object();
 obj1.food = "cake";
 obj1.desert = "pie";
 
-obj2 = obj1;
+var obj2 = obj1;
 //obj2 = obj1.clone();
 //obj2.food = "kittens";
 

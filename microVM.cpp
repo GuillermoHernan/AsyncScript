@@ -77,12 +77,15 @@ void returnLog (Ref<FunctionScope> fnScope, Ref<JSValue> result, ExecutionContex
 void execCp8 (const int opCode, ExecutionContext* ec);
 void execSwap (const int opCode, ExecutionContext* ec);
 void execPop (const int opCode, ExecutionContext* ec);
+void execPushScope (const int opCode, ExecutionContext* ec);
+void execPopScope (const int opCode, ExecutionContext* ec);
 void execRdLocal (const int opCode, ExecutionContext* ec);
 void execWrLocal (const int opCode, ExecutionContext* ec);
 void execRdGlobal (const int opCode, ExecutionContext* ec);
 void execWrGlobal (const int opCode, ExecutionContext* ec);
 void execRdField (const int opCode, ExecutionContext* ec);
 void execWrField (const int opCode, ExecutionContext* ec);
+void execNewVar (const int opCode, ExecutionContext* ec);
 void execNop (const int opCode, ExecutionContext* ec);
 void execCpAux (const int opCode, ExecutionContext* ec);
 void execPushAux (const int opCode, ExecutionContext* ec);
@@ -99,11 +102,11 @@ static const OpFunction s_instructions[64] =
     
     //8
     execCp8,        execCp8,        execCp8,        execCp8,
-    execSwap,       execPop,        invalidOp,      invalidOp,
+    execSwap,       execPop,        execPushScope,  execPopScope,
     
     //16
     execRdLocal,    execWrLocal,    execRdGlobal,   execWrGlobal,
-    execRdField,    execWrField,    invalidOp,      invalidOp,
+    execRdField,    execWrField,    execNewVar,     invalidOp,
     
     //24
     invalidOp,      invalidOp,      invalidOp,      invalidOp,
@@ -155,6 +158,7 @@ Ref<JSValue> execScript (Ref<MvmScript> code, ExecutionContext* ec)
         return undefined();
     
     ValueVector*    prevConstants = ec->constants;
+    const size_t    scopesStackLen = ec->scopes.size();
     
     int nextBlock = 0;
     
@@ -165,6 +169,10 @@ Ref<JSValue> execScript (Ref<MvmScript> code, ExecutionContext* ec)
     {
         nextBlock = execBlock (code->blocks[nextBlock], ec);
     }
+    
+    //Scope stack unwind.
+    ASSERT (ec->scopes.size() >= scopesStackLen);
+    ec->scopes.resize(scopesStackLen);
     
     ec->constants = prevConstants;
     
@@ -355,6 +363,10 @@ void execCall (const int nArgs, ExecutionContext* ec)
 void callLog (Ref<FunctionScope> fnScope, ExecutionContext* ec)
 {
     const auto globals = fnScope->getGlobals();
+    
+    if (!globals->isDefined("callLogger"))
+        return;
+    
     const auto logFunction = globals->get("callLogger");
     
     if (!logFunction->isFunction())
@@ -396,6 +408,10 @@ void callLog (Ref<FunctionScope> fnScope, ExecutionContext* ec)
 void returnLog (Ref<FunctionScope> fnScope, Ref<JSValue> result, ExecutionContext* ec)
 {
     const auto globals = fnScope->getGlobals();
+
+    if (!globals->isDefined("callLogger"))
+        return;
+
     const auto logFunction = globals->get("callLogger");
     
     if (!logFunction->isFunction())
@@ -472,6 +488,35 @@ void execPop (const int opCode, ExecutionContext* ec)
     ec->pop();
 }
 
+/**
+ * Creates a new 'Block scope'
+ * @param opCode
+ * @param ec
+ */
+void execPushScope (const int opCode, ExecutionContext* ec)
+{
+    if (ec->scopes.empty())
+        error("Empty scope stack executing 'PUSH SCOPE");
+    
+    auto scope = BlockScope::create(ec->scopes.back());
+    ec->scopes.push_back(scope);
+}
+
+/**
+ * Removes current scope from the scope stack
+ * @param opCode
+ * @param ec
+ */
+void execPopScope (const int opCode, ExecutionContext* ec)
+{
+    if (ec->scopes.empty())
+        error("Empty scope stack executing 'POP SCOPE");
+    
+    if (!ec->scopes.back()->isBlockScope())
+        error("'POP SCOPE' trying to remove a non-block scope");
+    
+    ec->scopes.pop_back();
+}
 
 /**
  * Reads a local variable.
@@ -496,7 +541,7 @@ void execWrLocal (const int opCode, ExecutionContext* ec)
     const Ref<JSValue>  val = ec->pop();
     const Ref<JSValue>  name = ec->pop();
     
-    ec->scopes.back()->set(name->toString(), val, true);
+    ec->scopes.back()->set(name->toString(), val);
 }
 
 /**
@@ -556,6 +601,21 @@ void execWrField (const int opCode, ExecutionContext* ec)
         objVal.staticCast<JSObject>()->set (name->toString(), val);
 }
 
+/**
+ * Exec
+ * @param opCode
+ * @param ec
+ */
+void execNewVar (const int opCode, ExecutionContext* ec)
+{
+    if (ec->scopes.empty())
+        error("Empty scope stack executing 'NEW VAR'");
+
+    const auto  val = ec->pop();
+    const auto  name = ec->pop();
+    
+    ec->scopes.back()->newVar (name->toString(), val);
+}
 
 /**
  * No operation. It does nothing
@@ -675,12 +735,15 @@ string disassembly8bitInst (int opCode, const ValueVector& constants)
         case OC_CP+3:       return "CP(3)";
         case OC_SWAP:       return "SWAP";
         case OC_POP:        return "POP";
+        case OC_PUSH_SCOPE: return "PUSH_SCOPE";
+        case OC_POP_SCOPE:  return "POP_SCOPE";
         case OC_RD_LOCAL:   return "RD_LOCAL";
         case OC_WR_LOCAL:   return "WR_LOCAL";
         case OC_RD_GLOBAL:   return "RD_GLOBAL";
         case OC_WR_GLOBAL:   return "WR_GLOBAL";
         case OC_RD_FIELD:   return "RD_FIELD";
         case OC_WR_FIELD:   return "WR_FIELD";
+        case OC_NEW_VAR:   return "NEW_VAR";
         case OC_CP_AUX:     return "CP_AUX";
         case OC_PUSH_AUX:   return "PUSH_AUX";
         case OC_NOP:        return "NOP";

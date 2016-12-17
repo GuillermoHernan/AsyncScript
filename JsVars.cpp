@@ -687,13 +687,33 @@ std::string JSFunction::toString()const
 //
 //////////////////////////////////////////////////
 
+BlockScope::BlockScope(Ref<IScope> parent) : m_pParent(parent)
+{
+    ASSERT (parent.notNull());
+}
+
+/**
+ * Checks if a symbol is defined at current scope.
+ * It also checks parent scope
+ * @param name
+ * @return 
+ */
+bool BlockScope::isDefined(const std::string& name)const
+{
+    SymbolMap::const_iterator it = m_symbols.find(name);
+
+    if (it != m_symbols.end())
+        return true;
+    else
+        return m_pParent->isDefined(name);
+}
+
 /**
  * Looks for a symbol in current scope.
- * If not found, it look in the parent scope. If is not found in any scope,
- * it returns 'undefined'
+ * If not found, it look in the parent scope. 
  * 
  * @param name  Symbol name
- * @return Value for the symbol or 'undefined'
+ * @return Value for the symbol
  */
 Ref<JSValue> BlockScope::get(const std::string& name)const
 {
@@ -701,56 +721,41 @@ Ref<JSValue> BlockScope::get(const std::string& name)const
 
     if (it != m_symbols.end())
         return it->second;
-    else if (!m_pParent.isNull())
-        return m_pParent->get(name);
     else
-        return Ref<JSValue>();
+        return m_pParent->get(name);
 }
 
 /**
- * Sets a symbol value in current scope.
+ * Sets a symbol value in current block scope.
  * 
- * - If the symbol is already defined in this scope, it is overwritten.
- * - If the symbol is defined in a parent scope, it is not overwritten in its scope,
- * but is also defined in this scope, so it shadows the old value while this scope
- * is valid.
- * - If the symbol is not defined, it is created.
+ * If the symbol is already defined in this scope, it is overwritten. If not, it
+ * tries to set it in parent scope.
  * 
  * @param name      Symbol name
  * @param value     Symbol value.
  * @return Symbol value.
  */
-Ref<JSValue> BlockScope::set(const std::string& name, Ref<JSValue> value, bool forceLocal)
+Ref<JSValue> BlockScope::set(const std::string& name, Ref<JSValue> value)
 {
-    if (value->isUndefined())
-    {
-        if (m_pParent.notNull())
-            m_symbols[name] = value; //The symbol will be 'undefined' while this scope is active.
-        else
-            m_symbols.erase(name); //At global scope, we can delete it.
-    }
-    else if (m_symbols.find(name) != m_symbols.end())
+    if (m_symbols.find(name) != m_symbols.end())
         m_symbols[name] = value; //Present at current scope
-    else if (get(name).isNull())
-        m_symbols[name] = value; //Symbol does not exist, create it at this scope.
-    else if (forceLocal)
-        m_symbols[name] = value;
-    else
-        return m_pParent->set(name, value); //Set at parent scope
+    else if (m_pParent.notNull())
+        m_pParent->set(name, value);
 
     return value;
 }
 
 /**
- * Gets the first function scope down the scope chain.
- * @return Function scope or null if there is no function scope.
+ * Creates a new variable at current scope.
+ * @param name
+ * @param value
+ * @return 
  */
-Ref<IScope> BlockScope::getFunctionScope()
+Ref<JSValue> BlockScope::newVar(const std::string& name, Ref<JSValue> value)
 {
-    if (m_pParent.isNull())
-        return Ref<IScope>();
-    else
-        return m_pParent->getFunctionScope();
+    m_symbols[name] = value;
+
+    return value;
 }
 
 
@@ -768,7 +773,6 @@ m_function(targetFn),
 m_globals(globals)
 {
     m_this = undefined();
-    m_result = undefined();
     m_arguments = JSArray::create();
 }
 
@@ -814,10 +818,23 @@ Ref<JSValue> FunctionScope::getParam(const std::string& name)const
 }
 
 /**
+ * Checks if a symbols is defined
+ * @param name
+ * @return 
+ */
+bool FunctionScope::isDefined(const std::string& name)const
+{
+    if (name == "this" || name == "arguments")
+        return true;
+    else
+        return (m_params.find(name) != m_params.end());
+}
+
+/**
  * Gets a value from function scope. It looks for:
- * - this pointer
+ * - 'this' pointer
+ * - 'arguments' array
  * - Function arguments
- * - global variables
  * @param name Symbol name
  * @return The symbol value or undefined.
  */
@@ -834,35 +851,121 @@ Ref<JSValue> FunctionScope::get(const std::string& name)const
         if (it != m_params.end())
             return it->second;
         else
-        {
-            it = m_locals.find(name);
-            if (it != m_locals.end())
-                return it->second;
-            else if (!m_globals.isNull())
-                return m_globals->get(name);
-            else
-                return undefined();
-        }
+            error ("'%s' is undefined", name.c_str());
     }
+    
+    return undefined();
 }
 
 /**
  * Sets a value in function scope.
- * It only lets change values of arguments, and globals
+ * It only lets change arguments values
  * @param name
  * @param value
  * @return 
  */
-Ref<JSValue> FunctionScope::set(const std::string& name, Ref<JSValue> value, bool forceLocal)
+Ref<JSValue> FunctionScope::set(const std::string& name, Ref<JSValue> value)
 {
     if (name == "this" || name == "arguments")
-        throw CScriptException("Invalid left hand side in assignment");
+        error("'%s' cannot be written", name.c_str());
     else if (m_params.find(name) != m_params.end())
         m_params[name] = value;
-    else if (forceLocal || m_locals.find(name) != m_locals.end())
-        m_locals[name] = value;
-    else if (!get(name).isNull())
-        return m_globals->set(name, value);
+    else 
+        error ("'%s' is undefined", name.c_str());
 
     return value;
+}
+
+/**
+ * 'newVar' implementation for 'FunctionScope' should never be called, because
+ * variables are created at global scope or at block level.
+ * It just asserts.
+ * @param name
+ * @param value
+ * @return 
+ */
+Ref<JSValue> FunctionScope::newVar(const std::string& name, Ref<JSValue> value)
+{
+    ASSERT(!"Variables cannot be created at 'FunctionScope");
+
+    return undefined();
+}
+
+// GlobalScope
+//
+//////////////////////////////////////////////////
+
+/**
+ * Checks if a symbol is defined at current scope.
+ * @param name
+ * @return 
+ */
+bool GlobalScope::isDefined(const std::string& name)const
+{
+    return m_symbols.find(name) != m_symbols.end();
+}
+
+/**
+ * Looks for a symbol in current scope.
+ * 
+ * @param name  Symbol name
+ * @return Value for the symbol
+ */
+Ref<JSValue> GlobalScope::get(const std::string& name)const
+{
+    SymbolMap::const_iterator it = m_symbols.find(name);
+
+    if (it != m_symbols.end())
+        return it->second;
+    else
+    {
+        error ("'%s' is not defined", name.c_str());
+        return undefined();
+    }
+}
+
+/**
+ * Sets a symbol value in current block scope.
+ * It must have been previously defined with a call to 'newVar'
+ * 
+ * @param name      Symbol name
+ * @param value     Symbol value.
+ * @return Symbol value.
+ */
+Ref<JSValue> GlobalScope::set(const std::string& name, Ref<JSValue> value)
+{
+    if (!isDefined(name))
+        error ("'%s' is not defined", name.c_str());
+
+    m_symbols[name] = value;
+
+    return value;
+}
+
+/**
+ * Creates a new variable at global scope.
+ * @param name
+ * @param value
+ * @return 
+ */
+Ref<JSValue> GlobalScope::newVar(const std::string& name, Ref<JSValue> value)
+{
+    m_symbols[name] = value;
+
+    return value;
+}
+
+/**
+ * Generates an object which contains all symbols defined at global scope.
+ * @return 
+ */
+Ref<JSObject> GlobalScope::toObject()
+{
+    auto result = JSObject::create();
+    
+    SymbolMap::const_iterator it;
+    for (it = m_symbols.begin(); it != m_symbols.end(); ++it)
+        result->set(it->first, it->second);
+    
+    return result;
 }

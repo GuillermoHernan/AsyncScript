@@ -1,24 +1,24 @@
 /* Mandelbrot! */
 
-X1 =  -2.0;  
-Y1 =  -2.0; 
-X2 =   2.0; 
-Y2 =   2.0; 
-PX = 32;
-PY = 32;
+var X1 =  -2.0;  
+var Y1 =  -2.0; 
+var X2 =   2.0; 
+var Y2 =   2.0; 
+var PX = 32;
+var PY = 32;
 
 
-lines = [];
-for (y=0;y<PY;y++) {
-  line="";
-  for (x=0;x<PX;x++) {
-    Xr=0;
-    Xi=0; 
-    Cr=X1+((X2-X1)*x/PX);
-    Ci=Y1+((Y2-Y1)*y/PY);
-    iterations=0;
+var lines = [];
+for (var y=0;y<PY;y++) {
+  var line="";
+  for (var x=0;x<PX;x++) {
+    var Xr=0;
+    var Xi=0; 
+    var Cr=X1+((X2-X1)*x/PX);
+    var Ci=Y1+((Y2-Y1)*y/PY);
+    var iterations=0;
     while ((iterations<32) && ((Xr*Xr+Xi*Xi)<4)) {
-      t=Xr*Xr - Xi*Xi + Cr;
+      var t=Xr*Xr - Xi*Xi + Cr;
       Xi=2*Xr*Xi+Ci;          
       Xr=t;        
       iterations++;

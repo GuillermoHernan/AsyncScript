@@ -20,7 +20,7 @@ When using dump() to show symbols, found the function "a" is reassigned to
 */
 
 function a (){};
-b = {};
+var b = {};
 b.a = {};
 a();
 

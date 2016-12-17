@@ -55,25 +55,13 @@ Ref<JSValue> evaluate (const char* script, Ref<IScope> globals)
  * Creates the default global scope
  * @return 
  */
-Ref<IScope> createDefaultGlobals()
+Ref<GlobalScope> createDefaultGlobals()
 {
-    Ref<JSObject>   globals = createDefaultGlobalsObj();
+    auto    globals = GlobalScope::create();
     
-    return ObjectScope::create(globals);
-}
-
-/**
- * Creates the default global object, which backs the default global scope
- * @return 
- */
-Ref<JSObject> createDefaultGlobalsObj()
-{
-    Ref<JSObject>   globals = JSObject::create(Ref<JSObject>());
-    Ref<IScope>     tmpScope = ObjectScope::create(globals);
-    
-    registerMvmFunctions(tmpScope);
-    registerFunctions(tmpScope);
-    registerMathFunctions(tmpScope);
+    registerMvmFunctions(globals);
+    registerFunctions(globals);
+    registerMathFunctions(globals);
     
     return globals;
 }
@@ -97,21 +85,46 @@ Ref<JSFunction> addNative (const std::string& szFunctionHeader,
     token = token.match(LEX_R_FUNCTION);
     string funcName = token.text();
     token = token.match(LEX_ID);
+    
+    Ref<JSObject>   container;
 
     // Check for dots, we might want to do something like function String.substring ...
+    if (token.type() == '.')        //First dot, read at global scope
+    {
+        token = token.match('.');
+        Ref<JSValue> child = undefined();
+        
+        if (scope->isDefined(funcName))
+            child = scope->get(funcName);
+            
+        // if it doesn't exist or it is not an object, make an object class
+        if (!child->isObject())
+        {
+            child = JSObject::create( JSObject::DefaultPrototype );
+            scope->newVar(funcName, child);
+        }
+        container = child.staticCast<JSObject>();
+
+        funcName = token.text();
+        token = token.match(LEX_ID);
+    }
+    
+    //Next dots, read in previous objects
     while (token.type() == '.')
     {
         token = token.match('.');
-        Ref<JSObject> child = getObject(scope, funcName);
-
-        // if it doesn't exist, make an object class
-        if (child.isNull())
+        Ref<JSValue> child = undefined();
+        
+        child = container->readField(funcName);
+            
+        // if it doesn't exist or it is not an object, make an object class
+        if (!child->isObject())
         {
             child = JSObject::create( JSObject::DefaultPrototype );
             scope->set(funcName, child);
         }
+        container = child.staticCast<JSObject>();
 
-        scope = ObjectScope::create(child);
         funcName = token.text();
         token = token.match(LEX_ID);
     }
@@ -119,7 +132,10 @@ Ref<JSFunction> addNative (const std::string& szFunctionHeader,
     Ref<JSFunction> function = JSFunction::createNative(funcName, pFn);
     parseFunctionArguments(function, token);
 
-    scope->set(funcName, function);
+    if (container.notNull())
+        container->set(funcName, function);
+    else
+        scope->newVar(funcName, function);
     
     return function;
 }
@@ -165,7 +181,7 @@ Ref<JSFunction> addNative0 (const std::string& szName,
 {
     Ref<JSFunction> function = JSFunction::createNative(szName, pFn);
 
-    scope->set(szName, function);
+    scope->newVar(szName, function);
     
     return function;
     
@@ -187,7 +203,7 @@ Ref<JSFunction> addNative1 (const std::string& szName,
     Ref<JSFunction> function = JSFunction::createNative(szName, pFn);
 
     function->addParam(p1);
-    scope->set(szName, function);
+    scope->newVar(szName, function);
     
     return function;
 }
@@ -212,7 +228,7 @@ Ref<JSFunction> addNative2 (const std::string& szName,
 
     function->addParam(p1);
     function->addParam(p2);
-    scope->set(szName, function);
+    scope->newVar(szName, function);
     
     return function;
 }

@@ -1,4 +1,4 @@
 // check for undefined-ness
-a = undefined;
-b = "foo";
+var a = undefined;
+var b = "foo";
 result = a==undefined && b!=undefined;

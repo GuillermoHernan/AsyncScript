@@ -204,6 +204,11 @@ void blockCodegen (Ref<AstNode> statement, CodegenState* pState)
 {
     const AstNodeList&  children = statement->children();
     
+    //It does not create a code generation scope, because it just needs to know
+    //if a variable is local or global. Therefore, code generation scopes are
+    //only created at function-level.
+    instruction8 (OC_PUSH_SCOPE, pState);
+    
     for (size_t i=0; i < children.size(); ++i)
     {
         if (children[i].notNull())
@@ -212,6 +217,8 @@ void blockCodegen (Ref<AstNode> statement, CodegenState* pState)
             instruction8(OC_POP, pState);   //Discard result
         }
     }
+
+    instruction8 (OC_POP_SCOPE, pState);
         
     //Non expression stataments leave an 'undefined' on the stack.
     pushUndefined(pState);
@@ -229,12 +236,10 @@ void varCodegen (Ref<AstNode> statement, CodegenState* pState)
     //target function scope specifically.
     pState->scopes.back().declare(name);
     
-    if (statement->childExists(0))
-    {
-        pushConstant (name, pState);
-        childrenCodegen(statement, pState);
-        instruction8 (OC_WR_LOCAL, pState);
-    }
+    pushConstant (name, pState);
+    if (!childCodegen(statement, 0, pState))
+        pushUndefined(pState);
+    instruction8 (OC_NEW_VAR, pState);
     
     //Non-expression statements leave an 'undefined' on the stack.
     pushUndefined(pState);
@@ -296,6 +301,9 @@ void ifCodegen (Ref<AstNode> statement, CodegenState* pState)
  */
 void forCodegen (Ref<AstNode> statement, CodegenState* pState)
 {
+    //For loops define its own scope
+    instruction8(OC_PUSH_SCOPE, pState);
+    
     //Loop initialization
     if (childCodegen (statement, 0, pState))
         instruction8(OC_POP, pState);
@@ -323,6 +331,9 @@ void forCodegen (Ref<AstNode> statement, CodegenState* pState)
     
     //Fix condition jump destination
     setFalseJump(bodyBegin-1, nextBlock, pState);    
+    
+    //Remove loop scope
+    instruction8(OC_POP_SCOPE, pState);
     
     //Non expression statements leave an 'undefined' on the stack.
     pushUndefined(pState);
@@ -385,7 +396,7 @@ void functionCodegen (Ref<AstNode> statement, CodegenState* pState)
         
         //Copy function reference.
         instruction8(OC_CP+1, pState);
-        instruction8(OC_WR_LOCAL, pState);
+        instruction8(OC_NEW_VAR, pState);
     }
 }
 
