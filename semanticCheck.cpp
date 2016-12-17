@@ -33,6 +33,7 @@ void functionSemCheck (Ref<AstNode> node, SemCheckState* pState);
 void assignmentSemCheck (Ref<AstNode> node, SemCheckState* pState);
 void postfixOpSemCheck (Ref<AstNode> node, SemCheckState* pState);
 void prefixOpSemCheck (Ref<AstNode> node, SemCheckState* pState);
+void objectSemCheck (Ref<AstNode> node, SemCheckState* pState);
 
 void checkReservedNames (const std::string& name, ScriptPosition pos, const char* errorMsg);
 void checkReservedNames (Ref<AstNode> node, const char* errorMsg);
@@ -83,7 +84,7 @@ void semCheck (Ref<AstNode> node, SemCheckState* pState)
         types [AST_LITERAL] = childrenSemCheck;
         types [AST_IDENTIFIER] = childrenSemCheck;
         types [AST_ARRAY] = childrenSemCheck;
-        types [AST_OBJECT] = childrenSemCheck;
+        types [AST_OBJECT] = objectSemCheck;
         types [AST_ARRAY_ACCESS] = childrenSemCheck;
         types [AST_MEMBER_ACCESS] = childrenSemCheck;
         types [AST_CONDITIONAL] = childrenSemCheck;
@@ -175,6 +176,26 @@ void prefixOpSemCheck (Ref<AstNode> node, SemCheckState* pState)
     checkReservedNames (node->children().front(), "Cannot write to: %s");
 
     childrenSemCheck(node, pState);
+}
+
+void objectSemCheck(Ref<AstNode> node, SemCheckState* pState)
+{
+    Ref<AstObject> objNode = node.staticCast<AstObject>();
+
+    auto        props = objNode->getProperties();
+    set<string> usedNames;
+    
+    for (size_t i = 0; i < props.size(); ++i)
+    {
+        if (usedNames.count(props[i].name) == 0)
+            usedNames.insert(props[i].name);
+        else
+        {
+            errorAt (props[i].expr->position(), 
+                     "Duplicated key in object: %s", 
+                     props[i].name.c_str());
+        }
+    }
 }
 
 /**
