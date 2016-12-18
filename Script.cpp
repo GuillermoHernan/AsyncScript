@@ -83,7 +83,9 @@ int main(int argc, char **argv)
         fgets(buffer, sizeof (buffer), stdin);
         try
         {
-            evaluate(buffer, globals);
+            auto result = evaluate(buffer, globals);
+            
+            printf ("> %s\n", result->toString().c_str());
         }
         catch (const CScriptException &e)
         {
