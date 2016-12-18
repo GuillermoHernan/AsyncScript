@@ -38,6 +38,7 @@ ExprResult parseRelationalExpr (CScriptToken token);
 ExprResult parseShiftExpr (CScriptToken token);
 ExprResult parseAddExpr (CScriptToken token);
 ExprResult parseMultiplyExpr (CScriptToken token);
+ExprResult parsePowerExpr (CScriptToken token);
 ExprResult parseUnaryExpr (CScriptToken token);
 ExprResult parsePostFixExpr (CScriptToken token);
 ExprResult parseIdentifier (CScriptToken token);
@@ -603,7 +604,17 @@ ExprResult parseAddExpr (CScriptToken token)
 ExprResult parseMultiplyExpr (CScriptToken token)
 {
     const int operators[] = {'*', '/', '%', 0 };
-    return parseBinaryLROp(token, operators, parseUnaryExpr);
+    return parseBinaryLROp(token, operators, parsePowerExpr);
+}
+
+/**
+ * Parses a exponenciation operation (operator '**')
+ * @param token
+ * @return 
+ */
+ExprResult parsePowerExpr(CScriptToken token)
+{
+    return parseBinaryRLOp(token, LEX_POWER, parseUnaryExpr);
 }
 
 /**
