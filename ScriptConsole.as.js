@@ -13,7 +13,7 @@ actor ScriptConsole
 {
     const reader = spawn IO.StdinLineReader;
     
-    lineIn <- reader.lineOut 
+    lineIn <- reader.lineOut; 
     
     input lineIn (cmd)
     {

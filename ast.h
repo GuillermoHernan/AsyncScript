@@ -42,10 +42,15 @@ enum AstNodeTypes
     ,AST_BINARYOP
     ,AST_PREFIXOP
     ,AST_POSTFIXOP
+    ,AST_ACTOR
+    ,AST_CONNECT
+    ,AST_INPUT
+    ,AST_OUTPUT
     ,AST_TYPES_COUNT
 };
 
 class AstNode;
+class AstFunction;
 typedef std::vector <Ref<AstNode> > AstNodeList;
 
 //AST conversion functions (mainly for AST /parser debugging)
@@ -88,7 +93,15 @@ Ref<AstNode> astCreateArrayAccess(ScriptPosition pos,
 Ref<AstNode> astCreateMemberAccess(ScriptPosition pos,
                                   Ref<AstNode> objExpr, 
                                   Ref<AstNode> identifier);
-
+Ref<AstNode> astCreateVar (const ScriptPosition& pos, 
+                              const std::string& name, 
+                              Ref<AstNode> expr);
+Ref<AstNode> astCreateActor(ScriptPosition pos, const std::string& name);
+Ref<AstFunction> astCreateInputMessage(ScriptPosition pos, const std::string& name);
+Ref<AstFunction> astCreateOutputMessage(ScriptPosition pos, const std::string& name);
+Ref<AstNode> astCreateConnect(ScriptPosition pos,
+                                 Ref<AstNode> lexpr, 
+                                 Ref<AstNode> rexpr);
 
 
 /**
@@ -184,29 +197,23 @@ protected:
 };
 
 /**
- * AST node for variable declarations
+ * Class for branch nodes which are also named
  */
-class AstVar : public AstBranchNode
+class AstNamedBranch : public AstBranchNode
 {
 public:
 
-    static Ref<AstVar> create(ScriptPosition position, const std::string& name, Ref<AstNode> expr)
-    {
-        return refFromNew(new AstVar(position, name, expr));
-    }
-    
     virtual const std::string getName()const
     {
         return m_name;
     }
+
+    AstNamedBranch(AstNodeTypes type, const ScriptPosition& pos, const std::string& _name)
+    : AstBranchNode(type, pos), m_name(_name)
+    {
+    }
     
 protected:
-
-    AstVar(const ScriptPosition& pos, const std::string& _name, Ref<AstNode> expr)
-    : AstBranchNode(AST_VAR, pos), m_name(_name)
-    {
-        m_children.push_back(expr);
-    }
 
     const std::string m_name;
 };
@@ -220,7 +227,7 @@ public:
     static Ref<AstFunction> create(ScriptPosition position,
                                    const std::string& name)
     {
-        return refFromNew (new AstFunction(position, name));
+        return refFromNew (new AstFunction(AST_FUNCTION, position, name));
     }
 
     void setCode(Ref<AstNode> code)
@@ -251,13 +258,13 @@ public:
     
     virtual Ref<JSValue> toJS()const;
 
-protected:
-
-    AstFunction(ScriptPosition position, const std::string& name) :
-    AstNode(AST_FUNCTION, position),
+    AstFunction(AstNodeTypes type, ScriptPosition position, const std::string& name) :
+    AstNode(type, position),
     m_name(name)
     {
     }
+    
+protected:
 
     const std::string   m_name;
     Params              m_params;

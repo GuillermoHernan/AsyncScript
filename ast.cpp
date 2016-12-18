@@ -182,6 +182,42 @@ Ref<AstNode> astCreateMemberAccess(ScriptPosition pos,
     return result;
 }
 
+Ref<AstNode> astCreateVar (const ScriptPosition& pos, 
+                              const std::string& name, 
+                              Ref<AstNode> expr)
+{
+    auto result = refFromNew (new AstNamedBranch(AST_VAR, pos, name));
+    
+    result->addChild(expr);
+    return result;
+}
+
+Ref<AstNode> astCreateActor(ScriptPosition pos, const std::string& name)
+{
+    return refFromNew(new AstNamedBranch(AST_ACTOR, pos, name));
+}
+
+Ref<AstFunction> astCreateInputMessage(ScriptPosition pos, const std::string& name)
+{
+    return refFromNew(new AstFunction(AST_INPUT, pos, name));
+}
+
+Ref<AstFunction> astCreateOutputMessage(ScriptPosition pos, const std::string& name)
+{
+    return refFromNew(new AstFunction(AST_OUTPUT, pos, name));
+}
+
+Ref<AstNode> astCreateConnect(ScriptPosition pos,
+                                 Ref<AstNode> lexpr, 
+                                 Ref<AstNode> rexpr)
+{
+    auto result = refFromNew (new AstOperator(AST_CONNECT, pos, LEX_CONNECT));
+    
+    result->addChild(lexpr);
+    result->addChild(rexpr);
+    return result;
+}
+
 
 /**
  * Creates an 'AstLiteral' object from a source token.
@@ -258,7 +294,8 @@ Ref<JSValue> AstFunction::toJS()const
     Ref<JSObject>   obj = AstNode::toJS().staticCast<JSObject>();
     
     obj->writeFieldStr("c_parameters", JSArray::createStrArray(m_params));
-    obj->writeFieldStr("d_code", m_code->toJS());
+    if (m_code.notNull())
+        obj->writeFieldStr("d_code", m_code->toJS());
     
     return obj;
 }
@@ -365,6 +402,10 @@ std::string astTypeToString(AstNodeTypes type)
         types[AST_BINARYOP] = "AST_BINARYOP";
         types[AST_PREFIXOP] = "AST_PREFIXOP";
         types[AST_POSTFIXOP] = "AST_POSTFIXOP";
+        types[AST_ACTOR] = "AST_ACTOR";
+        types[AST_CONNECT] = "AST_CONNECT";
+        types[AST_INPUT] = "AST_INPUT";
+        types[AST_OUTPUT] = "AST_OUTPUT";
         //types[AST_TYPES_COUNT] = "AST_TYPES_COUNT";
     }
     

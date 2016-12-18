@@ -16,13 +16,13 @@ Ref<AstNode>   emptyStatement(ScriptPosition pos);
 
 ParseResult parseSimpleStatement (CScriptToken token);
 ParseResult parseBodyStatement (CScriptToken token);
-ParseResult parseBlock (CScriptToken token);
-ParseResult parseVar (CScriptToken token);
+ExprResult parseBlock (CScriptToken token);
+ExprResult  parseVar (CScriptToken token);
 ParseResult parseIf (CScriptToken token);
 ParseResult parseWhile (CScriptToken token);
 ParseResult parseFor (CScriptToken token);
 ParseResult parseReturn (CScriptToken token);
-CScriptToken parseFunctionArguments(Ref<AstFunction>(function), CScriptToken token);
+ExprResult parseFunctionArguments(CScriptToken token, Ref<AstNode> function);
 
 ExprResult parseExpression (CScriptToken token);
 ExprResult parseAssignment (CScriptToken token);
@@ -59,6 +59,12 @@ ExprResult parseBinaryLROp (CScriptToken token, LEX_TYPES opType, ExprResult::Pa
 ExprResult parseBinaryLROp (CScriptToken token, const int *types, ExprResult::ParseFunction childParser);
 ExprResult parseBinaryRLOp (CScriptToken token, LEX_TYPES opType, ExprResult::ParseFunction childParser);
 ExprResult parseBinaryRLOp (CScriptToken token, const int *types, ExprResult::ParseFunction childParser);
+
+ExprResult parseActorExpr (CScriptToken token);
+ExprResult parseActorMember (CScriptToken token);
+ExprResult parseInputMessage (CScriptToken token);
+ExprResult parseOutputMessage (CScriptToken token);
+ExprResult parseConnectExpr (CScriptToken token);
 
     
 bool isAssignment(CScriptToken token)
@@ -120,15 +126,16 @@ ParseResult parseStatement (CScriptToken token)
         if (r.ok())
             return r.toParseResult();
         else
-            return parseBlock(token);
+            return parseBlock(token).toParseResult();
     }
     case ';':           return ParseResult (token.next(), emptyStatement(token.getPosition()));
-    case LEX_R_VAR:     return parseVar (token);
+    case LEX_R_VAR:     return parseVar (token).toParseResult();
     case LEX_R_IF:      return parseIf (token);
     case LEX_R_WHILE:   return parseWhile (token);
     case LEX_R_FOR:     return parseFor (token);
     case LEX_R_RETURN:  return parseReturn (token);
     case LEX_R_FUNCTION:return parseFunctionExpr (token).toParseResult();
+    case LEX_R_ACTOR:   return parseActorExpr (token).toParseResult();
     
     default:
         return parseSimpleStatement(token);
@@ -158,7 +165,7 @@ ParseResult parseSimpleStatement (CScriptToken token)
         ExprResult r = parseExpression (token);
         return r.toParseResult();
     }
-    case LEX_R_VAR:     return parseVar (token);
+    case LEX_R_VAR:     return parseVar (token).toParseResult();
     default:
         errorAt(token.getPosition(), "Unexpected token: '%s'", token.text().c_str());
         return ParseResult (token.next(), emptyStatement(token.getPosition()));
@@ -203,24 +210,29 @@ ParseResult parseBodyStatement (CScriptToken token)
  * @param token
  * @return Code block object
  */
-ParseResult parseBlock (CScriptToken token)
+ExprResult parseBlock (CScriptToken token)
 {
     //TODO: Better handling of ';'
     Ref<AstNode>    block = astCreateBlock(token);
+    ExprResult      r(token);
     
-    token = token.match('{');
+    r = r.require('{');
     
-    while (token.type() != '}')
+    while (r.ok() && r.token.type() != '}')
     {
-        ParseResult r = parseStatement(token);
+        //TODO: Migrate all parsing functions to 'ExprResult'
+        ParseResult pr = parseStatement(r.token);
         
-        block->addChild (r.ast);
-        token = r.nextToken;
+        block->addChild (pr.ast);
+        r.token = pr.nextToken;
     }
     
-    token = token.match('}');
+    r = r.require('}');
     
-    return ParseResult (token, block);
+    if (r.ok())
+        r.result = block;
+    
+    return r.final();
 }
 
 /**
@@ -228,30 +240,33 @@ ParseResult parseBlock (CScriptToken token)
  * @param token
  * @return 
  */
-ParseResult parseVar (CScriptToken token)
+ExprResult parseVar (CScriptToken token)
 {
     ScriptPosition  pos = token.getPosition();
-    token = token.match(LEX_R_VAR);
+    ExprResult      r(token);
     
-    const string name = token.text();
+    r = r.require(LEX_R_VAR);
+    if (!r.ok())
+        return r.final();    
     
-    token = token.match(LEX_ID);
+    const string name = r.token.text();
+    
+    r = r.require(LEX_ID);
     
     Ref<AstNode> initExp;
     
-    if (token.type() == '=')
+    if (r.ok() && r.token.type() == '=')
     {
         //Initialization is optional.
-        ExprResult r = parseExpression(token.next());
-        r.throwIfError();
+        r = r.skip().then(parseExpression);
         
         initExp = r.result;
-        token = r.token;
     }
     
-    Ref<AstVar> var = AstVar::create (pos, name, initExp);
+    if (r.ok())
+        r.result = astCreateVar (pos, name, initExp);
     
-    return ParseResult (token, var);
+    return r;
 }
 
 /**
@@ -399,25 +414,36 @@ ParseResult parseReturn (CScriptToken token)
 
 /**
  * Parses a function argument list.
- * @param function  Function into which add the arguments
  * @param token 
- * @return Next token
+ * @param fnNode  Function into which add the arguments
+ * @return  ExprResult containing the same function AST node received, with
+ * the parameters added.
  */
-CScriptToken parseFunctionArguments(Ref<AstFunction>(function), CScriptToken token)
+ExprResult parseFunctionArguments(CScriptToken token, Ref<AstNode> fnNode)
 {
-    token = token.match('(');
+    Ref<AstFunction>    function = fnNode.staticCast<AstFunction>();
+    ExprResult          r(token);
+    
+    r = r.require('(');
 
-    while (token.type() != ')')
+    while (r.ok() && r.token.type() != ')')
     {
-        const string name = token.text();
+        const string name = r.token.text();
 
-        token = token.match(LEX_ID);
-        function->addParam(name);
+        r = r.require (LEX_ID);
+        if (r.ok())
+            function->addParam(name);
 
-        if (token.type() != ')')
-            token = token.match(',');
+        if (r.token.type() != ')')
+            r = r.require (',');
     }
-    return token.match(')');
+    
+    r = r.require(')');
+    
+    if (r.ok())
+        r.result = function;
+    
+    return r.final();
 }
 
 /**
@@ -821,24 +847,25 @@ ExprResult parseFunctionExpr (CScriptToken token)
     if (r.error())
         return r.final();
 
-    token = r.token;
-
     //unnamed functions are legal.
-    if (token.type() == LEX_ID)
+    if (r.token.type() == LEX_ID)
     {
-        name = token.text();
-        token = token.next();
+        name = r.token.text();
+        r = r.skip();
     }
     
     Ref<AstFunction>    function = AstFunction::create (pos, name);
+    r.result = function;
     
-    token = parseFunctionArguments(function, token);
+    r = r.then(parseFunctionArguments).then(parseBlock);
+
+    if (r.ok())
+    {
+        function->setCode (r.result);
+        r.result = function;
+    }
     
-    ParseResult rBlock = parseBlock(token);
-    
-    function->setCode (rBlock.ast);
-    
-    return ExprResult(rBlock.nextToken, function);    
+    return r.final();
 }
 
 /**
@@ -1107,4 +1134,150 @@ ExprResult parseBinaryRLOp (CScriptToken token, const int* ids, ExprResult::Pars
     }
     else    
         return r.final();
+}
+
+/**
+ * Parses an actor definition.
+ * @param token
+ * @return 
+ */
+ExprResult parseActorExpr (CScriptToken token)
+{
+    ScriptPosition  pos = token.getPosition();
+    ExprResult      r(token);
+    Ref<AstNode>    actorNode;
+
+    r = r.require(LEX_R_ACTOR);
+    if (r.error())
+        return r.final();
+
+    const string name = r.token.text();
+    
+    r = r.require(LEX_ID).require('{');
+    
+    if (r.ok())
+    {
+        actorNode = astCreateActor(pos, name);
+
+        while (r.ok() && r.token.type() != '}')
+        {
+            //Skip ';', which may (optionally) act as separators.
+            while (r.token.type() == ';')
+                r = r.skip();
+            
+            r = r.then (parseActorMember);
+            if (r.ok())
+                actorNode->addChild(r.result);
+        }
+        
+        r = r.require('}');
+    }//if
+    
+    if (r.ok())
+        r.result = actorNode;
+    
+    return r.final();
+}
+
+/**
+ * Parses one of the possible members of an actor.
+ * @param token
+ * @return 
+ */
+ExprResult parseActorMember (CScriptToken token)
+{
+    switch (token.type())
+    {
+    case LEX_R_VAR:     return parseVar(token);
+    case LEX_R_INPUT:   return parseInputMessage(token);
+    case LEX_R_OUTPUT:  return parseOutputMessage(token);
+    default:            return parseConnectExpr(token);
+    }
+}
+
+/**
+ * Parses an input message definition
+ * @param token
+ * @return 
+ */
+ExprResult parseInputMessage (CScriptToken token)
+{
+    ScriptPosition      pos = token.getPosition();
+    ExprResult          r(token);
+    Ref<AstFunction>    function;
+
+    r = r.require(LEX_R_INPUT);
+    if (r.error())
+        return r.final();
+
+    const string name = r.token.text();
+    r = r.require(LEX_ID);
+
+    if (r.ok())
+    {
+        function = astCreateInputMessage (pos, name);
+        r.result = function;
+    }
+    
+    r = r.then(parseFunctionArguments).then(parseBlock);
+    
+    if (r.ok())
+    {
+        function->setCode(r.result);
+        r.result = function;
+    }
+    
+    return r.final();
+}
+
+/**
+ * Parses an output message declaration
+ * @param token
+ * @return 
+ */
+ExprResult parseOutputMessage (CScriptToken token)
+{
+    ScriptPosition      pos = token.getPosition();
+    ExprResult          r(token);
+
+    r = r.require(LEX_R_OUTPUT);
+    if (r.error())
+        return r.final();
+
+    const string name = r.token.text();
+    r = r.require(LEX_ID);
+
+    if (r.error())
+        return r.final();
+    
+    Ref<AstFunction>    function = astCreateOutputMessage(pos, name);
+    r.result = function;
+    
+    r = r.then(parseFunctionArguments);
+    
+    if (r.ok())
+        r.result = function;
+    
+    return r.final();
+}
+
+/**
+ * Parses message connection operator ('<-')
+ * @param token
+ * @return 
+ */
+ExprResult parseConnectExpr (CScriptToken token)
+{
+    ExprResult  r(token);
+    
+    r.then(parseIdentifier);
+    auto lexpr = r.result;
+    
+    ScriptPosition  pos = r.token.getPosition();
+    r.require(LEX_CONNECT).then(parseCallExpr);
+    
+    if (r.ok())
+        r.result = astCreateConnect (pos, lexpr, r.result);    
+    
+    return r.final();
 }
