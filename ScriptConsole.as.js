@@ -3,8 +3,8 @@
  * 
  * Script console for AsyncScript.
  *
- * The first ever AsyncScript source file! In fact, it was written before AsyncScript
- * had a working implementation.
+ * The first ever AsyncScript source file!
+ * In fact, it was written before AsyncScript had a working implementation.
  * 
  * Created on December 18, 2016, 13:33 PM
  */

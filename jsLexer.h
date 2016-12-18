@@ -35,6 +35,7 @@ enum LEX_TYPES
     LEX_ANDAND,
     LEX_OROR,
     LEX_POWER,
+    LEX_CONNECT,
 
     LEX_ASSIGN_BASE = 512,
 
@@ -64,6 +65,14 @@ enum LEX_TYPES
     LEX_R_NULL,
     LEX_R_UNDEFINED,
     LEX_R_NEW,
+    
+    //Actor system keywords
+    LEX_R_ACTOR,
+    LEX_R_INPUT,
+    LEX_R_OUTPUT,
+    LEX_R_PROTOCOL,
+    LEX_R_SOCKET,
+    LEX_R_SPAWN,
 
     LEX_R_LIST_END /* always the last entry */
 };

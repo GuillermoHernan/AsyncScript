@@ -53,6 +53,7 @@ string getTokenStr(int token)
     case LEX_ANDAND: return "&&";
     case LEX_OROR: return "||";
     case LEX_POWER: return "**";
+    case LEX_CONNECT: return "<-";
         // reserved words
     case LEX_R_IF: return "if";
     case LEX_R_ELSE: return "else";
@@ -69,6 +70,14 @@ string getTokenStr(int token)
     case LEX_R_NULL: return "null";
     case LEX_R_UNDEFINED: return "undefined";
     case LEX_R_NEW: return "new";
+    
+    case LEX_R_ACTOR:   return "actor";
+    case LEX_R_INPUT:   return "input";
+    case LEX_R_OUTPUT:  return "output";
+    case LEX_R_PROTOCOL:return "protocol";
+    case LEX_R_SOCKET:  return "socket";
+    case LEX_R_SPAWN:   return "spawn";
+
     }
 
     ostringstream msg;
@@ -298,6 +307,13 @@ CScriptToken CScriptToken::parseId(const char * code)const
         keywords["null"] = LEX_R_NULL;
         keywords["undefined"] = LEX_R_UNDEFINED;
         keywords["new"] = LEX_R_NEW;
+
+        keywords["actor"] = LEX_R_ACTOR;
+        keywords["input"] = LEX_R_INPUT;
+        keywords["output"] = LEX_R_OUTPUT;
+        keywords["protocol"] = LEX_R_PROTOCOL;
+        keywords["socket"] = LEX_R_SOCKET;
+        keywords["spawn"] = LEX_R_SPAWN;
     }
 
     const char* end = code + 1;
@@ -420,6 +436,7 @@ const SOperatorDef s_operators [] = {
     {"&&", LEX_ANDAND, 2},
     {"++", LEX_PLUSPLUS, 2},
     {"--", LEX_MINUSMINUS, 2},
+    {"<-", LEX_CONNECT, 2},
     {"", LEX_EOF, 0}, //End record must have zero length
 };
 
