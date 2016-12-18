@@ -45,6 +45,9 @@ Ref<JSValue> evaluate (const char* script, Ref<IScope> globals)
         token = parseRes.nextToken;
     }
     
+    if (statements.empty())
+        return undefined();
+    
     //Semantic check
     semanticCheck(statements);
     
