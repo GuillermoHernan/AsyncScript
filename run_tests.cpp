@@ -151,6 +151,31 @@ Ref<JSValue> printLn(FunctionScope* pScope)
     return undefined();
 }
 
+/**
+ * Gives access to the parser to the tested code.
+ * Useful for tests which target the parser.
+ * @param pScope
+ * @return 
+ */
+Ref<JSValue> asParse(FunctionScope* pScope)
+{
+    string          code =  pScope->getParam("code")->toString();
+    CScriptToken    token (code.c_str());
+    auto            result = JSArray::create();
+
+    //Parsing loop
+    token = token.next();
+    while (!token.eof())
+    {
+        const ParseResult   parseRes = parseStatement (token);
+
+        result->push(parseRes.ast->toJS());
+        token = parseRes.nextToken;
+    }
+    
+    return result;
+}
+
 
 bool run_test(const std::string& szFile, const string &testDir, const string& resultsDir)
 {
@@ -173,6 +198,7 @@ bool run_test(const std::string& szFile, const string &testDir, const string& re
     addNative("function assert(value, text)", assertFunction, globals);
     addNative("function printLn(text)", printLn, globals);
     addNative("function expectError(code)", expectError, globals);
+    addNative("function asParse(code)", asParse, globals);
     try
     {
         //This code is copied from 'evaluate', to log the intermediate results 

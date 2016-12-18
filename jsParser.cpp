@@ -1165,7 +1165,7 @@ ExprResult parseActorExpr (CScriptToken token)
             while (r.token.type() == ';')
                 r = r.skip();
             
-            r = r.then (parseActorMember);
+            r = parseActorMember(r.token);
             if (r.ok())
                 actorNode->addChild(r.result);
         }
@@ -1270,14 +1270,14 @@ ExprResult parseConnectExpr (CScriptToken token)
 {
     ExprResult  r(token);
     
-    r.then(parseIdentifier);
+    r = r.then(parseIdentifier);
     auto lexpr = r.result;
     
     ScriptPosition  pos = r.token.getPosition();
-    r.require(LEX_CONNECT).then(parseCallExpr);
+    r = r.require(LEX_CONNECT).then(parseLeftExpr);
     
     if (r.ok())
         r.result = astCreateConnect (pos, lexpr, r.result);    
     
-    return r.final();
+    return r;
 }
