@@ -1279,5 +1279,5 @@ ExprResult parseConnectExpr (CScriptToken token)
     if (r.ok())
         r.result = astCreateConnect (pos, lexpr, r.result);    
     
-    return r;
+    return r.final();
 }

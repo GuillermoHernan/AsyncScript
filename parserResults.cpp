@@ -153,7 +153,7 @@ ExprResult ExprResult::getError(const char* format, ...)
 void ExprResult::throwIfError()const
 {
     if (error())
-        errorAt(token.getPosition(), "%s", errorDesc.text.c_str());
+        errorAt(errorDesc.position, "%s", errorDesc.text.c_str());
 }
     
 /**
