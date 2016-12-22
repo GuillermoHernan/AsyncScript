@@ -7,7 +7,7 @@
  * Created on November 21, 2016, 7:24 PM
  */
 
-#include "JsVars.h"
+#include "jsVars.h"
 #include "OS_support.h"
 #include "utils.h"
 #include "TinyJS_Functions.h"

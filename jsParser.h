@@ -15,7 +15,7 @@
 #include "RefCountObj.h"
 #include "jsLexer.h"
 #include "utils.h"
-#include "JsVars.h"
+#include "jsVars.h"
 #include "ast.h"
 #include "parserResults.h"
 

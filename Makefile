@@ -7,7 +7,7 @@ TinyJS_Functions.cpp \
 TinyJS_MathFunctions.cpp \
 jsLexer.cpp \
 utils.cpp \
-JsVars.cpp \
+jsVars.cpp \
 jsParser.cpp \
 ast.cpp \
 parserResults.cpp \

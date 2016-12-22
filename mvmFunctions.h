@@ -12,7 +12,7 @@
 
 #pragma once
 
-#include "JsVars.h"
+#include "jsVars.h"
 
 void registerMvmFunctions(Ref<IScope> scope);
 

@@ -12,7 +12,7 @@
 #define	MICROVM_H
 #pragma once
 
-#include "JsVars.h"
+#include "jsVars.h"
 #include <vector>
 #include <string>
 

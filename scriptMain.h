@@ -12,7 +12,7 @@
 #define	SCRIPTMAIN_H
 #pragma once
 
-#include "JsVars.h"
+#include "jsVars.h"
 #include <string>
 
 Ref<JSValue>    evaluate (const char* script, Ref<IScope> globals);

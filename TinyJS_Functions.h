@@ -31,7 +31,7 @@
 
 #pragma once
 
-#include "JsVars.h"
+#include "jsVars.h"
 #include <string>
 
 /// Register useful functions with the TinyJS interpreter

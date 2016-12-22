@@ -8,7 +8,7 @@
 #include "OS_support.h"
 #include "jsParser.h"
 #include "utils.h"
-#include "JsVars.h"
+#include "jsVars.h"
 
 using namespace std;
 
