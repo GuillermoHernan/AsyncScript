@@ -21,7 +21,7 @@ using namespace std;
 
 // Functions forward declarations.
 //////////////////////////////////////////
-CScriptToken parseFunctionArguments(Ref<JSFunction> function, CScriptToken token);
+CScriptToken parseArgumentList(Ref<JSFunction> function, CScriptToken token);
 
 /**
  * Script evaluation function. Runs a script, and returns its result.
@@ -137,7 +137,7 @@ Ref<JSFunction> addNative (const std::string& szFunctionHeader,
     }
 
     Ref<JSFunction> function = JSFunction::createNative(funcName, pFn);
-    parseFunctionArguments(function, token);
+    parseArgumentList(function, token);
 
     if (container.notNull())
         container->writeFieldStr(funcName, function);
@@ -155,7 +155,7 @@ Ref<JSFunction> addNative (const std::string& szFunctionHeader,
  * @param token 
  * @return Next token
  */
-CScriptToken parseFunctionArguments(Ref<JSFunction> function, CScriptToken token)
+CScriptToken parseArgumentList(Ref<JSFunction> function, CScriptToken token)
 {
     //TODO: It is a copy & paste from the function of the same name in 'jsParser.cpp'
     //But the other version uses a 'AstFunction', not a 'JSFunction'

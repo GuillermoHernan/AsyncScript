@@ -1,16 +1,18 @@
 // Test for actor system parser.
 
 var code = 
-    "actor ScriptConsole{\n" + 
-    "var reader = IO.StdinLineReader();\n"+
+    "actor ScriptConsole(inStream, outStream, errStream){\n" + 
+    "var reader = IO.LineReader(inStream);\n"+
+    "var outWriter = IO.TextWriter(outStream);\n"+
+    "var errWriter = IO.TextWriter(errStream);\n"+
     "lineIn <- reader.lineOut;\n"+
     "input lineIn (cmd)\n"+
     "{\n"+
         "var result = safeEval (line);\n"+
         "if (result.ok)\n"+
-            "Console.log ('> ' + result.value);\n"+
+            "outWriter.textIn ('> ' + result.value);\n"+
         "else\n"+
-            "Console.error ('! ' + result.error);\n"+
+            "errWriter.textIn ('! ' + result.error);\n"+
     "}}\n";
 
 var parseResult = asParse (code);

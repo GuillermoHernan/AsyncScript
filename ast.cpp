@@ -218,6 +218,17 @@ Ref<AstNode> astCreateConnect(ScriptPosition pos,
     return result;
 }
 
+Ref<AstNode> astCreateSend(ScriptPosition pos,
+                            Ref<AstNode> lexpr, 
+                            Ref<AstNode> rexpr)
+{
+    auto result = refFromNew (new AstOperator(AST_BINARYOP, pos, LEX_SEND));
+    
+    result->addChild(lexpr);
+    result->addChild(rexpr);
+    return result;
+}
+
 
 /**
  * Creates an 'AstLiteral' object from a source token.
@@ -296,6 +307,19 @@ Ref<JSValue> AstFunction::toJS()const
     obj->writeFieldStr("c_parameters", JSArray::createStrArray(m_params));
     if (m_code.notNull())
         obj->writeFieldStr("d_code", m_code->toJS());
+    
+    return obj;
+}
+
+/**
+ * Actor node to javascript object
+ * @return 
+ */
+Ref<JSValue> AstActor::toJS()const
+{
+    Ref<JSObject>   obj = AstNamedBranch::toJS().staticCast<JSObject>();
+    
+    obj->writeFieldStr("c_parameters", JSArray::createStrArray(m_params));
     
     return obj;
 }

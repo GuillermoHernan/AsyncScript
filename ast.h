@@ -96,10 +96,12 @@ Ref<AstNode> astCreateMemberAccess(ScriptPosition pos,
 Ref<AstNode> astCreateVar (const ScriptPosition& pos, 
                               const std::string& name, 
                               Ref<AstNode> expr);
-Ref<AstNode> astCreateActor(ScriptPosition pos, const std::string& name);
 Ref<AstFunction> astCreateInputMessage(ScriptPosition pos, const std::string& name);
 Ref<AstFunction> astCreateOutputMessage(ScriptPosition pos, const std::string& name);
 Ref<AstNode> astCreateConnect(ScriptPosition pos,
+                                 Ref<AstNode> lexpr, 
+                                 Ref<AstNode> rexpr);
+Ref<AstNode> astCreateSend (ScriptPosition pos,
                                  Ref<AstNode> lexpr, 
                                  Ref<AstNode> rexpr);
 
@@ -129,6 +131,11 @@ public:
     virtual void addChild(Ref<AstNode> child)
     {
         ASSERT(!"addChildren unsupported");
+    }
+    
+    virtual void addParam(const std::string& paramName)
+    {
+        ASSERT(!"addParam unsupported");
     }
 
 
@@ -245,7 +252,7 @@ public:
         return m_name;
     }
 
-    void addParam(const std::string& paramName)
+    virtual void addParam(const std::string& paramName)
     {
         m_params.push_back(paramName);
     }
@@ -270,6 +277,41 @@ protected:
     Params              m_params;
     Ref<AstNode>        m_code;
 };
+
+/**
+ * AST node for actor definitions
+ */
+class AstActor : public AstNamedBranch
+{
+public:
+    static Ref<AstActor> create(ScriptPosition position,
+                                   const std::string& name)
+    {
+        return refFromNew (new AstActor(position, name));
+    }
+
+    virtual void addParam(const std::string& paramName)
+    {
+        m_params.push_back(paramName);
+    }
+
+    typedef std::vector<std::string> Params;
+    const Params& getParams()const
+    {
+        return m_params;
+    }
+    
+    virtual Ref<JSValue> toJS()const;
+
+protected:
+    AstActor(ScriptPosition position, const std::string& name) :
+    AstNamedBranch(AST_ACTOR, position, name)
+    {
+    }
+    
+    Params              m_params;
+};
+
 
 /**
  * Base class for all AST nodes which represent operators.

@@ -36,6 +36,7 @@ enum LEX_TYPES
     LEX_OROR,
     LEX_POWER,
     LEX_CONNECT,
+    LEX_SEND,
 
     LEX_ASSIGN_BASE = 512,
 
@@ -72,7 +73,6 @@ enum LEX_TYPES
     LEX_R_OUTPUT,
     LEX_R_PROTOCOL,
     LEX_R_SOCKET,
-    LEX_R_SPAWN,
 
     LEX_R_LIST_END /* always the last entry */
 };

@@ -22,7 +22,7 @@ ParseResult parseIf (CScriptToken token);
 ParseResult parseWhile (CScriptToken token);
 ParseResult parseFor (CScriptToken token);
 ParseResult parseReturn (CScriptToken token);
-ExprResult parseFunctionArguments(CScriptToken token, Ref<AstNode> function);
+ExprResult parseArgumentList(CScriptToken token, Ref<AstNode> function);
 
 ExprResult parseExpression (CScriptToken token);
 ExprResult parseAssignment (CScriptToken token);
@@ -419,9 +419,8 @@ ParseResult parseReturn (CScriptToken token)
  * @return  ExprResult containing the same function AST node received, with
  * the parameters added.
  */
-ExprResult parseFunctionArguments(CScriptToken token, Ref<AstNode> fnNode)
+ExprResult parseArgumentList(CScriptToken token, Ref<AstNode> fnNode)
 {
-    Ref<AstFunction>    function = fnNode.staticCast<AstFunction>();
     ExprResult          r(token);
     
     r = r.require('(');
@@ -432,7 +431,7 @@ ExprResult parseFunctionArguments(CScriptToken token, Ref<AstNode> fnNode)
 
         r = r.require (LEX_ID);
         if (r.ok())
-            function->addParam(name);
+            fnNode->addParam(name);
 
         if (r.token.type() != ')')
             r = r.require (',');
@@ -441,7 +440,7 @@ ExprResult parseFunctionArguments(CScriptToken token, Ref<AstNode> fnNode)
     r = r.require(')');
     
     if (r.ok())
-        r.result = function;
+        r.result = fnNode;
     
     return r.final();
 }
@@ -857,7 +856,7 @@ ExprResult parseFunctionExpr (CScriptToken token)
     Ref<AstFunction>    function = AstFunction::create (pos, name);
     r.result = function;
     
-    r = r.then(parseFunctionArguments).then(parseBlock);
+    r = r.then(parseArgumentList).then(parseBlock);
 
     if (r.ok())
     {
@@ -1145,7 +1144,7 @@ ExprResult parseActorExpr (CScriptToken token)
 {
     ScriptPosition  pos = token.getPosition();
     ExprResult      r(token);
-    Ref<AstNode>    actorNode;
+    Ref<AstActor>   actorNode;
 
     r = r.require(LEX_R_ACTOR);
     if (r.error())
@@ -1153,11 +1152,13 @@ ExprResult parseActorExpr (CScriptToken token)
 
     const string name = r.token.text();
     
-    r = r.require(LEX_ID).require('{');
+    r = r.require(LEX_ID);
     
     if (r.ok())
     {
-        actorNode = astCreateActor(pos, name);
+        actorNode = AstActor::create(pos, name);
+        r.result = actorNode;
+        r = r.then(parseArgumentList).require('{');
 
         while (r.ok() && r.token.type() != '}')
         {
@@ -1219,7 +1220,7 @@ ExprResult parseInputMessage (CScriptToken token)
         r.result = function;
     }
     
-    r = r.then(parseFunctionArguments).then(parseBlock);
+    r = r.then(parseArgumentList).then(parseBlock);
     
     if (r.ok())
     {
@@ -1253,7 +1254,7 @@ ExprResult parseOutputMessage (CScriptToken token)
     Ref<AstFunction>    function = astCreateOutputMessage(pos, name);
     r.result = function;
     
-    r = r.then(parseFunctionArguments);
+    r = r.then(parseArgumentList);
     
     if (r.ok())
         r.result = function;
