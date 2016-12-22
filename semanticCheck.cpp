@@ -91,6 +91,10 @@ void semCheck (Ref<AstNode> node, SemCheckState* pState)
         types [AST_BINARYOP] = childrenSemCheck;
         types [AST_PREFIXOP] = prefixOpSemCheck;
         types [AST_POSTFIXOP] = postfixOpSemCheck;
+        types [AST_ACTOR] = childrenSemCheck;
+        types [AST_CONNECT] = childrenSemCheck;
+        types [AST_INPUT] = childrenSemCheck;
+        types [AST_OUTPUT] = childrenSemCheck;
     }
 
     types[node->getType()](node, pState);
