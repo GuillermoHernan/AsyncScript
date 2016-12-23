@@ -137,6 +137,13 @@ public:
     {
         ASSERT(!"addParam unsupported");
     }
+    
+    typedef std::vector<std::string> Params;
+    virtual const Params& getParams()const
+    {
+        static const Params noParams;
+        return noParams;
+    }
 
 
     bool childExists(size_t index)const
@@ -257,8 +264,7 @@ public:
         m_params.push_back(paramName);
     }
 
-    typedef std::vector<std::string> Params;
-    const Params& getParams()const
+    virtual const Params& getParams()const
     {
         return m_params;
     }
@@ -295,8 +301,7 @@ public:
         m_params.push_back(paramName);
     }
 
-    typedef std::vector<std::string> Params;
-    const Params& getParams()const
+    virtual const Params& getParams()const
     {
         return m_params;
     }

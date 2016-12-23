@@ -55,6 +55,7 @@ typedef map<Ref<JSValue>, int, JsValueLessComp> ConstantsMap;
 struct CodegenState
 {
     Ref<MvmRoutine>         curRoutine;
+    Ref<AsActorClass>       curActor;
     vector<CodegenScope>    scopes;
     ConstantsMap            constants;
 };
@@ -89,6 +90,10 @@ void prefixOpCodegen (Ref<AstNode> statement, CodegenState* pState);
 void postfixOpCodegen (Ref<AstNode> statement, CodegenState* pState);
 void logicalOpCodegen (const int opCode, Ref<AstNode> statement, CodegenState* pState);
 
+void actorCodegen (Ref<AstNode> node, CodegenState* pState);
+void connectCodegen (Ref<AstNode> node, CodegenState* pState);
+void messageCodegen (Ref<AstNode> node, CodegenState* pState);
+
 void pushConstant (Ref<JSValue> value, CodegenState* pState);
 void pushConstant (const std::string& str, CodegenState* pState);
 void pushConstant (int value, CodegenState* pState);
@@ -109,7 +114,7 @@ void setTrueJump (int blockId, int destinationId, CodegenState* pState);
 void setFalseJump (int blockId, int destinationId, CodegenState* pState);
 int  curBlockId (CodegenState* pState);
 
-
+CodegenState initFunctionState (Ref<AstNode> node);
 
 /**
  * Generates MVM code for a script.
@@ -162,6 +167,10 @@ void codegen (Ref<AstNode> statement, CodegenState* pState)
         types [AST_BINARYOP] = binaryOpCodegen;
         types [AST_PREFIXOP] = prefixOpCodegen;
         types [AST_POSTFIXOP] = postfixOpCodegen;
+        types [AST_ACTOR] = actorCodegen;
+        types [AST_CONNECT] = connectCodegen;
+        types [AST_INPUT] = messageCodegen;
+        types [AST_OUTPUT] = messageCodegen;
     }
     
     types[statement->getType()](statement, pState);
@@ -249,8 +258,7 @@ void blockCodegen (Ref<AstNode> statement, CodegenState* pState)
 void varCodegen (Ref<AstNode> statement, CodegenState* pState)
 {
     const string name = statement->getName();
-    //TODO: If block scopes are implemented, next line should be modified to
-    //target function scope specifically.
+
     pState->scopes.back().declare(name);
     
     pushConstant (name, pState);
@@ -384,22 +392,12 @@ void functionCodegen (Ref<AstNode> statement, CodegenState* pState)
 {
     Ref<AstFunction>    fnNode = statement.staticCast<AstFunction>();
     Ref<JSFunction>     function = JSFunction::createJS(fnNode->getName());
-    Ref<MvmRoutine>      code = MvmRoutine::create(fnNode->position());
     const AstFunction::Params& params = fnNode->getParams();
     
+    CodegenState    fnState = initFunctionState(statement);
+
     function->setParams (params);
-    function->setCodeMVM (code);
-    
-    CodegenState    fnState;// = *pState;
-    fnState.curRoutine = code;
-    fnState.scopes.push_back(CodegenScope());
-    
-    //Declare function reserver symbols.
-    fnState.scopes.back().declare("this");
-    fnState.scopes.back().declare("arguments");
-    
-    for (size_t i = 0; i < params.size(); ++i)
-        fnState.scopes.back().declare(params[i]);
+    function->setCodeMVM (fnState.curRoutine);
     
     codegen (fnNode->getCode(), &fnState);
     
@@ -815,6 +813,73 @@ void logicalOpCodegen (const int opCode, Ref<AstNode> statement, CodegenState* p
 }
 
 /**
+ * Generates code for an actor declaration
+ * @param node
+ * @param pState
+ */
+void actorCodegen (Ref<AstNode> node, CodegenState* pState)
+{
+    auto actor = AsActorClass::create(node->getName());
+    
+    const AstNode::Params&  params = node->getParams();
+    CodegenState            actorState = initFunctionState(node);
+    actorState.curActor = actor;
+    actor->setParams (params);
+    actor->setCodeMVM (actorState.curRoutine);
+    
+    childrenCodegen(node, &actorState);
+    
+    //Create a new variable, and yield actor class reference
+    pushConstant(actor, pState);
+    pushConstant(node->getName(), pState);
+    instruction8(OC_CP+1, pState);
+    instruction8(OC_NEW_VAR, pState);
+}
+
+/**
+ * Generates code for 'connect' operator
+ * @param node
+ * @param pState
+ */
+void connectCodegen (Ref<AstNode> node, CodegenState* pState)
+{
+    pushConstant("this", pState);
+    pushConstant(node->children().front()->getName(), pState);
+    childCodegen(node, 1, pState);
+    callCodegen("@connect", 3, pState);
+}
+
+/**
+ * Generates code for a message declared inside an actor.
+ * @param node
+ * @param pState
+ */
+void messageCodegen (Ref<AstNode> node, CodegenState* pState)
+{
+    ASSERT(pState->curActor.notNull());
+    
+    Ref<AsMessage>  msg = AsMessage::create(node->getName(), 
+                                            node->getType() == AST_INPUT);
+
+    msg->setParams(node->getParams());
+    
+    if (node->getType() == AST_INPUT)
+    {
+        //TODO: This code is very simular in function, actor, and message code generation
+        Ref<MvmRoutine>         code = MvmRoutine::create(node->position());
+
+        CodegenState    fnState = initFunctionState(node);
+        msg->setCodeMVM (fnState.curRoutine);
+        fnState.curRoutine = code;
+
+        codegen (node.staticCast<AstFunction>()->getCode(), &fnState);
+    }
+
+    pState->curActor->writeFieldStr (msg->getName(), msg);
+}
+
+
+/**
  * Generates the instruction which pushes a constant form the constant table into
  * the stack
  * @param value
@@ -1089,4 +1154,29 @@ void setFalseJump (int blockId, int destinationId, CodegenState* pState)
 int curBlockId (CodegenState* pState)
 {
     return (int)pState->curRoutine->blocks.size() - 1;
+}
+
+
+/**
+ * Initializes a 'CodegenState' object for a function
+ * @param node
+ * @return 
+ */
+CodegenState initFunctionState (Ref<AstNode> node)
+{
+    Ref<MvmRoutine>         code = MvmRoutine::create(node->position());
+    const AstNode::Params&  params = node->getParams();
+    CodegenState            fnState;
+    
+    fnState.curRoutine = code;
+    fnState.scopes.push_back(CodegenScope());
+
+    //Declare function reserved symbols.
+    fnState.scopes.back().declare("this");
+    fnState.scopes.back().declare("arguments");
+
+    for (size_t i = 0; i < params.size(); ++i)
+        fnState.scopes.back().declare(params[i]);
+
+    return fnState;
 }
