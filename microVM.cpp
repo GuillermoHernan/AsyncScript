@@ -63,7 +63,7 @@ struct ExecutionContext
 typedef void (*OpFunction) (const int opCode, ExecutionContext* ec);
 
 
-Ref<JSValue> execScript (Ref<MvmRoutine> code, ExecutionContext* ec);
+Ref<JSValue> execRoutine (Ref<MvmRoutine> code, ExecutionContext* ec);
 int execBlock (const MvmBlock& block, ExecutionContext* ec);
 void execInstruction16 (const int opCode, ExecutionContext* ec);
 void execInstruction8 (const int opCode, ExecutionContext* ec);
@@ -142,7 +142,7 @@ Ref<JSValue> mvmExecute (Ref<MvmRoutine> code, Ref<IScope> globals)
     
     ec.scopes.push_back(globals);
     
-    return execScript (code, &ec);
+    return execRoutine (code, &ec);
 }
 
 /**
@@ -152,7 +152,7 @@ Ref<JSValue> mvmExecute (Ref<MvmRoutine> code, Ref<IScope> globals)
  * @param ec        Execution context
  * @return 
  */
-Ref<JSValue> execScript (Ref<MvmRoutine> code, ExecutionContext* ec)
+Ref<JSValue> execRoutine (Ref<MvmRoutine> code, ExecutionContext* ec)
 {
     if (code->blocks.empty())
         return undefined();
@@ -346,7 +346,7 @@ void execCall (const int nArgs, ExecutionContext* ec)
         const Ref<MvmRoutine>    code = function->getCodeMVM().staticCast<MvmRoutine>();
         const size_t            initialStack = ec->stack.size();
         
-        result = execScript(code, ec);
+        result = execRoutine(code, ec);
         ASSERT (initialStack == ec->stack.size());
     }
     ec->scopes.pop_back();      //Remove function scope
