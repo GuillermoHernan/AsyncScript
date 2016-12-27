@@ -139,10 +139,14 @@ static const OpFunction s_instructions[64] =
  * Executes MVM code.
  * @param code
  * @param globals
+ * @param locals
  * @param callHook
  * @return 
  */
-Ref<JSValue> mvmExecute (Ref<MvmRoutine> code, Ref<IScope> globals, MvmCallHook callHook)
+Ref<JSValue> mvmExecute (Ref<MvmRoutine> code, 
+                         Ref<IScope> globals, 
+                         Ref<IScope> locals, 
+                         MvmCallHook callHook)
 {
     ExecutionContext    ec;
     
@@ -152,6 +156,8 @@ Ref<JSValue> mvmExecute (Ref<MvmRoutine> code, Ref<IScope> globals, MvmCallHook 
         ec.callHook = defaultCallHook;
     
     ec.scopes.push_back(globals);
+    if (locals.notNull())
+        ec.scopes.push_back(locals);
     
     return execRoutine (code, &ec);
 }

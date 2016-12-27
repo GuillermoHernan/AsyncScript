@@ -335,7 +335,7 @@ bool ActorRuntime::dispatchMessage()
             for (size_t i = 0; i < msg.params->length(); ++i)
                 scope->addParam(msg.params->getAt(i));
             
-            mvmExecute (routine, scope, asCallHook);
+            mvmExecute (routine, globals, scope, asCallHook);
         }
         catch (CScriptException& ex)
         {
