@@ -15,7 +15,9 @@ microVM.cpp \
 mvmCodegen.cpp \
 scriptMain.cpp \
 mvmFunctions.cpp \
-semanticCheck.cpp
+semanticCheck.cpp \
+actorRuntime.cpp \
+asVars.cpp
 
 OBJECTS=$(SOURCES:.cpp=.o)
 

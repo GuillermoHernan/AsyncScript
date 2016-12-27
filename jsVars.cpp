@@ -22,7 +22,6 @@ Ref<JSObject>   JSObject::DefaultPrototype;
 Ref<JSObject>   JSString::DefaultPrototype;
 Ref<JSObject>   JSArray::DefaultPrototype;
 Ref<JSObject>   JSFunction::DefaultPrototype;
-Ref<JSObject>   AsActor::DefaultPrototype;
 
 Ref<JSValue> JSValue::readFieldStr(const std::string& strKey)const
 {

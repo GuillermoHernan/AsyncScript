@@ -9,6 +9,7 @@
 
 #include "OS_support.h"
 #include "mvmCodegen.h"
+#include "asVars.h"
 
 #include <set>
 #include <map>
@@ -858,7 +859,7 @@ void messageCodegen (Ref<AstNode> node, CodegenState* pState)
 {
     ASSERT(pState->curActor.notNull());
     
-    Ref<AsMessage>  msg = AsMessage::create(node->getName(), 
+    Ref<AsEndPoint>  msg = AsEndPoint::create(node->getName(), 
                                             node->getType() == AST_INPUT);
 
     msg->setParams(node->getParams());

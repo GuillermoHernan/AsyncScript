@@ -27,6 +27,7 @@ struct ExecutionContext
     ValueVector*    constants;
     ScopeStack      scopes;
     Ref<JSValue>    auxRegister;
+    MvmCallHook     callHook;
     
     Ref<JSValue> pop()
     {
@@ -62,6 +63,10 @@ struct ExecutionContext
 
 typedef void (*OpFunction) (const int opCode, ExecutionContext* ec);
 
+Ref<JSValue> defaultCallHook (  Ref<JSFunction> function, 
+                                Ref<FunctionScope> scope, 
+                                ExecutionContext* ec, 
+                                void* defaultHook);
 
 Ref<JSValue> execRoutine (Ref<MvmRoutine> code, ExecutionContext* ec);
 int execBlock (const MvmBlock& block, ExecutionContext* ec);
@@ -134,11 +139,17 @@ static const OpFunction s_instructions[64] =
  * Executes MVM code.
  * @param code
  * @param globals
+ * @param callHook
  * @return 
  */
-Ref<JSValue> mvmExecute (Ref<MvmRoutine> code, Ref<IScope> globals)
+Ref<JSValue> mvmExecute (Ref<MvmRoutine> code, Ref<IScope> globals, MvmCallHook callHook)
 {
     ExecutionContext    ec;
+    
+    if (callHook != NULL)
+        ec.callHook = callHook;
+    else
+        ec.callHook = defaultCallHook;
     
     ec.scopes.push_back(globals);
     
@@ -337,24 +348,45 @@ void execCall (const int nArgs, ExecutionContext* ec)
     
     ec->scopes.push_back(fnScope);
 
-    Ref<JSValue> result;
+    const size_t            initialStack = ec->stack.size();
     
-    if (function->isNative())
-        result = function->nativePtr()(fnScope.getPointer());
-    else
-    {
-        const Ref<MvmRoutine>    code = function->getCodeMVM().staticCast<MvmRoutine>();
-        const size_t            initialStack = ec->stack.size();
-        
-        result = execRoutine(code, ec);
-        ASSERT (initialStack == ec->stack.size());
-    }
+    Ref<JSValue> result = ec->callHook (function, fnScope, ec, (void*)defaultCallHook);
+    
+    ASSERT (initialStack == ec->stack.size());
     ec->scopes.pop_back();      //Remove function scope
     
     ec->push(result);
 
     returnLog(fnScope, result, ec);
 }
+
+/**
+ * This is the default function for handling function calls. It can be overriden 
+ * by client code using 'callHook' parameter of 'mvmExecute'
+ * @param function      Function reference.
+ * @param scope         Function scope object
+ * @param ec            Execution context object
+ * @return 
+ */
+Ref<JSValue> defaultCallHook (  Ref<JSFunction> function, 
+                                Ref<FunctionScope> scope, 
+                                ExecutionContext* ec, 
+                                void* defaultHook)
+{
+    if (function->getType() != VT_FUNCTION)
+        error ("Micro VM default call handler only supports functions. Received: %s", 
+               function->toString().c_str());
+    
+    if (function->isNative())
+        return function->nativePtr()(scope.getPointer());
+    else
+    {
+        const Ref<MvmRoutine>    code = function->getCodeMVM().staticCast<MvmRoutine>();
+        
+        return execRoutine(code, ec);
+    }
+}
+
 
 /**
  * Logs function calls, if enabled.

@@ -34,10 +34,13 @@ enum JSValueTypes
     VT_STRING,
     VT_ARRAY,
     VT_ACTOR,
+    VT_ACTOR_REF,
     VT_FUNCTION,//All below are functions
     VT_ACTOR_CLASS,
-    VT_INPUT_MSG,
-    VT_OUTPUT_MSG
+    VT_INPUT_EP,
+    VT_OUTPUT_EP,
+    VT_INPUT_EP_REF,
+    VT_OUTPUT_EP_REF,
 };
 std::string getTypeName(JSValueTypes vType);
 
@@ -696,96 +699,3 @@ private:
     SymbolMap   m_symbols;
 };
 
-class AsMessage;
-
-/**
- * Actor class runtime object
- */
-class AsActorClass : public JSFunction  //TODO: May be, constructor could be a member, not the base class...
-{
-public:
-    static Ref<AsActorClass>    create (const std::string& name)
-    {
-        return refFromNew (new AsActorClass(name));
-    }
-
-    virtual JSValueTypes getType()const
-    {
-        return VT_ACTOR_CLASS;
-    }
-    
-protected:
-    AsActorClass (const std::string& name) : JSFunction(name, NULL)
-    {
-    }
-};
-
-/**
- * Actor runtime object
- */
-class AsActor : public JSObject
-{
-public:
-    static Ref<AsActor>    create (Ref<AsActorClass> cls)
-    {
-        return refFromNew(new AsActor(cls));
-    }
-
-    virtual JSValueTypes getType()const
-    {
-        return VT_ACTOR;
-    }
-    
-    /// 'AsActor' default prototype.
-    static Ref<JSObject> DefaultPrototype;
-
-protected:
-    AsActor (Ref<AsActorClass> cls) : JSObject(DefaultPrototype), m_cls (cls)
-    {
-    }
-    
-private:
-    const Ref<AsActorClass> m_cls;
-};
-
-/**
- * Message runtime object
- */
-class AsMessage : public JSFunction
-{
-public:
-    static Ref<AsMessage> create (const std::string& name, bool input)
-    {
-        return refFromNew (new AsMessage (name, input));
-    }
-    
-    bool isInput()const
-    {
-        return m_isInput;
-    }
-
-    virtual JSValueTypes getType()const
-    {
-        return isInput() ? VT_INPUT_MSG : VT_OUTPUT_MSG;
-    }
-    
-protected:
-    AsMessage (const std::string& name, bool input) :
-    JSFunction(name, NULL), m_isInput (input)
-    {
-
-    }
-    
-private:
-    const bool m_isInput;
-};
-
-/**
- * Actor reference runtime object
- */
-/*class AsActorRef
-{
-public:
-    static Ref<AsActorRef>    create (Ref<AsActor> actor);    
-    
-};*/
