@@ -270,6 +270,12 @@ bool run_test(const std::string& szFile, const string &testDir, const string& re
     return pass;
 }
 
+/**
+ * Test program entry point.
+ * @param argc
+ * @param argv
+ * @return 
+ */
 int main(int argc, char **argv)
 {
     const string testsDir = "./tests/";
