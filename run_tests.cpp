@@ -37,6 +37,7 @@
 #include "jsParser.h"
 #include "semanticCheck.h"
 #include "TinyJS_Functions.h"
+#include "actorRuntime.h"
 
 #include <assert.h>
 #include <sys/stat.h>
@@ -176,7 +177,13 @@ Ref<JSValue> asParse(FunctionScope* pScope)
     return result;
 }
 
-
+/**
+ * Funs a test script loaded from a file.
+ * @param szFile        Path to the test script.
+ * @param testDir       Directory in which the test script is located.
+ * @param resultsDir    Directory in which tests results are written
+ * @return 
+ */
 bool run_test(const std::string& szFile, const string &testDir, const string& resultsDir)
 {
     printf("TEST %s ", szFile.c_str());
@@ -242,7 +249,8 @@ bool run_test(const std::string& szFile, const string &testDir, const string& re
         //addNative("function callLogger(x)", logFn, globals);
 
         //Execution
-        mvmExecute(code, globals);
+        //mvmExecute(code, globals);
+        asBlockingExec(code, globals);
     }
     catch (const CScriptException &e)
     {

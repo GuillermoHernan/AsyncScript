@@ -20,7 +20,7 @@ class AsEndPoint;
 /**
  * Actor class runtime object
  */
-class AsActorClass : public JSFunction  //TODO: May be, constructor could be a member, not the base class...
+class AsActorClass : public JSObject
 {
 public:
     static Ref<AsActorClass>    create (const std::string& name)
@@ -34,11 +34,13 @@ public:
     }
     
     Ref<AsEndPoint> getEndPoint (const std::string& name);
-    
-protected:
-    AsActorClass (const std::string& name) : JSFunction(name, NULL)
+
+    Ref<AsEndPoint> getConstructor ()
     {
+        return getEndPoint("@start");
     }
+protected:
+    AsActorClass (const std::string& name);
 };
 
 class AsActorRef;

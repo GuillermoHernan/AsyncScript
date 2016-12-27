@@ -11,6 +11,18 @@
 #include "asVars.h"
 
 /**
+ * Actor class constructor.
+ * @param name
+ */
+AsActorClass::AsActorClass (const std::string& name) : JSObject(DefaultPrototype)
+{
+    auto constructor = AsEndPoint::create("@start", true);
+    
+    writeFieldStr(constructor->getName(), constructor);
+}
+
+
+/**
  * Gets one of the endpoints defined in the class.
  * @param name
  * @return 

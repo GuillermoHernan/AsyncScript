@@ -15,7 +15,7 @@ void execMessageLoop (Ref<ActorRuntime> runtime);
 
 Ref<AsActorRef> createRoutineActor (Ref<MvmRoutine> code, Ref<GlobalScope> globals);
 Ref<JSValue>    connectOperator (FunctionScope* pScope);
-Ref<JSValue>    asCallHook( Ref<JSFunction> function, 
+Ref<JSValue>    asCallHook( Ref<JSValue> function, 
                             Ref<FunctionScope> scope, 
                             ExecutionContext* ec, 
                             void* prevHook);
@@ -64,7 +64,7 @@ Ref<AsActorRef> createRoutineActor (Ref<MvmRoutine> code, Ref<GlobalScope> globa
     auto unnamedClass = AsActorClass::create("");
     auto newActor = AsActor::create(unnamedClass, globals, Ref<AsActorRef>());
     
-    unnamedClass->setCodeMVM(code);
+    unnamedClass->getConstructor()->setCodeMVM(code);
     return AsActorRef::create(newActor);
 }
 
@@ -114,7 +114,7 @@ Ref<JSValue> connectOperator (FunctionScope* pScope)
  * @param prevHook
  * @return 
  */
-Ref<JSValue> asCallHook( Ref<JSFunction> function, 
+Ref<JSValue> asCallHook( Ref<JSValue> function, 
                             Ref<FunctionScope> scope, 
                             ExecutionContext* ec, 
                             void* prevHook)
@@ -190,19 +190,22 @@ Ref<JSValue> actorConstructor(Ref<AsActorClass> actorClass, Ref<FunctionScope> s
     auto newActor = AsActor::create(actorClass, 
                                     scope->getGlobals().staticCast<GlobalScope>(), 
                                     curActor);
-    auto params = actorClass->getParams();
+    auto constructor = actorClass->getConstructor();
+    auto params = constructor->getParams();
+    auto msgParams = JSArray::create();
     
-    //Parameters become actor fields
+    //Parameters become actor fields, and parameters for 'start' message
     for (size_t i=0; i<params.size(); ++i)
     {
         auto value = scope->getParam(params[i]);
         newActor->writeFieldStr(params[i], value);
+        msgParams->push(value);
     }
     
     auto actorRef = AsActorRef::create(newActor);
     
     //Send start message
-    runtime->sendMessage0(actorRef, "start");
+    runtime->sendMessage(actorRef, "@start", msgParams);
     
     return actorRef;
 }
@@ -216,7 +219,7 @@ Ref<ActorRuntime> ActorRuntime::create(Ref<AsActorRef> rootActor)
 {
     auto result = refFromNew(new ActorRuntime(rootActor));
     
-    result->sendMessage0 (rootActor, "start");    
+    result->sendMessage0 (rootActor, "@start");    
     
     return result;
 }

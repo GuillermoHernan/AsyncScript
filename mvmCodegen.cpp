@@ -824,9 +824,11 @@ void actorCodegen (Ref<AstNode> node, CodegenState* pState)
     
     const AstNode::Params&  params = node->getParams();
     CodegenState            actorState = initFunctionState(node);
+    auto                    constructor = actor->getConstructor();
+    
     actorState.curActor = actor;
-    actor->setParams (params);
-    actor->setCodeMVM (actorState.curRoutine);
+    constructor->setParams (params);
+    constructor->setCodeMVM (actorState.curRoutine);
     
     childrenCodegen(node, &actorState);
     

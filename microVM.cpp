@@ -63,7 +63,7 @@ struct ExecutionContext
 
 typedef void (*OpFunction) (const int opCode, ExecutionContext* ec);
 
-Ref<JSValue> defaultCallHook (  Ref<JSFunction> function, 
+Ref<JSValue> defaultCallHook (  Ref<JSValue> function, 
                                 Ref<FunctionScope> scope, 
                                 ExecutionContext* ec, 
                                 void* defaultHook);
@@ -368,14 +368,16 @@ void execCall (const int nArgs, ExecutionContext* ec)
  * @param ec            Execution context object
  * @return 
  */
-Ref<JSValue> defaultCallHook (  Ref<JSFunction> function, 
+Ref<JSValue> defaultCallHook (  Ref<JSValue> fnVal, 
                                 Ref<FunctionScope> scope, 
                                 ExecutionContext* ec, 
                                 void* defaultHook)
 {
-    if (function->getType() != VT_FUNCTION)
+    if (fnVal->getType() != VT_FUNCTION)
         error ("Micro VM default call handler only supports functions. Received: %s", 
-               function->toString().c_str());
+               fnVal->toString().c_str());
+    
+    auto function = fnVal.staticCast<JSFunction>();
     
     if (function->isNative())
         return function->nativePtr()(scope.getPointer());

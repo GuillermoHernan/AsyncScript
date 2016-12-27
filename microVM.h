@@ -21,7 +21,7 @@ struct ExecutionContext;
 
 //TODO: The last parameter should be a 'MvmCallHook', but C++ doesn't allow
 //to use the defined type inside the typedef. Find a better solution.
-typedef Ref<JSValue> (*MvmCallHook)(Ref<JSFunction> function, 
+typedef Ref<JSValue> (*MvmCallHook)(Ref<JSValue> function, 
                                     Ref<FunctionScope> scope, 
                                     ExecutionContext* ec, 
                                     void* prevHook);
