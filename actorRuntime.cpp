@@ -13,7 +13,6 @@
 
 void execMessageLoop (Ref<ActorRuntime> runtime);
 
-Ref<AsActorRef> createRoutineActor (Ref<MvmRoutine> code, Ref<GlobalScope> globals);
 Ref<JSValue>    connectOperator (FunctionScope* pScope);
 Ref<JSValue>    asCallHook( Ref<JSValue> function, 
                             Ref<FunctionScope> scope, 
@@ -22,6 +21,55 @@ Ref<JSValue>    asCallHook( Ref<JSValue> function,
 Ref<JSValue>    inputEpCall(Ref<AsEndPointRef> endPoint, Ref<FunctionScope> scope);
 Ref<JSValue>    outputEpCall(Ref<AsEndPointRef> endPoint, Ref<FunctionScope> scope);
 Ref<JSValue>    actorConstructor(Ref<AsActorClass> actorClass, Ref<FunctionScope> scope);
+
+
+/**
+ * Actor class which executes a piece of MVM code at startup and then finishes.
+ */
+class RoutineActor : public AsActor
+{
+public:
+    /**
+     * Creates a routine actor.
+     * @param code
+     * @param globals
+     * @param parent
+     * @return 
+     */
+    static Ref<AsActorRef> create(Ref<MvmRoutine> code, 
+                                  Ref<GlobalScope> globals, 
+                                  Ref<AsActorRef> parent)
+    {
+        auto            ownClass = AsActorClass::create("");
+        RoutineActor*   newActor = new RoutineActor (ownClass, globals, parent);
+
+        ownClass->getConstructor()->setNativePtr(routineActorExec);
+        newActor->m_code = code;
+        return AsActorRef::create(refFromNew(newActor));
+        
+    }
+
+    /**
+     * Executes the routine actor.
+     * @param pScope
+     * @return 
+     */
+    static Ref<JSValue> routineActorExec (FunctionScope* pScope)
+    {
+        auto actor = pScope->getThis().staticCast<RoutineActor>();
+        
+        return mvmExecute(actor->m_code, pScope->getGlobals());
+    }
+    
+private:
+    RoutineActor (Ref<AsActorClass> cls, Ref<GlobalScope> globals, Ref<AsActorRef> parent) : 
+    AsActor (cls, globals, parent)
+    {        
+    }
+    
+    Ref<MvmRoutine>     m_code;
+};
+
 
 /**
  * Executes a compiled actor script, and blocks the current thread until all created
@@ -32,7 +80,7 @@ Ref<JSValue>    actorConstructor(Ref<AsActorClass> actorClass, Ref<FunctionScope
  */
 Ref<JSValue> asBlockingExec (Ref<MvmRoutine> code, Ref<GlobalScope> globals)
 {
-    auto    rootActor = createRoutineActor (code, globals);
+    auto    rootActor = RoutineActor::create (code, globals, Ref<AsActorRef>());
     auto    runtime = ActorRuntime::create(rootActor);
     
     globals->newVar("@actorRT", runtime);
@@ -51,21 +99,6 @@ void execMessageLoop (Ref<ActorRuntime> runtime)
 {
     //TODO: This function must become more complex when taking I/O into account.
     while (runtime->dispatchMessage());
-}
-
-/**
- * Creates an actor which executes the given routine at startup. 
- * It finishes when all actors it has created have finished.
- * @param code
- * @return 
- */
-Ref<AsActorRef> createRoutineActor (Ref<MvmRoutine> code, Ref<GlobalScope> globals)
-{
-    auto unnamedClass = AsActorClass::create("");
-    auto newActor = AsActor::create(unnamedClass, globals, Ref<AsActorRef>());
-    
-    unnamedClass->getConstructor()->setCodeMVM(code);
-    return AsActorRef::create(newActor);
 }
 
 /**
@@ -326,7 +359,6 @@ bool ActorRuntime::dispatchMessage()
             auto actor = actorRef->getActor();
             auto globals = actor->getGlobals();
             auto endPoint = msg.destination->getEndPoint();
-            auto routine = endPoint->getCodeMVM().staticCast<MvmRoutine>();
             auto scope = FunctionScope::create(globals, endPoint);
 
             globals->newVar("@curActor", actorRef);
@@ -335,7 +367,13 @@ bool ActorRuntime::dispatchMessage()
             for (size_t i = 0; i < msg.params->length(); ++i)
                 scope->addParam(msg.params->getAt(i));
             
-            mvmExecute (routine, globals, scope, asCallHook);
+            if (endPoint->isNative())
+                endPoint->nativePtr()(scope.getPointer());
+            else
+            {
+                auto routine = endPoint->getCodeMVM().staticCast<MvmRoutine>();
+                mvmExecute (routine, globals, scope, asCallHook);
+            }
         }
         catch (CScriptException& ex)
         {

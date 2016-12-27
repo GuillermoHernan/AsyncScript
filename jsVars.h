@@ -518,6 +518,11 @@ public:
     {
         m_codeMVM = code;
     }
+    
+    void setNativePtr(JSNativeFn pNative)
+    {
+        m_pNative = pNative;
+    }
 
     Ref<RefCountObj> getCodeMVM()const
     {
@@ -564,7 +569,7 @@ protected:
 private:
     const std::string m_name;
     Ref<RefCountObj> m_codeMVM;
-    const JSNativeFn m_pNative;
+    JSNativeFn m_pNative;
     ParametersList m_params;
 };
 
