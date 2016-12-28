@@ -323,6 +323,48 @@ bool isUint (Ref<JSValue> a)
         return floor(v) == v;
 }
 
+/**
+ * Creates a 'deep frozen' copy of an object, making deep frozen copies of 
+ * all descendants which are necessary,
+ * @param obj
+ * @param transformed
+ * @return 
+ */
+Ref<JSValue> deepFreeze(Ref<JSValue> obj, JSValuesMap& transformed)
+{
+    if (obj.isNull())
+        return obj;
+    
+    if (obj->getMutability() == MT_DEEPFROZEN)
+        return obj;
+    
+    auto it = transformed.find(obj);
+    if (it != transformed.end())
+        return it->second;
+
+    ASSERT (obj->isObject());
+    
+    //Clone object
+    auto newObject = obj->unFreeze(true).staticCast<JSObject>();
+    transformed[obj] = newObject;    
+    
+    auto    object = obj.staticCast<JSObject>();
+    auto    keys = object->getKeys();
+    auto    prototype = deepFreeze(object->getPrototype(), transformed);
+    newObject->setPrototype ( prototype.staticCast<JSObject>() );
+    
+    for (size_t i = 0; i < keys.size(); ++i)
+    {
+        auto key = keys[i];
+        auto value = deepFreeze (object->readField (key), transformed);
+        newObject->writeField(key, value);
+    }
+    
+    newObject->setFrozen();
+    
+    return newObject;
+}
+
 // JSNumber
 //
 //////////////////////////////////////////////////
@@ -469,6 +511,31 @@ Ref<JSValue> JSObject::unFreeze(bool forceClone)
 }
 
 /**
+ * Transforms the object into an immutable object. The transformation is made in
+ * place, no copy is performed.
+ * Watch-out for side-effects.
+ */
+void JSObject::setFrozen()
+{
+    m_mutability = selectMutability(*this, false);
+}
+
+/**
+ * Gets an with all object keys
+ * @return 
+ */
+std::vector <Ref<JSValue> > JSObject::getKeys()const
+{
+    std::vector <Ref<JSValue> >     result;
+    
+    result.reserve(m_members.size());
+    for (auto it = m_members.begin(); it != m_members.end(); ++it)
+        result.push_back(jsString(it->first));
+    
+    return result;
+}
+
+/**
  * Copy constructor.
  * @param src       Reference to the source object
  * @param _mutable  
@@ -505,7 +572,7 @@ JSMutability JSObject::selectMutability(const JSObject& src, bool _mutable)
         return MT_MUTABLE;
     else
     {
-        if (src.m_prototype->getMutability() != MT_DEEPFROZEN)
+        if (src.m_prototype.notNull() && src.m_prototype->getMutability() != MT_DEEPFROZEN)
             return MT_FROZEN;
         
         //Check if all children are 'deepfrozen'

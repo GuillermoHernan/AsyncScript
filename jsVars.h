@@ -168,7 +168,8 @@ size_t toSizeT (Ref<JSValue> a);
 bool isInteger (Ref<JSValue> a);
 bool isUint (Ref<JSValue> a);
 
-Ref<JSValue>    deepFreeze(Ref<JSValue>);
+typedef std::map< Ref<JSValue>, Ref<JSValue> >  JSValuesMap;
+Ref<JSValue>    deepFreeze(Ref<JSValue> obj, JSValuesMap& transformed);
 
 
 //////////////////////////////////////////
@@ -369,8 +370,15 @@ public:
     
     Ref<JSObject> setPrototype(Ref<JSObject> value)
     {
-        return m_prototype = value;
+        if (isMutable())
+            return m_prototype = value;
+        else
+            return m_prototype;
     }
+    
+    void setFrozen();
+    
+    std::vector <Ref<JSValue> >   getKeys()const;
 
     // JSValue
     /////////////////////////////////////////
@@ -423,9 +431,9 @@ protected:
 private:
     typedef std::map <std::string, Ref<JSValue> > MembersMap;
 
-    MembersMap          m_members;
-    Ref<JSObject>       m_prototype;
-    const JSMutability  m_mutability;
+    MembersMap      m_members;
+    Ref<JSObject>   m_prototype;
+    JSMutability    m_mutability;
 };
 
 /**

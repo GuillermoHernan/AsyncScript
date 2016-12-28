@@ -23,4 +23,26 @@ assert (c.x == 8, "c.x == 8");
 assert (d.x == 2, "d.x == 2");
 assert (e.x == 3, "e.x == 3");
 
+var f = {a:a, b:b}
+
+f.a.x = 11;
+assert (a.x == 11, "a.x == 11");
+assert (f.a.x == 11, "f.a.x == 11");
+
+var g = f.freeze();
+
+a.x = 9;
+assert (a.x == 9, "a.x == 9");
+assert (f.a.x == 9, "f.a.x == 9");
+assert (g.a.x == 9, "f.a.x == 9");
+
+var h = f.deepFreeze();
+
+a.x = 14;
+assert (a.x == 14, "a.x == 9");
+assert (f.a.x == 14, "f.a.x == 9");
+assert (g.a.x == 14, "f.a.x == 9");
+assert (h.a.x == 9, "f.a.x == 9");
+
+
 result = true;

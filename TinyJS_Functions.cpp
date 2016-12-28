@@ -62,12 +62,34 @@ Ref<JSValue> scObjectFreeze(FunctionScope* pScope)
     return obj->freeze();
 }
 
+Ref<JSValue> scObjectDeepFreeze(FunctionScope* pScope)
+{
+    auto obj = pScope->getThis();
+    
+    JSValuesMap transformed;    
+    return deepFreeze(obj, transformed);
+}
+
 Ref<JSValue> scObjectUnfreeze(FunctionScope* pScope)
 {
     auto obj = pScope->getThis();
     auto forceClone = pScope->getParam("forceClone");
     
     return obj->unFreeze(forceClone->toBoolean());
+}
+
+Ref<JSValue> scObjectIsFrozen(FunctionScope* pScope)
+{
+    auto obj = pScope->getThis();
+    
+    return jsBool (!obj->isMutable());
+}
+
+Ref<JSValue> scObjectIsDeepFrozen(FunctionScope* pScope)
+{
+    auto obj = pScope->getThis();
+    
+    return jsBool (obj->getMutability() == MT_DEEPFROZEN);
 }
 
 Ref<JSValue> scMathRand(FunctionScope* pScope)
@@ -361,7 +383,10 @@ void registerFunctions(Ref<IScope> scope)
     //    addNative("function Object.clone()", scObjectClone, scope);
     
     addNative("function Object.prototype.freeze()", scObjectFreeze, scope);
+    addNative("function Object.prototype.deepFreeze()", scObjectDeepFreeze, scope);
     addNative("function Object.prototype.unfreeze(forceClone)", scObjectUnfreeze, scope);
+    addNative("function Object.prototype.isFrozen(forceClone)", scObjectIsFrozen, scope);
+    addNative("function Object.prototype.isDeepFrozen(forceClone)", scObjectIsDeepFrozen, scope);
     
     addNative("function Math.rand()", scMathRand, scope);
     addNative("function Math.randInt(min, max)", scMathRandInt, scope);

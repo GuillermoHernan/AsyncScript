@@ -140,6 +140,11 @@ public:
     {
         return this->getPointer() == x.getPointer();
     }
+    
+    bool operator < (const Ref<ObjType>& b)const
+    {
+        return this->getPointer() < b.getPointer();
+    }
 
 private:
     ObjType* m_ptr;
