@@ -1166,6 +1166,9 @@ ExprResult parseActorExpr (CScriptToken token)
             while (r.token.type() == ';')
                 r = r.skip();
             
+            if (r.token.type() == '}')
+                break;
+            
             r = parseActorMember(r.token);
             if (r.ok())
                 actorNode->addChild(r.result);
