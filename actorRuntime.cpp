@@ -59,7 +59,7 @@ public:
     {
         auto actor = pScope->getThis().staticCast<RoutineActor>();
         
-        return mvmExecute(actor->m_code, pScope->getGlobals());
+        return mvmExecute(actor->m_code, pScope->getGlobals(), Ref<IScope>(), asCallHook);
     }
     
 private:
