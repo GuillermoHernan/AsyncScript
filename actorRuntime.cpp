@@ -401,6 +401,8 @@ void ActorRuntime::actorCrashed(Ref<AsActorRef> actorRef, const CScriptException
     {
         sendMessage2 (parent, "childStopped", jsTrue(), jsString(ex.what()));
     }
+    else
+        fprintf (stderr, "Root actor crashed: %s\n", ex.what());
 }
 
 Ref<JSObject> ActorRuntime::clone (bool _mutable)
