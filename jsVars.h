@@ -434,6 +434,8 @@ private:
     MembersMap      m_members;
     Ref<JSObject>   m_prototype;
     JSMutability    m_mutability;
+    
+    friend Ref<JSValue> deepFreeze(Ref<JSValue> obj, JSValuesMap& transformed);
 };
 
 /**

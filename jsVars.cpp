@@ -359,8 +359,8 @@ Ref<JSValue> deepFreeze(Ref<JSValue> obj, JSValuesMap& transformed)
         auto value = deepFreeze (object->readField (key), transformed);
         newObject->writeField(key, value);
     }
-    
-    newObject->setFrozen();
+
+    newObject->m_mutability = MT_DEEPFROZEN;
     
     return newObject;
 }

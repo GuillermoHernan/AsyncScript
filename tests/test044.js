@@ -43,6 +43,10 @@ assert (a.x == 14, "a.x == 9");
 assert (f.a.x == 14, "f.a.x == 9");
 assert (g.a.x == 14, "f.a.x == 9");
 assert (h.a.x == 9, "f.a.x == 9");
+assert (h.isFrozen(), "h.isFrozen");
+assert (h.isDeepFrozen(), "h.isDeepFrozen");
+assert (h.a.isDeepFrozen(), "h.a.isDeepFrozen");
+assert (h.b.isDeepFrozen(), "h.b.isDeepFrozen");
 
 
 result = true;
