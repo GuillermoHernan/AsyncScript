@@ -184,8 +184,9 @@ Ref<JSValue> asCallHook( Ref<JSValue> function,
  */
 Ref<JSValue> inputEpCall(Ref<AsEndPointRef> endPoint, Ref<FunctionScope> scope)
 {
-    auto runtime = scope->get("@actorRT").staticCast<ActorRuntime>();
-    auto params = scope->get("arguments").staticCast<JSArray>();
+    auto globals = scope->getGlobals().staticCast<GlobalScope>();
+    auto runtime = globals->get("@actorRT").staticCast<ActorRuntime>();
+    auto params = globals->get("arguments").staticCast<JSArray>();
     
     runtime->sendMessage (endPoint, params);
     return undefined();
@@ -219,11 +220,10 @@ Ref<JSValue> outputEpCall(Ref<AsEndPointRef> endPoint, Ref<FunctionScope> scope)
  */
 Ref<JSValue> actorConstructor(Ref<AsActorClass> actorClass, Ref<FunctionScope> scope)
 {
-    auto runtime = scope->get("@actorRT").staticCast<ActorRuntime>();
-    auto curActor = scope->get("@curActor").staticCast<AsActorRef>();
-    auto newActor = AsActor::create(actorClass, 
-                                    scope->getGlobals().staticCast<GlobalScope>(), 
-                                    curActor);
+    auto globals = scope->getGlobals().staticCast<GlobalScope>();
+    auto runtime = globals->get("@actorRT").staticCast<ActorRuntime>();
+    auto curActor = globals->get("@curActor").staticCast<AsActorRef>();
+    auto newActor = AsActor::create(actorClass, globals, curActor);
     auto constructor = actorClass->getConstructor();
     auto params = constructor->getParams();
     auto msgParams = JSArray::create();
