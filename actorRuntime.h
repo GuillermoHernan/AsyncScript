@@ -53,6 +53,8 @@ public:
 protected:
     void actorCrashed(Ref<AsActorRef> actor, const CScriptException& error);
 
+    virtual Ref<JSObject>   clone (bool _mutable);
+
 private:
 
     struct SMessage
@@ -69,7 +71,7 @@ private:
     typedef std::deque<SMessage> MessageQueue;
 
     ActorRuntime(Ref<AsActorRef> rootActor)
-    : JSObject(JSObject::DefaultPrototype)
+    : JSObject(JSObject::DefaultPrototype, MT_MUTABLE)
     , m_rootActor(rootActor)
     {
     }

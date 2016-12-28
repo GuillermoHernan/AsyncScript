@@ -8,19 +8,32 @@
  * Created on December 25, 2016, 12:53 PM
  */
 
+#include "OS_support.h"
 #include "asVars.h"
 
 /**
  * Actor class constructor.
  * @param name
  */
-AsActorClass::AsActorClass (const std::string& name) : JSObject(DefaultPrototype)
+AsActorClass::AsActorClass (const std::string& name) 
+: JSObject(DefaultPrototype, MT_MUTABLE)
+, m_name (name)
 {
     auto constructor = AsEndPoint::create("@start", true);
     
     writeFieldStr(constructor->getName(), constructor);
 }
 
+AsActorClass::AsActorClass(const AsActorClass& src, bool _mutable)
+: JSObject(src, _mutable)
+, m_name (src.m_name)
+{    
+}
+
+Ref<JSObject> AsActorClass::clone (bool _mutable)
+{
+    return refFromNew (new AsActorClass(*this, _mutable));
+}
 
 /**
  * Gets one of the endpoints defined in the class.
@@ -51,6 +64,24 @@ Ref<AsEndPointRef> AsActorRef::getEndPoint (const std::string& name)
         return Ref<AsEndPointRef>();
     else
         return AsEndPointRef::create(ep, Ref<AsActorRef>(this));
+}
+
+Ref<JSObject> AsActor::clone (bool _mutable)
+{
+    ASSERT (!"Clone operation not allowed on actors.");
+    return Ref<AsActor>(this);
+}
+
+   
+AsEndPoint::AsEndPoint(const AsEndPoint& src, bool _mutable)
+: JSFunction(src, _mutable)
+, m_isInput(src.m_isInput)
+{
+}
+
+Ref<JSObject> AsEndPoint::clone (bool _mutable)
+{
+    return refFromNew (new AsEndPoint(*this, _mutable));
 }
 
 /**

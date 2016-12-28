@@ -7,6 +7,7 @@
  * Created on December 24, 2016, 11:50 AM... Merry Christmas!!!
  */
 
+#include "OS_support.h"
 #include "actorRuntime.h"
 #include "microVM.h"
 #include "scriptMain.h"
@@ -140,7 +141,7 @@ Ref<JSValue> connectOperator (FunctionScope* pScope)
 }
 
 /**
- * This function maneges ALL MVM function calls when using actor runtime.
+ * This function manages ALL MVM function calls when using actor runtime.
  * @param function
  * @param scope
  * @param ec
@@ -401,3 +402,10 @@ void ActorRuntime::actorCrashed(Ref<AsActorRef> actorRef, const CScriptException
         sendMessage2 (parent, "childStopped", jsTrue(), jsString(ex.what()));
     }
 }
+
+Ref<JSObject> ActorRuntime::clone (bool _mutable)
+{
+    ASSERT (!"clone operation not allowed on 'ActorRuntime'");
+    return Ref<JSObject>(this);
+}
+

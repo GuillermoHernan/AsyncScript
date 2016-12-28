@@ -41,6 +41,12 @@ public:
     }
 protected:
     AsActorClass (const std::string& name);
+
+    AsActorClass(const AsActorClass& src, bool _mutable);
+    virtual Ref<JSObject>   clone (bool _mutable);
+    
+private:
+    std::string m_name;
 };
 
 class AsActorRef;
@@ -105,7 +111,7 @@ public:
     
 protected:
     AsActor (Ref<AsActorClass> cls, Ref<GlobalScope> globals, Ref<AsActorRef> parent) : 
-        JSObject(DefaultPrototype)
+        JSObject(DefaultPrototype, MT_MUTABLE)
         , m_cls (cls)
         , m_globals (globals)
         , m_parent (parent)
@@ -113,6 +119,8 @@ protected:
         , m_finished(false)
     {
     }
+        
+    virtual Ref<JSObject> clone (bool _mutable);
     
 private:
     const Ref<AsActorClass> m_cls;
@@ -134,17 +142,12 @@ private:
  * @param cls
  * @return 
  */
-class AsActorRef : public JSObject
+class AsActorRef : public JSValueBase<VT_ACTOR_REF>
 {
 public:
     static Ref<AsActorRef> create (Ref<AsActor> actor)
     {
         return refFromNew(new AsActorRef(actor));
-    }
-
-    virtual JSValueTypes getType()const
-    {
-        return VT_ACTOR_REF;
     }
 
     bool isRunning()
@@ -168,7 +171,7 @@ public:
     Ref<AsEndPointRef> getEndPoint (const std::string& name);
     
 protected:
-    AsActorRef (Ref<AsActor> actor) : JSObject(DefaultPrototype), m_ref (actor)
+    AsActorRef (Ref<AsActor> actor) : m_ref (actor)
     {
     }
     
@@ -178,14 +181,16 @@ private:
 };
 
 /**
- * Message runtime object
+ * Message input or output end point object
  */
 class AsEndPoint : public JSFunction
 {
 public:
     static Ref<AsEndPoint> create (const std::string& name, bool input)
     {
-        return refFromNew (new AsEndPoint (name, input));
+        auto ep = refFromNew (new AsEndPoint (name, input));
+        
+        return ep->freeze().staticCast<AsEndPoint>();
     }
     
     bool isInput()const
@@ -202,8 +207,10 @@ protected:
     AsEndPoint (const std::string& name, bool input) :
     JSFunction(name, NULL), m_isInput (input)
     {
-
     }
+   
+    AsEndPoint(const AsEndPoint& src, bool _mutable);
+    virtual Ref<JSObject>   clone (bool _mutable);
     
 private:
     const bool m_isInput;
@@ -216,7 +223,7 @@ private:
  * Async Script message reference.
  * Holds a reference to the message, and to the actor.
  */
-class AsEndPointRef : public JSFunction
+class AsEndPointRef : public JSValueBase<VT_INPUT_EP_REF>
 {
 public:
     static Ref<AsEndPointRef> create (Ref<AsEndPoint> endPoint, Ref<AsActorRef> actor)
@@ -245,8 +252,8 @@ public:
     }
     
 protected:
-    AsEndPointRef (Ref<AsEndPoint> endPoint, Ref<AsActorRef> actor) :
-    JSFunction("", NULL), m_endPoint (endPoint), m_actor(actor)
+    AsEndPointRef (Ref<AsEndPoint> endPoint, Ref<AsActorRef> actor)
+        : m_endPoint (endPoint), m_actor(actor)
     {
     }
     

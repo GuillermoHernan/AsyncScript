@@ -15,6 +15,7 @@
 #include "utils.h"
 #include "RefCountObj.h"
 #include <map>
+#include <set>
 #include <sstream>
 #include <vector>
 
@@ -45,6 +46,17 @@ enum JSValueTypes
 std::string getTypeName(JSValueTypes vType);
 
 /**
+ * The possible mutability states of a JSValue.
+ */
+enum JSMutability
+{
+    MT_MUTABLE,
+    MT_FROZEN,
+    MT_DEEPFROZEN   //Deep frozen means that it is frozen and contains no references
+                    //which may lead to a mutable object.
+};
+
+/**
  * Root class for all Javascript types.
  * Defines several operations which must be implemented by the derived types.
  * The defined operations fall in these categories:
@@ -57,6 +69,10 @@ class JSValue : public RefCountObj
 {
 public:
     virtual JSValueTypes getType()const = 0;
+    
+    virtual JSMutability    getMutability()const=0;
+    virtual Ref<JSValue>    freeze()=0;
+    virtual Ref<JSValue>    unFreeze(bool forceClone=false)=0;
 
     virtual std::string toString()const = 0;
     virtual bool toBoolean()const = 0;
@@ -105,6 +121,11 @@ public:
         const JSValueTypes t = this->getType();
 
         return t == VT_STRING || (t > VT_NULL && t < VT_OBJECT);
+    }
+    
+    bool isMutable()const
+    {
+        return getMutability() == MT_MUTABLE;
     }
 };
 
@@ -158,6 +179,21 @@ template <JSValueTypes V_TYPE>
 class JSValueBase : public JSValue
 {
 public:
+    
+    virtual JSMutability getMutability()const
+    {
+        return MT_DEEPFROZEN;
+    }
+    
+    virtual Ref<JSValue> freeze()
+    {
+        return Ref<JSValue>(this);
+    }
+    
+    virtual Ref<JSValue> unFreeze(bool forceClone=false)
+    {
+        return Ref<JSValue>(this);
+    }
 
     virtual std::string toString()const
     {
@@ -316,6 +352,14 @@ public:
     static Ref<JSObject> create();
     static Ref<JSObject> create(Ref<JSObject> prototype);
     
+    virtual JSMutability getMutability()const
+    {
+        return m_mutability;
+    }
+    
+    virtual Ref<JSValue>    freeze();
+    virtual Ref<JSValue>    unFreeze(bool forceClone=false);
+    
     Ref<JSObject> getPrototype()const
     {
         return m_prototype;
@@ -324,11 +368,6 @@ public:
     Ref<JSObject> setPrototype(Ref<JSObject> value)
     {
         return m_prototype = value;
-    }
-    
-    void freeze()
-    {
-        m_frozen = true;
     }
 
     // JSValue
@@ -366,20 +405,25 @@ public:
 
 protected:
 
-    JSObject(Ref<JSObject> prototype) : m_prototype (prototype), m_frozen(false)
+    JSObject(Ref<JSObject> prototype, JSMutability mutability) : 
+    m_prototype (prototype), m_mutability(mutability)
     {
     }
 
     ~JSObject();
+
+    JSObject(const JSObject& src, bool _mutable);
+    virtual Ref<JSObject>   clone (bool _mutable);
     
-    static std::string key2Str(Ref<JSValue> key);
+    static JSMutability     selectMutability(const JSObject& src, bool _mutable);
+    static std::string      key2Str(Ref<JSValue> key);
 
 private:
     typedef std::map <std::string, Ref<JSValue> > MembersMap;
 
-    MembersMap      m_members;
-    Ref<JSObject>   m_prototype;
-    bool            m_frozen;
+    MembersMap          m_members;
+    Ref<JSObject>       m_prototype;
+    const JSMutability  m_mutability;
 };
 
 /**
@@ -390,6 +434,8 @@ class JSString : public JSObject
 {
 public:
     static Ref<JSString> create(const std::string& value);
+
+    virtual Ref<JSValue> unFreeze(bool forceClone=false);
 
     virtual bool toBoolean()const
     {
@@ -416,9 +462,9 @@ public:
 
 protected:
 
-    JSString(const std::string& text) : JSObject(DefaultPrototype), m_text(text)
+    JSString(const std::string& text) 
+    : JSObject(DefaultPrototype, MT_DEEPFROZEN), m_text(text)
     {
-        freeze();
     }
 
 private:
@@ -466,9 +512,12 @@ public:
     
 private:
 
-    JSArray() : JSObject(DefaultPrototype), m_length(0)
+    JSArray() : JSObject(DefaultPrototype, MT_MUTABLE), m_length(0)
     {
     }
+    
+    JSArray(const JSArray& src, bool _mutable);
+    virtual Ref<JSObject>   clone (bool _mutable);
 
     void setLength(Ref<JSValue> value);
 
@@ -563,9 +612,11 @@ public:
 protected:
 
     JSFunction(const std::string& name, JSNativeFn pNative);
-    
     ~JSFunction();
 
+    JSFunction(const JSFunction& src, bool _mutable);
+    virtual Ref<JSObject>   clone (bool _mutable);
+    
 private:
     const std::string m_name;
     Ref<RefCountObj> m_codeMVM;

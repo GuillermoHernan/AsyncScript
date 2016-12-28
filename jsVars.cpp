@@ -358,6 +358,17 @@ Ref<JSString> JSString::create(const std::string & value)
 }
 
 /**
+ * Strings are never mutable. Therefore 'unFreeze' operation returns a reference
+ * to the same object.
+ * @param forceClone
+ * @return 
+ */
+Ref<JSValue> JSString::unFreeze(bool forceClone)
+{
+    return Ref<JSValue>(this);
+}
+
+/**
  * Tries to transform a string into a double value
  * @return 
  */
@@ -421,7 +432,7 @@ JSObject::~JSObject()
  */
 Ref<JSObject> JSObject::create()
 {
-    return refFromNew(new JSObject(DefaultPrototype));
+    return refFromNew(new JSObject(DefaultPrototype, MT_MUTABLE));
 }
 
 /**
@@ -430,7 +441,82 @@ Ref<JSObject> JSObject::create()
  */
 Ref<JSObject> JSObject::create(Ref<JSObject> prototype)
 {
-    return refFromNew(new JSObject(prototype));
+    return refFromNew(new JSObject(prototype, MT_MUTABLE));
+}
+
+/**
+ * Creates a frozen copy of an object
+ */
+Ref<JSValue> JSObject::freeze()
+{
+    if (isMutable())
+        return clone (false);
+    else
+        return Ref<JSValue>(this);
+}
+
+/**
+ * Creates a mutable copy of an object
+ * @param forceClone
+ * @return 
+ */
+Ref<JSValue> JSObject::unFreeze(bool forceClone)
+{
+    if (forceClone || !isMutable())
+        return clone (true);
+    else
+        return Ref<JSValue>(this);
+}
+
+/**
+ * Copy constructor.
+ * @param src       Reference to the source object
+ * @param _mutable  
+ */
+JSObject::JSObject(const JSObject& src, bool _mutable)
+: m_members (src.m_members)
+, m_prototype (src.m_prototype)
+, m_mutability (selectMutability(src, _mutable))
+{
+}
+
+
+/**
+ * Creates a copy of the object
+ * @param _mutable   Controls if the copy will be mutable or not. In case of not 
+ * being mutable, it will be 'frozen' or 'deepFrozen' depending on the mutability 
+ * state of the object members.
+ * @return 
+ */
+Ref<JSObject> JSObject::clone (bool _mutable)
+{
+    return refFromNew(new JSObject(*this, _mutable));
+}
+
+/**
+ * Chooses the appropriate mutability state for the new object on a clone operation
+ * @param src
+ * @param _mutable
+ * @return 
+ */
+JSMutability JSObject::selectMutability(const JSObject& src, bool _mutable)
+{
+    if (!_mutable)
+        return MT_MUTABLE;
+    else
+    {
+        if (src.m_prototype->getMutability() != MT_DEEPFROZEN)
+            return MT_FROZEN;
+        
+        //Check if all children are 'deepfrozen'
+        auto items = src.m_members;
+        for (auto it = items.begin(); it != items.end(); ++it)
+        {
+            if (it->second->getMutability() != MT_DEEPFROZEN)
+                return MT_FROZEN;
+        }
+        return MT_DEEPFROZEN;
+    }
 }
 
 /**
@@ -463,7 +549,7 @@ Ref<JSValue> JSObject::readField(Ref<JSValue> key)const
  */
 Ref<JSValue> JSObject::writeField(Ref<JSValue> key, Ref<JSValue> value)
 {
-    if (m_frozen)
+    if (!isMutable())
         return readField(key);
     
     m_members[key2Str(key)] = value;
@@ -478,7 +564,7 @@ Ref<JSValue> JSObject::writeField(Ref<JSValue> key, Ref<JSValue> value)
  */
 Ref<JSValue> JSObject::deleteField(Ref<JSValue> key)
 {
-    if (m_frozen)
+    if (!isMutable())
         return readField(key);
     
     const string strKey = key2Str(key);
@@ -613,6 +699,9 @@ Ref<JSArray> JSArray::createStrArray(const std::vector<std::string>& strList)
  */
 size_t JSArray::push(Ref<JSValue> value)
 {
+    if (!isMutable())
+        return m_length;
+    
     //TODO: String conversion may be more efficient.
     this->writeField(jsInt(m_length++), value);
     return m_length;
@@ -653,6 +742,9 @@ Ref<JSValue> JSArray::readField(Ref<JSValue> key)const
  */
 Ref<JSValue> JSArray::writeField(Ref<JSValue> key, Ref<JSValue> value)
 {
+    if (!isMutable())
+        return readField(key);
+    
     if (key->toString() == "length")
     {
         setLength(value);
@@ -715,6 +807,22 @@ std::string JSArray::getJSON(int indent)
     return output.str();
 }
 
+JSArray::JSArray(const JSArray& src, bool _mutable)
+: JSObject(src, _mutable)
+, m_length (src.m_length)
+{    
+}
+
+/**
+ * 'JSArray' clone operation.
+ * @param _mutable
+ * @return 
+ */
+Ref<JSObject> JSArray::clone (bool _mutable)
+{
+    return refFromNew (new JSArray(*this, _mutable));
+}
+
 /**
  * Modifies array length
  * @param value
@@ -761,7 +869,7 @@ Ref<JSFunction> JSFunction::createNative(const std::string& name, JSNativeFn fnP
 
 
 JSFunction::JSFunction(const std::string& name, JSNativeFn pNative) :
-    JSObject(DefaultPrototype),
+    JSObject(DefaultPrototype, MT_MUTABLE),
     m_name(name),
     m_pNative(pNative)
 {
@@ -775,6 +883,19 @@ JSFunction::~JSFunction()
 //    printf ("Destroying function: %s\n", m_name.c_str());
 }
 
+JSFunction::JSFunction(const JSFunction& src, bool _mutable)
+: JSObject(src, _mutable)
+, m_name (src.m_name)
+, m_codeMVM (src.m_codeMVM)
+, m_pNative (src.m_pNative)
+, m_params (src.m_params)
+{    
+}
+
+Ref<JSObject> JSFunction::clone (bool _mutable)
+{
+    return refFromNew (new JSFunction(*this, _mutable));
+}
 
 /**
  * String representation of the function.

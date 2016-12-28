@@ -55,6 +55,21 @@ void scObjectClone(FunctionScope* pScope) {
     c->getReturnVar()->copyValue(obj);
 }*/
 
+Ref<JSValue> scObjectFreeze(FunctionScope* pScope)
+{
+    auto obj = pScope->getThis();
+    
+    return obj->freeze();
+}
+
+Ref<JSValue> scObjectUnfreeze(FunctionScope* pScope)
+{
+    auto obj = pScope->getThis();
+    auto forceClone = pScope->getParam("forceClone");
+    
+    return obj->unFreeze(forceClone->toBoolean());
+}
+
 Ref<JSValue> scMathRand(FunctionScope* pScope)
 {
     return jsDouble(double(rand()) / RAND_MAX);
@@ -344,6 +359,10 @@ void registerFunctions(Ref<IScope> scope)
     //    addNative("function trace()", scTrace, scope);
     //    addNative("function Object.dump()", scObjectDump, scope);
     //    addNative("function Object.clone()", scObjectClone, scope);
+    
+    addNative("function Object.freeze()", scObjectFreeze, scope);
+    addNative("function Object.unfreeze(forceClone)", scObjectUnfreeze, scope);
+    
     addNative("function Math.rand()", scMathRand, scope);
     addNative("function Math.randInt(min, max)", scMathRandInt, scope);
     addNative("function charToInt(ch)", scCharToInt, scope); //  convert a character to an int - get its value
