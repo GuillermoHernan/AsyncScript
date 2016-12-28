@@ -501,7 +501,7 @@ Ref<JSObject> JSObject::clone (bool _mutable)
  */
 JSMutability JSObject::selectMutability(const JSObject& src, bool _mutable)
 {
-    if (!_mutable)
+    if (_mutable)
         return MT_MUTABLE;
     else
     {
