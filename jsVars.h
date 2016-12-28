@@ -31,17 +31,17 @@ enum JSValueTypes
     VT_NULL,
     VT_NUMBER,
     VT_BOOL,
+    VT_ACTOR_REF,
+    VT_INPUT_EP_REF,
+    VT_OUTPUT_EP_REF,
     VT_OBJECT,  //All below are objects
     VT_STRING,
     VT_ARRAY,
     VT_ACTOR,
-    VT_ACTOR_REF,
     VT_FUNCTION,//All below are functions
     VT_ACTOR_CLASS,
     VT_INPUT_EP,
     VT_OUTPUT_EP,
-    VT_INPUT_EP_REF,
-    VT_OUTPUT_EP_REF,
 };
 std::string getTypeName(JSValueTypes vType);
 
@@ -167,6 +167,8 @@ unsigned long long toUint64 (Ref<JSValue> a);
 size_t toSizeT (Ref<JSValue> a);
 bool isInteger (Ref<JSValue> a);
 bool isUint (Ref<JSValue> a);
+
+Ref<JSValue>    deepFreeze(Ref<JSValue>);
 
 
 //////////////////////////////////////////
