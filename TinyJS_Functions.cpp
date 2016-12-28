@@ -360,8 +360,8 @@ void registerFunctions(Ref<IScope> scope)
     //    addNative("function Object.dump()", scObjectDump, scope);
     //    addNative("function Object.clone()", scObjectClone, scope);
     
-    addNative("function Object.freeze()", scObjectFreeze, scope);
-    addNative("function Object.unfreeze(forceClone)", scObjectUnfreeze, scope);
+    addNative("function Object.prototype.freeze()", scObjectFreeze, scope);
+    addNative("function Object.prototype.unfreeze(forceClone)", scObjectUnfreeze, scope);
     
     addNative("function Math.rand()", scMathRand, scope);
     addNative("function Math.randInt(min, max)", scMathRandInt, scope);
