@@ -11,6 +11,7 @@
 
 #include "OS_support.h"
 #include "microVM.h"
+#include "asVars.h"
 
 #include <vector>
 
@@ -700,6 +701,39 @@ void invalidOp (const int opCode, ExecutionContext* ec)
 }
 
 Ref<JSObject> disassemblyFunction (Ref<JSFunction> function);
+Ref<JSObject> disassemblyActorClass (Ref<AsActorClass> actorClass);
+Ref<JSObject> disassemblyInputEndPoint (Ref<AsEndPoint> ep);
+Ref<JSObject> disassemblyOutputEndPoint (Ref<AsEndPoint> ep);
+
+/**
+ * Generates a Javascript object representation of a single constant
+ * @param constants
+ * @return 
+ */
+Ref<JSValue> constantToJS (Ref<JSValue> constant)
+{
+    switch (constant->getType())
+    {
+    case VT_ACTOR_CLASS:
+        return disassemblyActorClass (constant.staticCast<AsActorClass>());
+    
+    case VT_INPUT_EP:
+        return disassemblyInputEndPoint (constant.staticCast<AsEndPoint>());
+    
+    case VT_OUTPUT_EP:
+        return disassemblyOutputEndPoint (constant.staticCast<AsEndPoint>());
+    
+    case VT_NULL:
+    case VT_UNDEFINED:
+        return jsNull();
+        
+    default:
+        if (constant->isFunction())
+            return disassemblyFunction (constant.staticCast<JSFunction>());
+        else
+            return constant;
+    }//switch
+}
 
 /**
  * Generates a textual representation of a constant list
@@ -714,14 +748,7 @@ Ref<JSObject> constantsToJS (const ValueVector& constants)
     for (size_t i=0; i < constants.size(); ++i )
     {
         sprintf_s (name, "%04lu", i);
-        Ref<JSValue>    value;
-
-        if (constants[i]->isFunction())
-            value = disassemblyFunction (constants[i].staticCast<JSFunction>());
-        else if (constants[i]->isNull())
-            value = jsNull();
-        else
-            value = constants[i];
+        Ref<JSValue>    value = constantToJS(constants[i]);
         
         obj->writeFieldStr(name, value);
     }
@@ -890,8 +917,8 @@ Ref<JSObject> toJSObject (Ref<MvmRoutine> code)
 {
     Ref<JSObject>   obj = JSObject::create();
     
-    obj->writeFieldStr ("a_constants", constantsToJS(code->constants));
-    obj->writeFieldStr ("b_blocks", blocksToJS(code->blocks, code->constants));
+    obj->writeFieldStr ("constants", constantsToJS(code->constants));
+    obj->writeFieldStr ("blocks", blocksToJS(code->blocks, code->constants));
     
     return obj;
 }
@@ -906,11 +933,54 @@ Ref<JSObject> disassemblyFunction (Ref<JSFunction> function)
 {
     Ref<JSObject>   obj = JSObject::create();
 
-    obj->writeFieldStr ("a_header", jsString(function->toString() ));
+    obj->writeFieldStr ("header", jsString(function->toString() ));
     if (function->isNative())
         obj->writeFieldStr("code", jsString("native"));
     else
         obj->writeFieldStr("code", toJSObject(function->getCodeMVM().staticCast<MvmRoutine>()));
 
     return obj;
+}
+
+/**
+ * Transforms an actor class into a Javascript object which can be serialized.
+ * @param actorClass
+ * @return 
+ */
+Ref<JSObject> disassemblyActorClass (Ref<AsActorClass> actorClass)
+{
+    Ref<JSObject>   obj = JSObject::create();
+
+    obj->writeFieldStr ("actorClass", jsString(actorClass->getName()) );
+    
+    auto keys = actorClass->getKeys();
+    for (size_t i = 0; i < keys.size(); ++i)
+    {
+        auto value = actorClass->readField(keys[i]);
+        obj->writeField (keys[i], constantToJS(value) );
+    }        
+
+    return obj;
+}
+
+/**
+ * Transforms an input endpoint to a Javascript object representation
+ * @param ep
+ * @return 
+ */
+Ref<JSObject> disassemblyInputEndPoint (Ref<AsEndPoint> ep)
+{
+    return disassemblyFunction(ep);
+}
+
+/**
+ * Transforms an output endpoint to a Javascript object representation
+ * @param ep
+ * @return 
+ */
+Ref<JSObject> disassemblyOutputEndPoint (Ref<AsEndPoint> ep)
+{
+    auto result = JSObject::create();
+    result->writeFieldStr ("header", jsString(ep->toString() ));
+    return result;
 }

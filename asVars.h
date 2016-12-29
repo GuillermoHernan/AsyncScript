@@ -39,6 +39,12 @@ public:
     {
         return getEndPoint("@start");
     }
+    
+    const std::string& getName()const
+    {
+        return m_name;
+    }
+    
 protected:
     AsActorClass (const std::string& name);
 
@@ -202,6 +208,8 @@ public:
     {
         return isInput() ? VT_INPUT_EP : VT_OUTPUT_EP;
     }
+    
+    virtual std::string toString()const;
     
 protected:
     AsEndPoint (const std::string& name, bool input) :

@@ -11,6 +11,8 @@
 #include "OS_support.h"
 #include "asVars.h"
 
+using namespace std;
+
 /**
  * Actor class constructor.
  * @param name
@@ -72,6 +74,16 @@ Ref<JSObject> AsActor::clone (bool _mutable)
     return Ref<AsActor>(this);
 }
 
+/**
+ * String representation of an end point.
+ * @return 
+ */
+std::string AsEndPoint::toString()const
+{
+    const string header = isInput() ? "input" : "output";
+    
+    return header + JSFunction::toString().substr(8);
+}
    
 AsEndPoint::AsEndPoint(const AsEndPoint& src, bool _mutable)
 : JSFunction(src, _mutable)
