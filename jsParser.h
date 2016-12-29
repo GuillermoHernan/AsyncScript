@@ -19,6 +19,7 @@
 #include "ast.h"
 #include "parserResults.h"
 
+ParseResult parseScript(CScriptToken token);
 ParseResult parseStatement(CScriptToken token);
 
 

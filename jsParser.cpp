@@ -107,7 +107,25 @@ Ref<AstNode> emptyStatement(ScriptPosition pos)
     return AstLiteral::undefined(pos);
 }
 
+/**
+ * Parses an script, which is a list of statements
+ * @param token
+ * @return 
+ */
+ParseResult parseScript(CScriptToken token)
+{
+    auto script = astCreateScript(token.getPosition());
+    
+    while (!token.eof())
+    {
+        const ParseResult   parseRes = parseStatement (token);
 
+        script->addChild(parseRes.ast);
+        token = parseRes.nextToken;
+    }
+
+    return ParseResult(token, script);
+}
 
 /**
  * Parses one statement

@@ -33,26 +33,17 @@ CScriptToken parseArgumentList(Ref<JSFunction> function, CScriptToken token);
 Ref<JSValue> evaluate (const char* script, Ref<IScope> globals)
 {
     CScriptToken    token (script);
-    AstNodeList   statements;
-
-    //Parsing loop
-    token = token.next();
-    while (!token.eof())
-    {
-        const ParseResult   parseRes = parseStatement (token);
-        
-        statements.push_back(parseRes.ast);
-        token = parseRes.nextToken;
-    }
     
-    if (statements.empty())
-        return undefined();
+
+    //Parse
+    auto parseResult = parseScript(token.next());
+    auto ast = parseResult.ast;
     
     //Semantic check
-    semanticCheck(statements);
+    semanticCheck(ast);
     
     //Code generation.
-    const Ref<MvmRoutine>    code = scriptCodegen(statements);
+    const Ref<MvmRoutine>    code = scriptCodegen(ast);
     
     //Execution
     return mvmExecute(code, globals);

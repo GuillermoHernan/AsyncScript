@@ -211,27 +211,20 @@ bool run_test(const std::string& szFile, const string &testDir, const string& re
         //This code is copied from 'evaluate', to log the intermediate results 
         //generated from each state
         CScriptToken    token (script.c_str());
-        AstNodeList   statements;
 
-        //Parsing loop
-        token = token.next();
-        while (!token.eof())
-        {
-            const ParseResult   parseRes = parseStatement (token);
-
-            statements.push_back(parseRes.ast);
-            token = parseRes.nextToken;
-        }
+        //Script parse
+        auto    parseRes = parseScript(token.next());
+        auto    ast = parseRes.ast;
 
         //Write Abstract Syntax Tree
-        const string astJSON = toJSON (statements);
+        const string astJSON = ast->toJS()->getJSON(0);
         writeTextFile(testResultsDir + testName + ".ast.json", astJSON);
         
         //Semantic analysis
-        semanticCheck(statements);
+        semanticCheck(ast);
 
         //Code generation.
-        const Ref<MvmRoutine>    code = scriptCodegen(statements);
+        const Ref<MvmRoutine>    code = scriptCodegen(ast);
 
         //Write disassembly
         writeTextFile(testResultsDir + testName + ".asm.json", mvmDisassembly(code));

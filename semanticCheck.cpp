@@ -51,14 +51,15 @@ void checkReservedNames (Ref<AstNode> node, const char* errorMsg);
 /**
  * Semantic analysis pass entry point. It throws a 'CScriptException' on the first
  * error it finds.
- * @param statements
+ * @param script
  */
-void semanticCheck(const AstNodeList& statements)
+void semanticCheck(Ref<AstNode> script)
 {
+    ASSERT (script->getType() == AST_SCRIPT);
+    
     SemCheckState   state;
     
-    for (size_t i = 0; i < statements.size(); ++i)
-        semCheck (statements[i], &state);
+    childrenSemCheck(script, &state);
 }
 
 /**
@@ -72,6 +73,7 @@ void semCheck (Ref<AstNode> node, SemCheckState* pState)
     
     if (types [0] == NULL)
     {
+        types [AST_SCRIPT] = childrenSemCheck;
         types [AST_BLOCK] = childrenSemCheck;
         types [AST_VAR] = varSemCheck;
         types [AST_IF] = childrenSemCheck;

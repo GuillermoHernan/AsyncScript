@@ -18,6 +18,11 @@ const AstNodeList AstNode::ms_noChildren;
 //  Constructor functions.
 //
 ////////////////////////////////
+Ref<AstNode> astCreateScript(ScriptPosition pos)
+{
+    return refFromNew( new AstBranchNode(AST_SCRIPT, pos));    
+}
+
 Ref<AstNode> astCreateBlock(CScriptToken token)
 {
     return refFromNew( new AstBranchNode(AST_BLOCK, token.getPosition()));    
@@ -407,6 +412,7 @@ std::string astTypeToString(AstNodeTypes type)
     
     if (types.empty())
     {
+        types[AST_SCRIPT] = "AST_SCRIPT";
         types[AST_BLOCK] = "AST_BLOCK";
         types[AST_VAR] = "AST_VAR";
         types[AST_IF] = "AST_IF";

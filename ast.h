@@ -23,7 +23,8 @@
  */
 enum AstNodeTypes
 {
-    AST_BLOCK
+    AST_SCRIPT
+    ,AST_BLOCK
     ,AST_VAR
     ,AST_IF
     ,AST_FOR
@@ -60,6 +61,7 @@ std::string toJSON (const AstNodeList& statements);
 std::string astTypeToString(AstNodeTypes type);
 
 //Constructor functions
+Ref<AstNode> astCreateScript(ScriptPosition pos);
 Ref<AstNode> astCreateBlock(CScriptToken token);
 Ref<AstNode> astCreateIf (ScriptPosition pos, 
                           Ref<AstNode> condition,

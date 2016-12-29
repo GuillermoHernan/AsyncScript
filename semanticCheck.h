@@ -15,7 +15,7 @@
 #include "ast.h"
 #include <vector>
 
-void semanticCheck(const AstNodeList& statements);
+void semanticCheck(Ref<AstNode> script);
 
 #endif	/* SEMANTICCHECK_H */
 

@@ -33,6 +33,12 @@ public:
         return m_symbols.count(name) > 0;
     }
     
+    const Ref<AstNode>          ownerNode;
+    
+    CodegenScope (const Ref<AstNode> _ownerNode) : ownerNode(_ownerNode)
+    {
+    }
+    
 private:
     std::set < std::string>     m_symbols;
 };
@@ -69,6 +75,7 @@ void codegen (Ref<AstNode> statement, CodegenState* pState);
 int  childrenCodegen (Ref<AstNode> statement, CodegenState* pState);
 bool childCodegen (Ref<AstNode> statement, int index, CodegenState* pState);
 
+void invalidNodeCodegen (Ref<AstNode> node, CodegenState* pState);
 void blockCodegen (Ref<AstNode> statement, CodegenState* pState);
 void varCodegen (Ref<AstNode> statement, CodegenState* pState);
 void ifCodegen (Ref<AstNode> statement, CodegenState* pState);
@@ -122,14 +129,16 @@ CodegenState initFunctionState (Ref<AstNode> node);
  * @param statements    The script is received as a sequence (vector) of compiled statements.
  * @return 
  */
-Ref<MvmRoutine> scriptCodegen (const AstNodeList& statements)
+Ref<MvmRoutine> scriptCodegen (Ref<AstNode> script)
 {
     CodegenState    state;
     
-    ASSERT (!statements.empty());
+    ASSERT (script->getType() == AST_SCRIPT);
     
     state.curRoutine = MvmRoutine::create(ScriptPosition(1,1));
-    state.scopes.push_back(CodegenScope());
+    state.scopes.push_back(CodegenScope(script));
+    
+    auto statements = script->children();
     
     for (size_t i = 0; i < statements.size(); ++i)
     {
@@ -139,7 +148,7 @@ Ref<MvmRoutine> scriptCodegen (const AstNodeList& statements)
         codegen (statements[i], &state);
     }
     
-    return state.curRoutine;    
+    return state.curRoutine;
 }
 
 
@@ -149,6 +158,7 @@ void codegen (Ref<AstNode> statement, CodegenState* pState)
     
     if (types [0] == NULL)
     {
+        types [AST_SCRIPT] = invalidNodeCodegen;
         types [AST_BLOCK] = blockCodegen;
         types [AST_VAR] = varCodegen;
         types [AST_IF] = ifCodegen;
@@ -221,6 +231,16 @@ bool childCodegen (Ref<AstNode> statement, int index, CodegenState* pState)
         return false;
 }
 
+/**
+ * Called if an invalid node is found in the AST
+ * @param node
+ * @param pState
+ */
+void invalidNodeCodegen(Ref<AstNode> node, CodegenState* pState)
+{
+    auto typeString = astTypeToString(node->getType());
+    errorAt (node->position(), "Invalid AST node found: ", typeString.c_str());
+}
 
 /**
  * Generates the code for a block of statements.
@@ -256,19 +276,37 @@ void blockCodegen (Ref<AstNode> statement, CodegenState* pState)
  * @param statement
  * @param pState
  */
-void varCodegen (Ref<AstNode> statement, CodegenState* pState)
+void varCodegen (Ref<AstNode> node, CodegenState* pState)
 {
-    const string name = statement->getName();
+    const string name = node->getName();
+    const bool inActor = pState->scopes.back().ownerNode->getType() == AST_ACTOR;
 
-    pState->scopes.back().declare(name);
-    
-    pushConstant (name, pState);
-    if (!childCodegen(statement, 0, pState))
+    if (!inActor)
+    {
+        //Not inside an actor
+        pState->scopes.back().declare(name);
+
+        pushConstant (name, pState);
+        if (!childCodegen(node, 0, pState))
+            pushUndefined(pState);
+        instruction8 (OC_NEW_VAR, pState);
+
+        //Non-expression statements leave an 'undefined' on the stack.
         pushUndefined(pState);
-    instruction8 (OC_NEW_VAR, pState);
-    
-    //Non-expression statements leave an 'undefined' on the stack.
-    pushUndefined(pState);
+    }
+    else
+    {
+        pState->curActor->writeFieldStr(name, jsNull());
+        
+        if (node->childExists(0))
+        {
+            pushConstant ("this", pState);
+            instruction8 (OC_RD_LOCAL, pState);
+            pushConstant (name, pState);
+            childCodegen(node, 0, pState);
+            instruction8 (OC_WR_FIELD, pState);
+        }
+    }
 }
 
 /**
@@ -386,16 +424,16 @@ void returnCodegen (Ref<AstNode> statement, CodegenState* pState)
 
 /**
  * Generates code for a function declaration.
- * @param statement
+ * @param node
  * @param pState
  */
-void functionCodegen (Ref<AstNode> statement, CodegenState* pState)
+void functionCodegen (Ref<AstNode> node, CodegenState* pState)
 {
-    Ref<AstFunction>    fnNode = statement.staticCast<AstFunction>();
+    Ref<AstFunction>    fnNode = node.staticCast<AstFunction>();
     Ref<JSFunction>     function = JSFunction::createJS(fnNode->getName());
     const AstFunction::Params& params = fnNode->getParams();
     
-    CodegenState    fnState = initFunctionState(statement);
+    CodegenState    fnState = initFunctionState(node);
 
     function->setParams (params);
     function->setCodeMVM (fnState.curRoutine);
@@ -830,7 +868,9 @@ void actorCodegen (Ref<AstNode> node, CodegenState* pState)
     constructor->setParams (params);
     constructor->setCodeMVM (actorState.curRoutine);
     
+//    instruction8 (OC_PUSH_SCOPE, &actorState);
     childrenCodegen(node, &actorState);
+//    instruction8 (OC_POP_SCOPE, &actorState);
     
     //Create a new variable, and yield actor class reference
     pushConstant(actor, pState);
@@ -1172,7 +1212,7 @@ CodegenState initFunctionState (Ref<AstNode> node)
     CodegenState            fnState;
     
     fnState.curRoutine = code;
-    fnState.scopes.push_back(CodegenScope());
+    fnState.scopes.push_back(CodegenScope(node));
 
     //Declare function reserved symbols.
     fnState.scopes.back().declare("this");

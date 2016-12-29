@@ -15,7 +15,7 @@
 #include "ast.h"
 #include <vector>
 
-Ref<MvmRoutine> scriptCodegen ( const AstNodeList& statements);
+Ref<MvmRoutine> scriptCodegen ( Ref<AstNode> script);
 
 
 #endif	/* MVMCODEGEN_H */
