@@ -12,6 +12,7 @@ jsParser.cpp \
 ast.cpp \
 parserResults.cpp \
 microVM.cpp \
+mvmDisassembly.cpp \
 mvmCodegen.cpp \
 scriptMain.cpp \
 mvmFunctions.cpp \
