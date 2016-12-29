@@ -332,8 +332,8 @@ void execCall (const int nArgs, ExecutionContext* ec)
     
     const Ref<JSValue>  fnVal = ec->pop();
     
-    if (!fnVal->isFunction())
-        error ("Trying to call a non-function value");
+//    if (!fnVal->isFunction())
+//        error ("Trying to call a non-function value");
     
     const Ref<JSFunction>   function = fnVal.staticCast<JSFunction>();
     
