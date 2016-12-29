@@ -159,13 +159,16 @@ string disassembly16bitInst (int opCode, const ValueVector& constants)
  * @param constants
  * @return 
  */
-Ref<JSArray> disassemblyInstructions (const ByteVector& code, const ValueVector& constants)
+Ref<JSObject> disassemblyInstructions (const ByteVector& code, const ValueVector& constants)
 {
-    Ref<JSArray>    result = JSArray::create();
+    auto    result = JSObject::create();
+    char    position[64];
     
     for (size_t i=0; i < code.size(); ++i)
     {
         string  instructionStr;
+        
+        sprintf_s (position, "%04u", (unsigned)i);
         
         if (code[i] & OC_EXT_FLAG)
         {
@@ -176,7 +179,7 @@ Ref<JSArray> disassemblyInstructions (const ByteVector& code, const ValueVector&
         else
             instructionStr = disassembly8bitInst (code[i], constants);
         
-        result->push( jsString(instructionStr) );
+        result->writeFieldStr(position, jsString(instructionStr));
     }
     
     return result;
