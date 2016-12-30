@@ -45,6 +45,7 @@ public:
         RoutineActor*   newActor = new RoutineActor (ownClass, globals, parent);
 
         ownClass->getConstructor()->setNativePtr(routineActorExec);
+        ownClass->createDefaultEndPoints();
         newActor->m_code = code;
         return AsActorRef::create(refFromNew(newActor));
         
@@ -242,6 +243,19 @@ Ref<JSValue> actorConstructor(Ref<AsActorClass> actorClass, Ref<FunctionScope> s
     runtime->sendMessage(actorRef, "@start", msgParams);
     
     return actorRef;
+}
+
+/**
+ * Default handler for 'childStopped' message.
+ * @param pScope
+ * @return 
+ */
+Ref<JSValue> actorChildStoppedDefaultHandler(FunctionScope* pScope)
+{
+    auto actor = pScope->getThis().staticCast<AsActor>();
+    
+    actor->stop(jsNull());
+    return undefined();
 }
 
 /**

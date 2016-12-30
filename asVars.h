@@ -44,6 +44,9 @@ public:
     {
         return m_name;
     }
+
+    void createDefaultEndPoints ();
+
     
 protected:
     AsActorClass (const std::string& name);
@@ -93,7 +96,13 @@ public:
     void forceStop()
     {
         m_finished = true;
-    }    
+    }
+    
+    void stop(Ref<JSValue> result)
+    {
+        m_result = result;
+        m_finished = true;
+    }
         
     Ref<JSValue> getResult()
     {

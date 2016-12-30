@@ -19,6 +19,8 @@ struct MvmRoutine;
 
 Ref<JSValue> asBlockingExec(Ref<MvmRoutine> code, Ref<GlobalScope> globals);
 
+Ref<JSValue> actorChildStoppedDefaultHandler(FunctionScope* pScope);
+
 /**
  * Keeps shared state of the actor system.
  * It contains the message queue. It only supports single-threaded dispatching

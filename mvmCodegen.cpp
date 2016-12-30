@@ -868,9 +868,9 @@ void actorCodegen (Ref<AstNode> node, CodegenState* pState)
     constructor->setParams (params);
     constructor->setCodeMVM (actorState.curRoutine);
     
-//    instruction8 (OC_PUSH_SCOPE, &actorState);
     childrenCodegen(node, &actorState);
-//    instruction8 (OC_POP_SCOPE, &actorState);
+    
+    actor->createDefaultEndPoints ();
     
     //Create a new variable, and yield actor class reference
     pushConstant(actor, pState);

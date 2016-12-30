@@ -10,6 +10,7 @@
 
 #include "OS_support.h"
 #include "asVars.h"
+#include "actorRuntime.h"
 
 using namespace std;
 
@@ -36,6 +37,23 @@ Ref<JSObject> AsActorClass::clone (bool _mutable)
 {
     return refFromNew (new AsActorClass(*this, _mutable));
 }
+
+/**
+ * Creates default endPoints of an actor class, if they are missing.
+ */
+void AsActorClass::createDefaultEndPoints ()
+{
+    const char* childStopped = "childStopped";
+    if (this->readFieldStr(childStopped)->isNull())
+    {
+        auto endPoint = AsEndPoint::create(childStopped, true);
+        
+        endPoint->addParam("child");
+        endPoint->setNativePtr(actorChildStoppedDefaultHandler);
+        this->writeFieldStr(childStopped, endPoint);
+    }
+}
+
 
 /**
  * Gets one of the endpoints defined in the class.
