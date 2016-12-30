@@ -912,7 +912,7 @@ void messageCodegen (Ref<AstNode> node, CodegenState* pState)
         Ref<MvmRoutine>         code = MvmRoutine::create(node->position());
 
         CodegenState    fnState = initFunctionState(node);
-        msg->setCodeMVM (fnState.curRoutine);
+        msg->setCodeMVM (code);
         fnState.curRoutine = code;
 
         codegen (node.staticCast<AstFunction>()->getCode(), &fnState);

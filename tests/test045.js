@@ -18,6 +18,7 @@ actor EchoTest()
     
     input begin()
     {
+        printLn ("Begin!");
         echoActor.ping("first actor test!");
     }
     
@@ -28,6 +29,7 @@ actor EchoTest()
     }
 }
 
+printLn ("\nhello");
 var a = EchoTest();
 
 a.begin();
