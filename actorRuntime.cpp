@@ -187,7 +187,7 @@ Ref<JSValue> inputEpCall(Ref<AsEndPointRef> endPoint, Ref<FunctionScope> scope)
 {
     auto globals = scope->getGlobals().staticCast<GlobalScope>();
     auto runtime = globals->get("@actorRT").staticCast<ActorRuntime>();
-    auto params = globals->get("arguments").staticCast<JSArray>();
+    auto params = scope->get("arguments").staticCast<JSArray>();
     
     runtime->sendMessage (endPoint, params);
     return undefined();
