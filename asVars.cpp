@@ -76,14 +76,14 @@ Ref<AsEndPoint> AsActorClass::getEndPoint (const std::string& name)
  * @param name
  * @return 
  */
-Ref<AsEndPointRef> AsActorRef::getEndPoint (const std::string& name)
+Ref<AsEndPointRef> AsActorRef::getEndPoint (const std::string& name)const
 {
     auto ep = m_ref->getEndPoint(name);
 
     if (ep.isNull())
         return Ref<AsEndPointRef>();
     else
-        return AsEndPointRef::create(ep, Ref<AsActorRef>(this));
+        return AsEndPointRef::create(ep, Ref<AsActorRef>(const_cast<AsActorRef*>(this)));
 }
 
 Ref<JSObject> AsActor::clone (bool _mutable)

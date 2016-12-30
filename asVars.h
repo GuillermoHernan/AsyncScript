@@ -164,6 +164,11 @@ public:
     {
         return refFromNew(new AsActorRef(actor));
     }
+    
+    virtual Ref<JSValue> readField(Ref<JSValue> key)const
+    {
+        return getEndPoint(key->toString());
+    }
 
     bool isRunning()
     {
@@ -183,7 +188,7 @@ public:
             return m_ref->getResult();
     }
     
-    Ref<AsEndPointRef> getEndPoint (const std::string& name);
+    Ref<AsEndPointRef> getEndPoint (const std::string& name)const;
     
 protected:
     AsActorRef (Ref<AsActor> actor) : m_ref (actor)
