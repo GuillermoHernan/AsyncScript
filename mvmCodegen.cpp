@@ -886,7 +886,9 @@ void actorCodegen (Ref<AstNode> node, CodegenState* pState)
 void connectCodegen (Ref<AstNode> node, CodegenState* pState)
 {
     pushConstant("this", pState);
+    instruction8(OC_RD_LOCAL, pState);
     pushConstant(node->children().front()->getName(), pState);
+    instruction8(OC_RD_FIELD, pState);
     childCodegen(node, 1, pState);
     callCodegen("@connect", 3, pState);
 }
