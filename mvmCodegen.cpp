@@ -103,6 +103,7 @@ void connectCodegen (Ref<AstNode> node, CodegenState* pState);
 void messageCodegen (Ref<AstNode> node, CodegenState* pState);
 
 void pushConstant (Ref<JSValue> value, CodegenState* pState);
+void pushConstant (const char* str, CodegenState* pState);
 void pushConstant (const std::string& str, CodegenState* pState);
 void pushConstant (int value, CodegenState* pState);
 void pushConstant (bool value, CodegenState* pState);
@@ -954,6 +955,16 @@ void pushConstant (Ref<JSValue> value, CodegenState* pState)
         else
             instruction16(id16 + OC16_PUSHC, pState);
     }
+}
+
+/**
+ * Push string constant
+ * @param str
+ * @param pState
+ */
+void pushConstant (const char* str, CodegenState* pState)
+{
+    pushConstant(jsString(str), pState);
 }
 
 /**
