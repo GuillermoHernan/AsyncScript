@@ -45,6 +45,8 @@ enum JSValueTypes
 };
 std::string getTypeName(JSValueTypes vType);
 
+typedef std::vector<std::string> StringVector;
+
 /**
  * The possible mutability states of a JSValue.
  */
@@ -82,6 +84,9 @@ public:
     virtual Ref<JSValue> writeField(Ref<JSValue> key, Ref<JSValue> value) = 0;
     virtual Ref<JSValue> deleteField(Ref<JSValue> key) = 0;
     virtual std::string getJSON(int indent) = 0;
+    
+    virtual const StringVector& getParams()const=0;
+    virtual const std::string& getName()const=0;
     
     Ref<JSValue> readFieldStr(const std::string& strKey)const;
     Ref<JSValue> writeFieldStr(const std::string& strKey, Ref<JSValue> value);
@@ -240,6 +245,19 @@ public:
     {
         return V_TYPE;
     }
+    
+    virtual const StringVector& getParams()const
+    {
+        static const StringVector    empty;
+        return empty;
+    }
+
+    virtual const std::string& getName()const
+    {
+        static std::string empty;
+        return empty;
+    }
+    
 };
 
 /**
@@ -408,6 +426,18 @@ public:
     {
         return VT_OBJECT;
     }
+    
+    virtual const StringVector& getParams()const
+    {
+        static const StringVector    empty;
+        return empty;
+    }
+
+    virtual const std::string& getName()const
+    {
+        static std::string empty;
+        return empty;
+    }
     /////////////////////////////////////////
 
     ///'JSObject' default prototype
@@ -492,7 +522,7 @@ class JSArray : public JSObject
 public:
     static Ref<JSArray> create();
     static Ref<JSArray> create(size_t size);
-    static Ref<JSArray> createStrArray(const std::vector<std::string>& strList);
+    static Ref<JSArray> createStrArray(const StringVector& strList);
 
     size_t push(Ref<JSValue> value);
 
@@ -552,20 +582,18 @@ public:
     static Ref<JSFunction> createJS(const std::string& name);
     static Ref<JSFunction> createNative(const std::string& name, JSNativeFn fnPtr);
 
-    typedef std::vector<std::string> ParametersList;
-
     int addParam(const std::string& name)
     {
         m_params.push_back(name);
         return (int) m_params.size();
     }
 
-    void setParams(const ParametersList& params)
+    void setParams(const StringVector& params)
     {
         m_params = params;
     }
 
-    const ParametersList& getParams()const
+    const StringVector& getParams()const
     {
         return m_params;
     }
@@ -633,7 +661,7 @@ private:
     const std::string m_name;
     Ref<RefCountObj> m_codeMVM;
     JSNativeFn m_pNative;
-    ParametersList m_params;
+    StringVector m_params;
 };
 
 /**
@@ -677,7 +705,7 @@ private:
 class FunctionScope : public IScope
 {
 public:
-    static Ref<FunctionScope> create(Ref<IScope> globals, Ref<JSFunction> targetFn)
+    static Ref<FunctionScope> create(Ref<IScope> globals, Ref<JSValue> targetFn)
     {
         return refFromNew(new FunctionScope(globals, targetFn));
     }
@@ -713,7 +741,7 @@ public:
         return m_globals;
     }
     
-    Ref<JSFunction> getFunction()const
+    Ref<JSValue> getFunction()const
     {
         return m_function;
     }
@@ -723,12 +751,12 @@ private:
 
     SymbolsMap m_params;
     SymbolsMap m_locals;
-    Ref<JSFunction> m_function;
+    Ref<JSValue> m_function;
     Ref<JSArray> m_arguments;
     Ref<JSValue> m_this;
     Ref<IScope> m_globals;
     
-    FunctionScope(Ref<IScope> globals, Ref<JSFunction> targetFn);
+    FunctionScope(Ref<IScope> globals, Ref<JSValue> targetFn);
 };
 
 /**

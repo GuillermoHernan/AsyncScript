@@ -335,9 +335,9 @@ void execCall (const int nArgs, ExecutionContext* ec)
 //    if (!fnVal->isFunction())
 //        error ("Trying to call a non-function value");
     
-    const Ref<JSFunction>   function = fnVal.staticCast<JSFunction>();
+//    const Ref<JSFunction>   function = fnVal.staticCast<JSFunction>();
     
-    Ref<FunctionScope>  fnScope = FunctionScope::create (ec->scopes.front(), function);
+    Ref<FunctionScope>  fnScope = FunctionScope::create (ec->scopes.front(), fnVal);
     
     //Set 'this' pointer
     size_t  i = ec->stack.size() - nArgs;
@@ -357,7 +357,7 @@ void execCall (const int nArgs, ExecutionContext* ec)
 
     const size_t            initialStack = ec->stack.size();
     
-    Ref<JSValue> result = ec->callHook (function, fnScope, ec, (void*)defaultCallHook);
+    Ref<JSValue> result = ec->callHook (fnVal, fnScope, ec, (void*)defaultCallHook);
     
     ASSERT (initialStack == ec->stack.size());
     ec->scopes.pop_back();      //Remove function scope

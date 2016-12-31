@@ -1076,7 +1076,7 @@ Ref<JSValue> BlockScope::newVar(const std::string& name, Ref<JSValue> value)
  * @param globals
  * @param targetFn
  */
-FunctionScope::FunctionScope(Ref<IScope> globals, Ref<JSFunction> targetFn) :
+FunctionScope::FunctionScope(Ref<IScope> globals, Ref<JSValue> targetFn) :
 m_function(targetFn),
 m_globals(globals)
 {
@@ -1091,7 +1091,7 @@ m_globals(globals)
  */
 int FunctionScope::addParam(Ref<JSValue> value)
 {
-    const JSFunction::ParametersList& paramsDef = m_function->getParams();
+    const StringVector& paramsDef = m_function->getParams();
     const size_t index = m_arguments->length();
 
     if (index < paramsDef.size())
