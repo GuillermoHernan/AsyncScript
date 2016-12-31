@@ -86,7 +86,7 @@ Ref<JSValue> asBlockingExec (Ref<MvmRoutine> code, Ref<GlobalScope> globals)
     auto    runtime = ActorRuntime::create(rootActor);
     
     globals->newVar("@actorRT", runtime);
-    addNative2("@connect", "dst", "src", connectOperator, globals);
+    addNative1("@connect", "src", connectOperator, globals);
     
     execMessageLoop (runtime);
     
@@ -117,7 +117,7 @@ Ref<JSValue> connectOperator (FunctionScope* pScope)
         error ("Missing actor runtime");
     
     auto src = pScope->getParam("src");
-    auto dst = pScope->getParam("dst");
+    auto dst = pScope->getThis();
     
     if (src->getType() != VT_OUTPUT_EP_REF)
         error ("Source is not an output message");
