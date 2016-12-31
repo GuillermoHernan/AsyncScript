@@ -413,6 +413,8 @@ void ActorRuntime::actorCrashed(Ref<AsActorRef> actorRef, const CScriptException
     
     if (parent.notNull())
     {
+        //TODO: Better error logging
+        fprintf (stderr, "Actor crashed: %s\n", ex.what());
         sendMessage2 (parent, "childStopped", jsTrue(), jsString(ex.what()));
     }
     else
