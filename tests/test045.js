@@ -14,7 +14,7 @@ actor EchoTest()
 {
     var echoActor = Echo();
     
-    result <- echoActor.pong;
+    result <- this.echoActor.pong;
     
     input begin()
     {
