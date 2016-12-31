@@ -297,16 +297,14 @@ void varCodegen (Ref<AstNode> node, CodegenState* pState)
     }
     else
     {
-        pState->curActor->writeFieldStr(name, jsNull());
+//        pState->curActor->writeFieldStr(name, jsNull());
         
-        if (node->childExists(0))
-        {
-            pushConstant ("this", pState);
-            instruction8 (OC_RD_LOCAL, pState);
-            pushConstant (name, pState);
-            childCodegen(node, 0, pState);
-            instruction8 (OC_WR_FIELD, pState);
-        }
+        pushConstant ("this", pState);
+        instruction8 (OC_RD_LOCAL, pState);
+        pushConstant (name, pState);
+        if (!childCodegen(node, 0, pState))
+            pushConstant (jsNull(), pState);
+        instruction8 (OC_WR_FIELD, pState);
     }
 }
 
