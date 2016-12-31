@@ -1091,7 +1091,7 @@ m_globals(globals)
  */
 int FunctionScope::addParam(Ref<JSValue> value)
 {
-    const JSFunction::ParametersList paramsDef = m_function->getParams();
+    const JSFunction::ParametersList& paramsDef = m_function->getParams();
     const size_t index = m_arguments->length();
 
     if (index < paramsDef.size())
