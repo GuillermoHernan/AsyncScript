@@ -4,7 +4,7 @@ actor Echo()
 {
     input ping (text)
     {
-        this.pong("pong: " + text);
+        this.pong("Echo: " + text);
     }
     
     output pong (msg);
@@ -18,18 +18,19 @@ actor EchoTest()
     
     input begin()
     {
-        printLn ("Begin!");
-        echoActor.ping("first actor test!");
+        this.echoActor.ping("first actor test!");
     }
     
     input result(text)
     {
-        assert (text == "pong: first actor test!", "Matching message text");
+        assert (text == "Echo: first actor test!", "Matching message text");
+        
+        //TODO: This should not write to the global scope. At some point, it shall 
+        //use anopther mechanism to detect success / failure.
         result = true;
     }
 }
 
-printLn ("\nhello");
 var a = EchoTest();
 
 a.begin();
