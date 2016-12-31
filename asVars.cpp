@@ -115,11 +115,34 @@ Ref<JSObject> AsEndPoint::clone (bool _mutable)
 }
 
 /**
+ * Reads a field from an actor.
+ * @param key
+ * @return 
+ */
+Ref<JSValue> AsActor::readField(Ref<JSValue> key)const
+{
+    auto result = JSObject::readField(key);
+    
+    // if not found at object fields, it may be an endpoint
+    if (result->isUndefined())
+    {
+        auto ep = getEndPoint(key->toString());
+        
+        if (ep.notNull())
+            return AsEndPointRef::create(ep, AsActorRef::create(Ref<AsActor>(const_cast<AsActor*>(this))));
+        else
+            return undefined();
+    }
+    else
+        return result;    
+}
+
+/**
  * Looks for the connected input end point of an output end point
  * @param msgName
  * @return 
  */
-Ref<AsEndPointRef> AsActor:: getConnectedEp (const std::string& msgName)const
+Ref<AsEndPointRef> AsActor::getConnectedEp (const std::string& msgName)const
 {
     auto    it = m_outputConections.find(msgName);
     

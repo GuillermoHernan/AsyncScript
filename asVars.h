@@ -81,6 +81,9 @@ public:
         return VT_ACTOR;
     }
     
+    virtual Ref<JSValue> readField(Ref<JSValue> key)const;    
+    
+    
     void setOutputConnection (const std::string& msgName, Ref<AsEndPointRef> dst)
     {
         m_outputConections[msgName] = dst;
@@ -109,7 +112,7 @@ public:
         return m_result;
     }
     
-    Ref<AsEndPoint> getEndPoint (const std::string& name)
+    Ref<AsEndPoint> getEndPoint (const std::string& name)const
     {
         return m_cls->getEndPoint(name);
     }
