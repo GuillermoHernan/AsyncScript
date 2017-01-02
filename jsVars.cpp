@@ -365,6 +365,24 @@ Ref<JSValue> deepFreeze(Ref<JSValue> obj, JSValuesMap& transformed)
     return newObject;
 }
 
+/**
+ * Writes to a variable in a variable map. If the variable already exist, and
+ * is a constant, it throw an exception.
+ * @param map
+ * @param name
+ * @param value
+ * @param isConst   If true, it creates a new constant
+ */
+void checkedVarWrite (VarMap& map, const std::string& name, Ref<JSValue> value, bool isConst)
+{
+    auto it = map.find(name);
+    
+    if (it != map.end() && it->second.isConst())
+        error ("Trying to write to constant '%s'", name.c_str());
+    
+    map[name] = VarProperties(value, isConst);        
+}
+
 // JSNumber
 //
 //////////////////////////////////////////////////
@@ -579,17 +597,24 @@ JSMutability JSObject::selectMutability(const JSObject& src, bool _mutable)
         auto items = src.m_members;
         for (auto it = items.begin(); it != items.end(); ++it)
         {
-            if (it->second->getMutability() != MT_DEEPFROZEN)
+            if (it->second.value()->getMutability() != MT_DEEPFROZEN)
                 return MT_FROZEN;
         }
         return MT_DEEPFROZEN;
     }
 }
 
-/**
- * Object field read function
- * @return 
- */
+bool JSObject::isWritable(const std::string& key)const
+{
+    if (!isMutable())
+        return false;
+    
+    auto it = m_members.find(key);
+    if (it == m_members.end())
+        return true;
+    else
+        return !it->second.isConst();
+}
 
 /**
  * Reads a field of the object. If it does not exist, it returns 'undefined'
@@ -598,10 +623,10 @@ JSMutability JSObject::selectMutability(const JSObject& src, bool _mutable)
  */
 Ref<JSValue> JSObject::readField(Ref<JSValue> key)const
 {
-    MembersMap::const_iterator it = m_members.find(key2Str(key));
+    auto it = m_members.find(key2Str(key));
 
     if (it != m_members.end())
-        return it->second;
+        return it->second.value();
     else if (!nullCheck(m_prototype))
         return m_prototype->readField (key);
     else
@@ -616,10 +641,30 @@ Ref<JSValue> JSObject::readField(Ref<JSValue> key)const
  */
 Ref<JSValue> JSObject::writeField(Ref<JSValue> key, Ref<JSValue> value)
 {
-    if (!isMutable())
+    const string keyStr = key2Str(key);
+    
+    if (!isWritable(keyStr))
         return readField(key);
     
-    m_members[key2Str(key)] = value;
+    m_members[keyStr] = VarProperties(value, false);
+
+    return value;
+}
+
+/**
+ * Creates a new constant field
+ * @param name
+ * @param value
+ * @return 
+ */
+Ref<JSValue> JSObject::newConstField(Ref<JSValue> key, Ref<JSValue> value)
+{
+    const string keyStr = key2Str(key);
+    
+    if (!isWritable(keyStr))
+        return readField(key);
+    
+    m_members[keyStr] = VarProperties(value, true);
 
     return value;
 }
@@ -631,17 +676,18 @@ Ref<JSValue> JSObject::writeField(Ref<JSValue> key, Ref<JSValue> value)
  */
 Ref<JSValue> JSObject::deleteField(Ref<JSValue> key)
 {
-    if (!isMutable())
-        return readField(key);
+    const string keyStr = key2Str(key);
     
-    const string strKey = key2Str(key);
-    MembersMap::iterator it = m_members.find(strKey);
+    if (!isWritable(keyStr))
+        return readField(key);
+
+    auto it = m_members.find(keyStr);
     
     if (it == m_members.end())
         return undefined();
     else
     {
-        auto result = it->second;
+        auto result = it->second.value();
         m_members.erase(it);
         return result;
     }
@@ -684,15 +730,14 @@ std::string indentText(int indent)
 std::string JSObject::getJSON(int indent)
 {
     ostringstream output;
-    MembersMap::const_iterator it;
     bool first = true;
 
     //{"x":2}
     output << "{";
 
-    for (it = m_members.begin(); it != m_members.end(); ++it)
+    for (auto it = m_members.begin(); it != m_members.end(); ++it)
     {
-        string childJSON = it->second->getJSON(indent+1);
+        string childJSON = it->second.value()->getJSON(indent+1);
 
         if (!childJSON.empty())
         {
@@ -1008,7 +1053,7 @@ BlockScope::BlockScope(Ref<IScope> parent) : m_pParent(parent)
  */
 bool BlockScope::isDefined(const std::string& name)const
 {
-    SymbolMap::const_iterator it = m_symbols.find(name);
+    auto it = m_symbols.find(name);
 
     if (it != m_symbols.end())
         return true;
@@ -1025,10 +1070,10 @@ bool BlockScope::isDefined(const std::string& name)const
  */
 Ref<JSValue> BlockScope::get(const std::string& name)const
 {
-    SymbolMap::const_iterator it = m_symbols.find(name);
+    auto it = m_symbols.find(name);
 
     if (it != m_symbols.end())
-        return it->second;
+        return it->second.value();
     else
         return m_pParent->get(name);
 }
@@ -1046,7 +1091,7 @@ Ref<JSValue> BlockScope::get(const std::string& name)const
 Ref<JSValue> BlockScope::set(const std::string& name, Ref<JSValue> value)
 {
     if (m_symbols.find(name) != m_symbols.end())
-        m_symbols[name] = value; //Present at current scope
+        checkedVarWrite(m_symbols, name, value, false);
     else if (m_pParent.notNull())
         m_pParent->set(name, value);
 
@@ -1059,9 +1104,9 @@ Ref<JSValue> BlockScope::set(const std::string& name, Ref<JSValue> value)
  * @param value
  * @return 
  */
-Ref<JSValue> BlockScope::newVar(const std::string& name, Ref<JSValue> value)
+Ref<JSValue> BlockScope::newVar(const std::string& name, Ref<JSValue> value, bool isConst)
 {
-    m_symbols[name] = value;
+    checkedVarWrite(m_symbols, name, value, isConst);
 
     return value;
 }
@@ -1098,7 +1143,7 @@ int FunctionScope::addParam(Ref<JSValue> value)
     {
         const std::string &name = paramsDef[index];
 
-        m_params[name] = value;
+        checkedVarWrite(m_params, name, value, false);
         m_arguments->push(value);
     }
     else
@@ -1117,10 +1162,10 @@ int FunctionScope::addParam(Ref<JSValue> value)
  */
 Ref<JSValue> FunctionScope::getParam(const std::string& name)const
 {
-    SymbolsMap::const_iterator it = m_params.find(name);
+    auto it = m_params.find(name);
     
     if (it != m_params.end())
-        return it->second;
+        return it->second.value();
     else
         return undefined();            
 }
@@ -1154,10 +1199,10 @@ Ref<JSValue> FunctionScope::get(const std::string& name)const
         return m_arguments;
     else
     {
-        SymbolsMap::const_iterator it = m_params.find(name);
+        auto it = m_params.find(name);
 
         if (it != m_params.end())
-            return it->second;
+            return it->second.value();
         else
             error ("'%s' is undefined", name.c_str());
     }
@@ -1177,7 +1222,7 @@ Ref<JSValue> FunctionScope::set(const std::string& name, Ref<JSValue> value)
     if (name == "this" || name == "arguments")
         error("'%s' cannot be written", name.c_str());
     else if (m_params.find(name) != m_params.end())
-        m_params[name] = value;
+        checkedVarWrite(m_params, name, value, false);
     else 
         error ("'%s' is undefined", name.c_str());
 
@@ -1192,7 +1237,7 @@ Ref<JSValue> FunctionScope::set(const std::string& name, Ref<JSValue> value)
  * @param value
  * @return 
  */
-Ref<JSValue> FunctionScope::newVar(const std::string& name, Ref<JSValue> value)
+Ref<JSValue> FunctionScope::newVar(const std::string& name, Ref<JSValue> value, bool isConst)
 {
     ASSERT(!"Variables cannot be created at 'FunctionScope");
 
@@ -1221,10 +1266,10 @@ bool GlobalScope::isDefined(const std::string& name)const
  */
 Ref<JSValue> GlobalScope::get(const std::string& name)const
 {
-    SymbolMap::const_iterator it = m_symbols.find(name);
+    auto it = m_symbols.find(name);
 
     if (it != m_symbols.end())
-        return it->second;
+        return it->second.value();
     else
     {
         error ("'%s' is not defined", name.c_str());
@@ -1245,7 +1290,7 @@ Ref<JSValue> GlobalScope::set(const std::string& name, Ref<JSValue> value)
     if (!isDefined(name))
         error ("'%s' is not defined", name.c_str());
 
-    m_symbols[name] = value;
+    checkedVarWrite(m_symbols, name, value, false);
 
     return value;
 }
@@ -1256,9 +1301,9 @@ Ref<JSValue> GlobalScope::set(const std::string& name, Ref<JSValue> value)
  * @param value
  * @return 
  */
-Ref<JSValue> GlobalScope::newVar(const std::string& name, Ref<JSValue> value)
+Ref<JSValue> GlobalScope::newVar(const std::string& name, Ref<JSValue> value, bool isConst)
 {
-    m_symbols[name] = value;
+    checkedVarWrite(m_symbols, name, value, isConst);
 
     return value;
 }
@@ -1271,9 +1316,8 @@ Ref<JSObject> GlobalScope::toObject()
 {
     auto result = JSObject::create();
     
-    SymbolMap::const_iterator it;
-    for (it = m_symbols.begin(); it != m_symbols.end(); ++it)
-        result->writeField(jsString(it->first), it->second);
+    for (auto it = m_symbols.begin(); it != m_symbols.end(); ++it)
+        result->writeField(jsString(it->first), it->second.value());
     
     return result;
 }

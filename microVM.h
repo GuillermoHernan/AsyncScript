@@ -49,7 +49,6 @@ enum OpCodes8
     OC_PUSH_SCOPE = 14,
     OC_POP_SCOPE = 15,
     
-    //OC_RETURN = 15,   //No return instruction, by the moment
     OC_RD_LOCAL = 16,
     OC_WR_LOCAL = 17,
     OC_RD_GLOBAL = 18,
@@ -57,6 +56,8 @@ enum OpCodes8
     OC_RD_FIELD = 20,
     OC_WR_FIELD = 21,
     OC_NEW_VAR = 22,
+    OC_NEW_CONST = 23,
+    OC_NEW_CONST_FIELD = 24,
     OC_CP_AUX = 32,
     OC_PUSH_AUX = 33,
     OC_NOP = 63,

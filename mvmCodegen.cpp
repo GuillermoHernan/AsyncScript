@@ -162,6 +162,7 @@ void codegen (Ref<AstNode> statement, CodegenState* pState)
         types [AST_SCRIPT] = invalidNodeCodegen;
         types [AST_BLOCK] = blockCodegen;
         types [AST_VAR] = varCodegen;
+        types [AST_CONST] = varCodegen;
         types [AST_IF] = ifCodegen;
         types [AST_FOR] = forCodegen;
         types [AST_RETURN] = returnCodegen;
@@ -281,6 +282,7 @@ void varCodegen (Ref<AstNode> node, CodegenState* pState)
 {
     const string name = node->getName();
     const bool inActor = pState->scopes.back().ownerNode->getType() == AST_ACTOR;
+    const bool isConst = node->getType() == AST_CONST;
 
     if (!inActor)
     {
@@ -290,7 +292,7 @@ void varCodegen (Ref<AstNode> node, CodegenState* pState)
         pushConstant (name, pState);
         if (!childCodegen(node, 0, pState))
             pushUndefined(pState);
-        instruction8 (OC_NEW_VAR, pState);
+        instruction8 (isConst ? OC_NEW_CONST : OC_NEW_VAR, pState);
 
         //Non-expression statements leave an 'undefined' on the stack.
         pushUndefined(pState);
@@ -304,7 +306,7 @@ void varCodegen (Ref<AstNode> node, CodegenState* pState)
         pushConstant (name, pState);
         if (!childCodegen(node, 0, pState))
             pushConstant (jsNull(), pState);
-        instruction8 (OC_WR_FIELD, pState);
+        instruction8 (isConst ? OC_NEW_CONST_FIELD : OC_WR_FIELD, pState);
     }
 }
 
@@ -443,12 +445,12 @@ void functionCodegen (Ref<AstNode> node, CodegenState* pState)
     pushConstant(function, pState);
     if (!fnNode->getName().empty())
     {
-        //If it is a named function, create a variable at current scope.
+        //If it is a named function, create a constant at current scope.
         pushConstant(fnNode->getName(), pState);
         
         //Copy function reference.
         instruction8(OC_CP+1, pState);
-        instruction8(OC_NEW_VAR, pState);
+        instruction8(OC_NEW_CONST, pState);
     }
 }
 
@@ -871,11 +873,11 @@ void actorCodegen (Ref<AstNode> node, CodegenState* pState)
     
     actor->createDefaultEndPoints ();
     
-    //Create a new variable, and yield actor class reference
+    //Create a new constant, and yield actor class reference
     pushConstant(actor, pState);
     pushConstant(node->getName(), pState);
     instruction8(OC_CP+1, pState);
-    instruction8(OC_NEW_VAR, pState);
+    instruction8(OC_NEW_CONST, pState);
 }
 
 /**

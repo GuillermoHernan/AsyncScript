@@ -61,6 +61,7 @@ enum LEX_TYPES
     LEX_R_FUNCTION,
     LEX_R_RETURN,
     LEX_R_VAR,
+    LEX_R_CONST,
     LEX_R_TRUE,
     LEX_R_FALSE,
     LEX_R_NULL,

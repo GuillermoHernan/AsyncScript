@@ -66,6 +66,7 @@ string getTokenStr(int token)
     case LEX_R_FUNCTION: return "function";
     case LEX_R_RETURN: return "return";
     case LEX_R_VAR: return "var";
+    case LEX_R_CONST: return "const";
     case LEX_R_TRUE: return "true";
     case LEX_R_FALSE: return "false";
     case LEX_R_NULL: return "null";
@@ -302,6 +303,7 @@ CScriptToken CScriptToken::parseId(const char * code)const
         keywords["function"] = LEX_R_FUNCTION;
         keywords["return"] = LEX_R_RETURN;
         keywords["var"] = LEX_R_VAR;
+        keywords["const"] = LEX_R_CONST;
         keywords["true"] = LEX_R_TRUE;
         keywords["false"] = LEX_R_FALSE;
         keywords["null"] = LEX_R_NULL;

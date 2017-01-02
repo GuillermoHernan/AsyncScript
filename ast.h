@@ -26,6 +26,7 @@ enum AstNodeTypes
     AST_SCRIPT
     ,AST_BLOCK
     ,AST_VAR
+    ,AST_CONST
     ,AST_IF
     ,AST_FOR
     ,AST_RETURN
@@ -96,8 +97,9 @@ Ref<AstNode> astCreateMemberAccess(ScriptPosition pos,
                                   Ref<AstNode> objExpr, 
                                   Ref<AstNode> identifier);
 Ref<AstNode> astCreateVar (const ScriptPosition& pos, 
-                              const std::string& name, 
-                              Ref<AstNode> expr);
+                           const std::string& name, 
+                           Ref<AstNode> expr,
+                           bool isConst);
 Ref<AstFunction> astCreateInputMessage(ScriptPosition pos, const std::string& name);
 Ref<AstFunction> astCreateOutputMessage(ScriptPosition pos, const std::string& name);
 Ref<AstNode> astCreateConnect(ScriptPosition pos,

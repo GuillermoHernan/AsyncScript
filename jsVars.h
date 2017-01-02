@@ -82,6 +82,7 @@ public:
 
     virtual Ref<JSValue> readField(Ref<JSValue> key)const = 0;
     virtual Ref<JSValue> writeField(Ref<JSValue> key, Ref<JSValue> value) = 0;
+    virtual Ref<JSValue> newConstField(Ref<JSValue> key, Ref<JSValue> value) = 0;
     virtual Ref<JSValue> deleteField(Ref<JSValue> key) = 0;
     virtual std::string getJSON(int indent) = 0;
     
@@ -228,6 +229,11 @@ public:
         return undefined();
     }
     
+    virtual Ref<JSValue> newConstField(Ref<JSValue> key, Ref<JSValue> value)
+    {
+        return undefined();
+    }
+    
     virtual Ref<JSValue> deleteField(Ref<JSValue> key)
     {
         return undefined();
@@ -275,7 +281,7 @@ struct IScope : public RefCountObj
     virtual bool isDefined(const std::string& name)const = 0;
     virtual Ref<JSValue> get(const std::string& name)const = 0;
     virtual Ref<JSValue> set(const std::string& name, Ref<JSValue> value) = 0;
-    virtual Ref<JSValue> newVar(const std::string& name, Ref<JSValue> value) = 0;
+    virtual Ref<JSValue> newVar(const std::string& name, Ref<JSValue> value, bool isConst) = 0;
     virtual bool isBlockScope()const = 0;
     
 protected:
@@ -365,6 +371,42 @@ private:
 };
 
 /**
+ * Stores a variable properties
+ */
+class VarProperties
+{
+public:
+    Ref<JSValue> value()const
+    {
+        return m_value;
+    }
+    
+    bool isConst()const
+    {
+        return m_isConst;
+    }
+    
+    VarProperties (Ref<JSValue> value, bool isConst) 
+    : m_value(value), m_isConst(isConst)
+    {        
+    }
+    
+    VarProperties () 
+    : m_value(undefined()), m_isConst(false)
+    {        
+    }
+    
+private:
+    Ref<JSValue>    m_value;
+    bool            m_isConst;
+};
+
+typedef std::map<std::string, VarProperties> VarMap;
+
+void checkedVarWrite (VarMap& map, const std::string& name, Ref<JSValue> value, bool isConst);
+
+
+/**
  * Javascript object class
  */
 class JSObject : public JSValue
@@ -397,6 +439,8 @@ public:
     void setFrozen();
     
     std::vector <Ref<JSValue> >   getKeys()const;
+    
+    bool isWritable(const std::string& key)const;
 
     // JSValue
     /////////////////////////////////////////
@@ -418,6 +462,7 @@ public:
 
     virtual Ref<JSValue> readField(Ref<JSValue> key)const;
     virtual Ref<JSValue> writeField(Ref<JSValue> key, Ref<JSValue> value);
+    virtual Ref<JSValue> newConstField(Ref<JSValue> key, Ref<JSValue> value);
     virtual Ref<JSValue> deleteField(Ref<JSValue> key);
 
     virtual std::string getJSON(int indent);
@@ -459,9 +504,7 @@ protected:
     static std::string      key2Str(Ref<JSValue> key);
 
 private:
-    typedef std::map <std::string, Ref<JSValue> > MembersMap;
-
-    MembersMap      m_members;
+    VarMap          m_members;
     Ref<JSObject>   m_prototype;
     JSMutability    m_mutability;
     
@@ -682,7 +725,7 @@ public:
     virtual bool isDefined(const std::string& name)const;
     virtual Ref<JSValue> get(const std::string& name)const;
     virtual Ref<JSValue> set(const std::string& name, Ref<JSValue> value);
-    virtual Ref<JSValue> newVar(const std::string& name, Ref<JSValue> value);
+    virtual Ref<JSValue> newVar(const std::string& name, Ref<JSValue> value, bool isConst);
     virtual bool isBlockScope()const
     {
         return true;
@@ -693,8 +736,7 @@ private:
     
     Ref<IScope> m_pParent;
 
-    typedef std::map<std::string, Ref<JSValue> > SymbolMap;
-    SymbolMap   m_symbols;
+    VarMap  m_symbols;
 };
 
 /**
@@ -729,7 +771,7 @@ public:
     virtual bool isDefined(const std::string& name)const;
     virtual Ref<JSValue> get(const std::string& name)const;
     virtual Ref<JSValue> set(const std::string& name, Ref<JSValue> value);
-    virtual Ref<JSValue> newVar(const std::string& name, Ref<JSValue> value);
+    virtual Ref<JSValue> newVar(const std::string& name, Ref<JSValue> value, bool isConst);
     virtual bool isBlockScope()const
     {
         return false;
@@ -747,14 +789,12 @@ public:
     }
 
 private:
-    typedef std::map <std::string, Ref<JSValue> > SymbolsMap;
-
-    SymbolsMap m_params;
-    SymbolsMap m_locals;
-    Ref<JSValue> m_function;
-    Ref<JSArray> m_arguments;
-    Ref<JSValue> m_this;
-    Ref<IScope> m_globals;
+    VarMap          m_params;
+    //VarMap          m_locals;
+    Ref<JSValue>    m_function;
+    Ref<JSArray>    m_arguments;
+    Ref<JSValue>    m_this;
+    Ref<IScope>     m_globals;
     
     FunctionScope(Ref<IScope> globals, Ref<JSValue> targetFn);
 };
@@ -777,7 +817,7 @@ public:
     virtual bool isDefined(const std::string& name)const;
     virtual Ref<JSValue> get(const std::string& name)const;
     virtual Ref<JSValue> set(const std::string& name, Ref<JSValue> value);
-    virtual Ref<JSValue> newVar(const std::string& name, Ref<JSValue> value);
+    virtual Ref<JSValue> newVar(const std::string& name, Ref<JSValue> value, bool isConst);
     virtual bool isBlockScope()const
     {
         return false;
@@ -791,7 +831,6 @@ private:
     {        
     }
 
-    typedef std::map<std::string, Ref<JSValue> > SymbolMap;
-    SymbolMap   m_symbols;
+    VarMap  m_symbols;
 };
 

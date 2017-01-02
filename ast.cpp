@@ -188,10 +188,11 @@ Ref<AstNode> astCreateMemberAccess(ScriptPosition pos,
 }
 
 Ref<AstNode> astCreateVar (const ScriptPosition& pos, 
-                              const std::string& name, 
-                              Ref<AstNode> expr)
+                           const std::string& name, 
+                           Ref<AstNode> expr,
+                           bool isConst)
 {
-    auto result = refFromNew (new AstNamedBranch(AST_VAR, pos, name));
+    auto result = refFromNew (new AstNamedBranch(isConst ? AST_CONST : AST_VAR, pos, name));
     
     result->addChild(expr);
     return result;
@@ -415,6 +416,7 @@ std::string astTypeToString(AstNodeTypes type)
         types[AST_SCRIPT] = "AST_SCRIPT";
         types[AST_BLOCK] = "AST_BLOCK";
         types[AST_VAR] = "AST_VAR";
+        types[AST_CONST] = "AST_CONST";
         types[AST_IF] = "AST_IF";
         types[AST_FOR] = "AST_FOR";
         types[AST_RETURN] = "AST_RETURN";

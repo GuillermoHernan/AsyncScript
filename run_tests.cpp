@@ -201,7 +201,7 @@ bool run_test(const std::string& szFile, const string &testDir, const string& re
 
     auto globals = createDefaultGlobals();
     
-    globals->newVar("result", jsInt(0));
+    globals->newVar("result", jsInt(0), false);
     addNative("function assert(value, text)", assertFunction, globals);
     addNative("function printLn(text)", printLn, globals);
     addNative("function expectError(code)", expectError, globals);

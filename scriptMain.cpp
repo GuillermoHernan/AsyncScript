@@ -99,7 +99,7 @@ Ref<JSFunction> addNative (const std::string& szFunctionHeader,
         if (!child->isObject())
         {
             child = JSObject::create( JSObject::DefaultPrototype );
-            scope->newVar(funcName, child);
+            scope->newVar(funcName, child, true);
         }
         container = child.staticCast<JSObject>();
 
@@ -133,7 +133,7 @@ Ref<JSFunction> addNative (const std::string& szFunctionHeader,
     if (container.notNull())
         container->writeFieldStr(funcName, function);
     else
-        scope->newVar(funcName, function);
+        scope->newVar(funcName, function, true);
     
     return function;
 }
@@ -179,7 +179,7 @@ Ref<JSFunction> addNative0 (const std::string& szName,
 {
     Ref<JSFunction> function = JSFunction::createNative(szName, pFn);
 
-    scope->newVar(szName, function);
+    scope->newVar(szName, function, true);
     
     return function;
     
@@ -201,7 +201,7 @@ Ref<JSFunction> addNative1 (const std::string& szName,
     Ref<JSFunction> function = JSFunction::createNative(szName, pFn);
 
     function->addParam(p1);
-    scope->newVar(szName, function);
+    scope->newVar(szName, function, true);
     
     return function;
 }
@@ -226,7 +226,7 @@ Ref<JSFunction> addNative2 (const std::string& szName,
 
     function->addParam(p1);
     function->addParam(p2);
-    scope->newVar(szName, function);
+    scope->newVar(szName, function, true);
     
     return function;
 }

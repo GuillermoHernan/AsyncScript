@@ -85,7 +85,7 @@ Ref<JSValue> asBlockingExec (Ref<MvmRoutine> code, Ref<GlobalScope> globals)
     auto    rootActor = RoutineActor::create (code, globals, Ref<AsActorRef>());
     auto    runtime = ActorRuntime::create(rootActor);
     
-    globals->newVar("@actorRT", runtime);
+    globals->newVar("@actorRT", runtime, true);
     addNative1("@connect", "src", connectOperator, globals);
     
     execMessageLoop (runtime);
@@ -376,7 +376,8 @@ bool ActorRuntime::dispatchMessage()
             auto endPoint = msg.destination->getEndPoint();
             auto scope = FunctionScope::create(globals, endPoint);
 
-            globals->newVar("@curActor", actorRef);
+            //TODO: Global scope sharing. Next line should be replaced.
+            globals->newVar("@curActor", actorRef, false);
             scope->setThis(actor);
             
             for (size_t i = 0; i < msg.params->length(); ++i)

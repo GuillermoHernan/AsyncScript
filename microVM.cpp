@@ -92,6 +92,8 @@ void execWrGlobal (const int opCode, ExecutionContext* ec);
 void execRdField (const int opCode, ExecutionContext* ec);
 void execWrField (const int opCode, ExecutionContext* ec);
 void execNewVar (const int opCode, ExecutionContext* ec);
+void execNewConst (const int opCode, ExecutionContext* ec);
+void execNewConstField (const int opCode, ExecutionContext* ec);
 void execNop (const int opCode, ExecutionContext* ec);
 void execCpAux (const int opCode, ExecutionContext* ec);
 void execPushAux (const int opCode, ExecutionContext* ec);
@@ -112,10 +114,10 @@ static const OpFunction s_instructions[64] =
     
     //16
     execRdLocal,    execWrLocal,    execRdGlobal,   execWrGlobal,
-    execRdField,    execWrField,    execNewVar,     invalidOp,
+    execRdField,    execWrField,    execNewVar,     execNewConst,
     
     //24
-    invalidOp,      invalidOp,      invalidOp,      invalidOp,
+    execNewConstField, invalidOp,   invalidOp,      invalidOp,
     invalidOp,      invalidOp,      invalidOp,      invalidOp,
     
     //32
@@ -641,19 +643,51 @@ void execWrField (const int opCode, ExecutionContext* ec)
 }
 
 /**
- * Exec
+ * Variable creation instruction
  * @param opCode
  * @param ec
  */
 void execNewVar (const int opCode, ExecutionContext* ec)
 {
     if (ec->scopes.empty())
-        error("Empty scope stack executing 'NEW VAR'");
+        error("Empty scope stack executing 'NEW_VAR'");
 
     const auto  val = ec->pop();
     const auto  name = ec->pop();
     
-    ec->scopes.back()->newVar (name->toString(), val);
+    ec->scopes.back()->newVar (name->toString(), val, false);
+}
+
+/**
+ * Constant creation instruction
+ * @param opCode
+ * @param ec
+ */
+void execNewConst (const int opCode, ExecutionContext* ec)
+{
+    if (ec->scopes.empty())
+        error("Empty scope stack executing 'NEW_CONST'");
+
+    const auto  val = ec->pop();
+    const auto  name = ec->pop();
+    
+    ec->scopes.back()->newVar (name->toString(), val, true);
+}
+
+
+/**
+ * Creates a new constant field in an object. Very similar to 'WR_FIELD', but the
+ * written field won't be modifiable.
+ * @param opCode
+ * @param ec
+ */
+void execNewConstField (const int opCode, ExecutionContext* ec)
+{
+    const Ref<JSValue>  val = ec->pop();
+    const Ref<JSValue>  name = ec->pop();
+    const Ref<JSValue>  objVal = ec->pop();
+    
+    objVal->newConstField (name, val);
 }
 
 /**

@@ -117,14 +117,16 @@ string disassembly8bitInst (int opCode, const ValueVector& constants)
         case OC_POP_SCOPE:  return "POP_SCOPE";
         case OC_RD_LOCAL:   return "RD_LOCAL";
         case OC_WR_LOCAL:   return "WR_LOCAL";
-        case OC_RD_GLOBAL:   return "RD_GLOBAL";
-        case OC_WR_GLOBAL:   return "WR_GLOBAL";
-        case OC_RD_FIELD:   return "RD_FIELD";
-        case OC_WR_FIELD:   return "WR_FIELD";
-        case OC_NEW_VAR:   return "NEW_VAR";
-        case OC_CP_AUX:     return "CP_AUX";
-        case OC_PUSH_AUX:   return "PUSH_AUX";
-        case OC_NOP:        return "NOP";
+        case OC_RD_GLOBAL:      return "RD_GLOBAL";
+        case OC_WR_GLOBAL:      return "WR_GLOBAL";
+        case OC_RD_FIELD:       return "RD_FIELD";
+        case OC_WR_FIELD:       return "WR_FIELD";
+        case OC_NEW_VAR:        return "NEW_VAR";
+        case OC_NEW_CONST:      return "NEW_CONST";
+        case OC_NEW_CONST_FIELD:return "NEW_CONST_FIELD";
+        case OC_CP_AUX:         return "CP_AUX";
+        case OC_PUSH_AUX:       return "PUSH_AUX";
+        case OC_NOP:            return "NOP";
         default:
             return "BAD_OP_CODE_8";
         }

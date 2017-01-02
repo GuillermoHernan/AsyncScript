@@ -147,7 +147,9 @@ ParseResult parseStatement (CScriptToken token)
             return parseBlock(token).toParseResult();
     }
     case ';':           return ParseResult (token.next(), emptyStatement(token.getPosition()));
-    case LEX_R_VAR:     return parseVar (token).toParseResult();
+    case LEX_R_VAR:
+    case LEX_R_CONST:
+        return parseVar (token).toParseResult();
     case LEX_R_IF:      return parseIf (token);
     case LEX_R_WHILE:   return parseWhile (token);
     case LEX_R_FOR:     return parseFor (token);
@@ -183,7 +185,9 @@ ParseResult parseSimpleStatement (CScriptToken token)
         ExprResult r = parseExpression (token);
         return r.toParseResult();
     }
-    case LEX_R_VAR:     return parseVar (token).toParseResult();
+    case LEX_R_VAR:
+    case LEX_R_CONST:
+        return parseVar (token).toParseResult();
     default:
         errorAt(token.getPosition(), "Unexpected token: '%s'", token.text().c_str());
         return ParseResult (token.next(), emptyStatement(token.getPosition()));
@@ -262,8 +266,16 @@ ExprResult parseVar (CScriptToken token)
 {
     ScriptPosition  pos = token.getPosition();
     ExprResult      r(token);
+    bool            isConst = false;
     
-    r = r.require(LEX_R_VAR);
+    if (r.token.type() == LEX_R_CONST)
+    {
+        isConst = true;
+        r = r.skip();
+    }
+    else
+        r = r.require(LEX_R_VAR);
+    
     if (!r.ok())
         return r.final();    
     
@@ -282,7 +294,7 @@ ExprResult parseVar (CScriptToken token)
     }
     
     if (r.ok())
-        r.result = astCreateVar (pos, name, initExp);
+        r.result = astCreateVar (pos, name, initExp, isConst);
     
     return r;
 }
@@ -1210,7 +1222,9 @@ ExprResult parseActorMember (CScriptToken token)
 {
     switch (token.type())
     {
-    case LEX_R_VAR:     return parseVar(token);
+    case LEX_R_VAR:
+    case LEX_R_CONST:
+        return parseVar(token);
     case LEX_R_INPUT:   return parseInputMessage(token);
     case LEX_R_OUTPUT:  return parseOutputMessage(token);
     default:            return parseConnectExpr(token);
