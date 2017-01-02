@@ -24,13 +24,11 @@ actor EchoTest()
     input result(text)
     {
         assert (text == "Echo: first actor test!", "Matching message text");
-        
-        //TODO: This should not write to the global scope. At some point, it shall 
-        //use anopther mechanism to detect success / failure.
-        result = true;
     }
 }
 
 var a = EchoTest();
 
 a.begin();
+
+result = true;
