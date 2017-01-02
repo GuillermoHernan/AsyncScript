@@ -198,6 +198,7 @@ bool run_test(const std::string& szFile, const string &testDir, const string& re
     const string relPath = szFile.substr (testDir.size());
     const string testName = removeExt( fileFromPath(relPath));
     string testResultsDir = resultsDir + removeExt(relPath) + '/';
+    bool pass = false;
 
     auto globals = createDefaultGlobals();
     
@@ -244,16 +245,23 @@ bool run_test(const std::string& szFile, const string &testDir, const string& re
         //Execution
         //mvmExecute(code, globals);
         asBlockingExec(code, globals);
+
+        auto result = globals->get("result");
+        if (result->toString() != "exception")
+            pass = result->toBoolean();
+        else
+            printf ("No exception thrown\n");
     }
     catch (const CScriptException &e)
     {
-        printf("ERROR: %s\n", e.what());
+        if (globals->get("result")->toString() == "exception")
+            pass = true;
+        else
+            printf("ERROR: %s\n", e.what());
     }
 
     //Write globals
     writeTextFile(testResultsDir + testName + ".globals.json", globals->toObject()->getJSON(0));
-
-    bool pass = null2undef( globals->get("result") )->toBoolean();
 
     if (pass)
         printf("PASS\n");
