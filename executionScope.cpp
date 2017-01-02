@@ -225,13 +225,29 @@ Ref<JSValue> FunctionScope::newVar(const std::string& name, Ref<JSValue> value, 
 //////////////////////////////////////////////////
 
 /**
+ * Default constructor.
+ */
+GlobalScope::GlobalScope() : m_shared (refFromNew(new SharedVars)), m_sharing(false)
+{
+}
+
+/**
+ * Constructor used in 'share' operation
+ * @param shared
+ */
+GlobalScope::GlobalScope(Ref<SharedVars> shared) : m_shared (shared), m_sharing(true)
+{
+}
+
+/**
  * Checks if a symbol is defined at current scope.
  * @param name
  * @return 
  */
 bool GlobalScope::isDefined(const std::string& name)const
 {
-    return m_symbols.find(name) != m_symbols.end();
+    return m_notShared.find(name) != m_notShared.end() || 
+            m_shared->vars.find(name) != m_shared->vars.end();
 }
 
 /**
@@ -242,14 +258,20 @@ bool GlobalScope::isDefined(const std::string& name)const
  */
 Ref<JSValue> GlobalScope::get(const std::string& name)const
 {
-    auto it = m_symbols.find(name);
+    auto it = m_notShared.find(name);
 
-    if (it != m_symbols.end())
+    if (it != m_notShared.end())
         return it->second.value();
     else
     {
-        error ("'%s' is not defined", name.c_str());
-        return undefined();
+        it = m_shared->vars.find(name);
+        if (it != m_shared->vars.end())
+            return it->second.value();
+        else
+        {
+            error ("'%s' is not defined", name.c_str());
+            return undefined();
+        }
     }
 }
 
@@ -263,11 +285,29 @@ Ref<JSValue> GlobalScope::get(const std::string& name)const
  */
 Ref<JSValue> GlobalScope::set(const std::string& name, Ref<JSValue> value)
 {
-    if (!isDefined(name))
-        error ("'%s' is not defined", name.c_str());
+    deleteVar(name);
 
-    checkedVarWrite(m_symbols, name, value, false);
+    return newVar(name, value, false);
+}
 
+/**
+ * Deletes a variable from global scope.
+ * @param name
+ * @return 
+ */
+Ref<JSValue> GlobalScope::deleteVar(const std::string& name)
+{
+    auto            it = m_shared->vars.find(name);
+    Ref<JSValue>    value;
+    
+    if (it != m_shared->vars.end())
+    {
+        copyOnWrite();
+        value = checkedVarDelete(m_shared->vars, name);
+    }
+    else 
+        value = checkedVarDelete(m_shared->vars, name);
+    
     return value;
 }
 
@@ -275,13 +315,36 @@ Ref<JSValue> GlobalScope::set(const std::string& name, Ref<JSValue> value)
  * Creates a new variable at global scope.
  * @param name
  * @param value
+ * @param isConst
  * @return 
  */
 Ref<JSValue> GlobalScope::newVar(const std::string& name, Ref<JSValue> value, bool isConst)
 {
-    checkedVarWrite(m_symbols, name, value, isConst);
+    if (isDefined(name))
+        deleteVar (name);
+    
+    if (value->getMutability() == MT_DEEPFROZEN)
+    {
+        copyOnWrite();
+        checkedVarWrite(m_shared->vars, name, value, isConst);
+    }
+    else
+        checkedVarWrite(m_notShared, name, value, isConst);
 
     return value;
+}
+
+/**
+ * Creates a new variable at global scope, which cannot be shared when sharing
+ * global scope with other actors.
+ * @param name
+ * @param value
+ * @param isConst
+ * @return 
+ */
+void GlobalScope::newNotSharedVar(const std::string& name, Ref<JSValue> value, bool isConst)
+{
+    checkedVarWrite(m_notShared, name, value, isConst);
 }
 
 /**
@@ -292,8 +355,42 @@ Ref<JSObject> GlobalScope::toObject()
 {
     auto result = JSObject::create();
     
-    for (auto it = m_symbols.begin(); it != m_symbols.end(); ++it)
+    for (auto it = m_notShared.begin(); it != m_notShared.end(); ++it)
+        result->writeField(jsString(it->first), it->second.value());
+    
+    for (auto it = m_shared->vars.begin(); it != m_shared->vars.end(); ++it)
         result->writeField(jsString(it->first), it->second.value());
     
     return result;
+}
+
+/**
+ * Creates a new global scope which shares 'deep-frozen' objects with this
+ * scope. 
+ * 
+ * It only shares objects created prior to the call to 'share'
+ * 
+ * @return 
+ */
+Ref<GlobalScope> GlobalScope::share()
+{
+    auto newScope = new GlobalScope(this->m_shared);
+    
+    this->m_sharing = true;
+    return refFromNew(newScope);
+}
+
+/**
+ * Makes a copy of the shareable variables if they are being shared, because
+ * shareable variable set is going to be modified.
+ */
+void GlobalScope::copyOnWrite()
+{
+    if (m_sharing)
+    {
+        auto copy = refFromNew(new SharedVars);
+        copy->vars = m_shared->vars;
+        m_shared = copy;
+        m_sharing = false;
+    }
 }

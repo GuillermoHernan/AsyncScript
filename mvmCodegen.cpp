@@ -876,7 +876,7 @@ void actorCodegen (Ref<AstNode> node, CodegenState* pState)
     actor->createDefaultEndPoints ();
     
     //Create a new constant, and yield actor class reference
-    pushConstant(actor, pState);
+    pushConstant( deepFreeze(actor), pState);
     pushConstant(node->getName(), pState);
     instruction8(OC_CP+1, pState);
     instruction8(OC_NEW_CONST, pState);

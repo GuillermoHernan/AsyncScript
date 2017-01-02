@@ -59,6 +59,10 @@ public:
     static Ref<JSValue> routineActorExec (FunctionScope* pScope)
     {
         auto actor = pScope->getThis().staticCast<RoutineActor>();
+        auto actorRef = AsActorRef::create(actor);
+        auto globals = pScope->getGlobals().staticCast<GlobalScope>();
+        
+        globals->newNotSharedVar("@curActor", actorRef, true);
         
         return mvmExecute(actor->m_code, pScope->getGlobals(), Ref<IScope>(), asCallHook);
     }
@@ -222,13 +226,18 @@ Ref<JSValue> outputEpCall(Ref<AsEndPointRef> endPoint, Ref<FunctionScope> scope)
  */
 Ref<JSValue> actorConstructor(Ref<AsActorClass> actorClass, Ref<FunctionScope> scope)
 {
-    auto globals = scope->getGlobals().staticCast<GlobalScope>();
+    auto curGlobals = scope->getGlobals().staticCast<GlobalScope>();
+    auto newGlobals = curGlobals->share();
     auto runtime = ActorRuntime::getRuntime(scope.getPointer());
-    auto curActor = globals->get("@curActor").staticCast<AsActorRef>();
-    auto newActor = AsActor::create(actorClass, globals, curActor);
+    auto curActor = curGlobals->get("@curActor").staticCast<AsActorRef>();
+    auto newActor = AsActor::create(actorClass, newGlobals, curActor);
+    auto actorRef = AsActorRef::create(newActor);
     auto constructor = actorClass->getConstructor();
     auto params = constructor->getParams();
     auto msgParams = JSArray::create();
+    
+    //Set the new current actor at the new global scope.
+    newGlobals->newNotSharedVar("@curActor", actorRef, true);
     
     //Parameters become actor fields, and parameters for 'start' message
     for (size_t i=0; i<params.size(); ++i)
@@ -237,8 +246,6 @@ Ref<JSValue> actorConstructor(Ref<AsActorClass> actorClass, Ref<FunctionScope> s
         newActor->writeFieldStr(params[i], value);
         msgParams->push(value);
     }
-    
-    auto actorRef = AsActorRef::create(newActor);
     
     //Send start message
     runtime->sendMessage(actorRef, "@start", msgParams);
@@ -274,6 +281,8 @@ Ref<ActorRuntime> ActorRuntime::create(Ref<AsActorRef> rootActor)
 {
     auto result = refFromNew(new ActorRuntime(rootActor));
     
+//    result = deepFreeze(result).staticCast<ActorRuntime>();
+//    
     result->sendMessage0 (rootActor, "@start");    
     
     return result;
@@ -439,8 +448,6 @@ bool ActorRuntime::dispatchMessage()
             auto endPoint = msg.destination->getEndPoint();
             auto scope = FunctionScope::create(globals, endPoint);
 
-            //TODO: Global scope sharing. Next line should be replaced.
-            globals->newVar("@curActor", actorRef, false);
             scope->setThis(actor);
             
             for (size_t i = 0; i < msg.params->length(); ++i)

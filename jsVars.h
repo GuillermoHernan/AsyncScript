@@ -176,6 +176,7 @@ bool isUint (Ref<JSValue> a);
 
 typedef std::map< Ref<JSValue>, Ref<JSValue> >  JSValuesMap;
 Ref<JSValue>    deepFreeze(Ref<JSValue> obj, JSValuesMap& transformed);
+Ref<JSValue>    deepFreeze(Ref<JSValue> obj);
 
 
 //////////////////////////////////////////
@@ -382,6 +383,7 @@ private:
 typedef std::map<std::string, VarProperties> VarMap;
 
 void checkedVarWrite (VarMap& map, const std::string& name, Ref<JSValue> value, bool isConst);
+Ref<JSValue> checkedVarDelete (VarMap& map, const std::string& name);
 
 
 /**

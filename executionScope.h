@@ -142,20 +142,38 @@ public:
     virtual Ref<JSValue> get(const std::string& name)const;
     virtual Ref<JSValue> set(const std::string& name, Ref<JSValue> value);
     virtual Ref<JSValue> newVar(const std::string& name, Ref<JSValue> value, bool isConst);
+    virtual Ref<JSValue> deleteVar(const std::string& name);
     virtual bool isBlockScope()const
     {
         return false;
     }
     /////////////////////////////////
     
-    Ref<JSObject>   toObject();
+    Ref<JSObject>       toObject();
+    
+    Ref<GlobalScope>    share();
+
+    void newNotSharedVar(const std::string& name, Ref<JSValue> value, bool isConst);
     
 private:
-    GlobalScope()
-    {        
-    }
+    /**
+     * Envelope class to share objects between globals scopes. It is just
+     * a reference-counted envelope over a variables map.
+     * Only 'deep-frozen' objects stored at global scope are shareable.
+     */
+    struct SharedVars : public RefCountObj
+    {
+        VarMap  vars;
+    };
+    
+    GlobalScope();
+    GlobalScope(Ref<SharedVars> shared);
+    
+    void copyOnWrite();
 
-    VarMap  m_symbols;
+    Ref<SharedVars>     m_shared;
+    VarMap              m_notShared;
+    bool                m_sharing;
 };
 
 

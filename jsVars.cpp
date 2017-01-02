@@ -365,6 +365,12 @@ Ref<JSValue> deepFreeze(Ref<JSValue> obj, JSValuesMap& transformed)
     
     return newObject;
 }
+Ref<JSValue> deepFreeze(Ref<JSValue> obj)
+{
+    JSValuesMap     transformed;
+    return deepFreeze(obj, transformed);
+}
+
 
 /**
  * Writes to a variable in a variable map. If the variable already exist, and
@@ -383,6 +389,32 @@ void checkedVarWrite (VarMap& map, const std::string& name, Ref<JSValue> value, 
     
     map[name] = VarProperties(value, isConst);        
 }
+
+/**
+ * Deletes a variable form a variable map. Throws exceptions if the variable 
+ * does not exist or if it is a constant.
+ * @param map
+ * @param name
+ * @return 
+ */
+Ref<JSValue> checkedVarDelete (VarMap& map, const std::string& name)
+{
+    auto            it = map.find(name);
+    Ref<JSValue>    value;
+
+    if (it == map.end())
+        error ("'%s' is not defined", name.c_str());
+    else if (it->second.isConst())
+        error ("Trying to delete constant '%s'", name.c_str());
+    else
+    {
+        value = it->second.value();
+        map.erase(it);
+    }
+    
+    return value;
+}
+
 
 // JSNumber
 //
@@ -977,7 +1009,10 @@ Ref<JSFunction> JSFunction::createJS(const std::string& name)
  */
 Ref<JSFunction> JSFunction::createNative(const std::string& name, JSNativeFn fnPtr)
 {
-    return refFromNew(new JSFunction(name, fnPtr));
+    auto result = refFromNew(new JSFunction(name, fnPtr));
+    
+    //Native functions are frozen by default.
+    return deepFreeze(result).staticCast<JSFunction>();
 }
 
 

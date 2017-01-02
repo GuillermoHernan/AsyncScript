@@ -82,7 +82,7 @@ private:
     typedef std::deque<SMessage> MessageQueue;
 
     ActorRuntime(Ref<AsActorRef> rootActor)
-    : JSObject(JSObject::DefaultPrototype, MT_MUTABLE)
+    : JSObject(JSObject::DefaultPrototype, MT_DEEPFROZEN)
     , m_rootActor(rootActor)
     {
     }
