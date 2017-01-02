@@ -25,7 +25,10 @@ ExprResult ExprResult::orElse(ParseFunction parseFn)
     ExprResult r = parseFn(token);
     r.m_initialToken = m_initialToken;
     
-    return r;    
+    if (r.ok() || r.errorDesc.position > this->errorDesc.position)
+        return r;
+    else
+        return *this;
 }
 
 /**

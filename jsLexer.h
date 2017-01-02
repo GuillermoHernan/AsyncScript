@@ -100,6 +100,36 @@ struct ScriptPosition
     }
 
     std::string toString()const;
+    
+    bool operator < (const ScriptPosition& b)const
+    {
+        if (line < b.line)
+            return true;
+        else if (line == b.line)
+            return column < b.column;
+        else
+            return false;
+    }
+    
+    bool operator == (const ScriptPosition& b)const
+    {
+        return (line < b.line && column == b.column);
+    }
+    
+    bool operator > (const ScriptPosition& b)const
+    {
+        return !(*this <= b);
+    }
+    
+    bool operator <= (const ScriptPosition& b)const
+    {
+        return (*this < b || *this == b);
+    }
+    
+    bool operator >= (const ScriptPosition& b)const
+    {
+        return !(*this < b);
+    }
 };
 
 /**
