@@ -402,6 +402,7 @@ public:
     {
         std::string     name;
         Ref<AstNode>    expr;
+        bool            isConst;
     };
     typedef std::vector<Property>   PropertyList;
     
@@ -410,11 +411,12 @@ public:
         return refFromNew (new AstObject(pos));
     }
     
-    void addProperty (const std::string name, Ref<AstNode> expr)
+    void addProperty (const std::string name, Ref<AstNode> expr, bool isConst)
     {
         Property prop;
         prop.name = name;
         prop.expr = expr;
+        prop.isConst = isConst;
         
         m_properties.push_back(prop);
     }

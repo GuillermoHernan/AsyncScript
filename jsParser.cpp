@@ -1045,30 +1045,37 @@ ExprResult parseMemberAccess (CScriptToken token, Ref<AstNode> arrayExpr)
  */
 ExprResult parseObjectProperty (CScriptToken token, Ref<AstNode> objExpr)
 {
-    string name;
+    string      name;
     ExprResult  r(token);
+    bool        isConst = false;
     
-    switch (token.type())
+    if (token.type() == LEX_R_CONST)
+    {
+        isConst = true;
+        r = r.skip();
+    }
+    
+    switch (r.token.type())
     {
     case LEX_INT:
     case LEX_FLOAT:
     case LEX_ID:
-        name = token.text();
+        name = r.token.text();
         break;
         
     case LEX_STR:
-        name = token.strValue();
+        name = r.token.strValue();
         break;
         
     default:
-        return r.getError("Invalid object property name: %s", token.text().c_str()).final();
+        return r.getError("Invalid object property name: %s", r.token.text().c_str()).final();
     }//switch
     
     r = r.skip().require(':').then(parseAssignment);
     
     if (r.ok())
     {
-        objExpr.staticCast<AstObject>()->addProperty (name, r.result);
+        objExpr.staticCast<AstObject>()->addProperty (name, r.result, isConst);
         r.result = objExpr;
     }
     

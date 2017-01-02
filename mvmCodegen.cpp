@@ -679,7 +679,9 @@ void objectCodegen (Ref<AstNode> statement, CodegenState* pState)
         instruction8(OC_CP, pState);        //Copy object reference
         pushConstant(it->name, pState);    //Property name
         codegen(it->expr, pState);        //Value expression
-        instruction8(OC_WR_FIELD, pState);
+        
+        const int opCode = it->isConst ? OC_NEW_CONST_FIELD : OC_WR_FIELD;
+        instruction8(opCode, pState);
     }
     
     //After the loop, the object reference is on the top of the stack
