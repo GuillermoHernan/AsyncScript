@@ -49,6 +49,8 @@ void AsActorClass::createDefaultEndPoints ()
         auto endPoint = AsEndPoint::create(childStopped, true);
         
         endPoint->addParam("child");
+        endPoint->addParam("result");
+        endPoint->addParam("error");
         endPoint->setNativePtr(actorChildStoppedDefaultHandler);
         this->writeFieldStr(childStopped, endPoint);
     }
@@ -85,6 +87,19 @@ Ref<AsEndPointRef> AsActorRef::getEndPoint (const std::string& name)const
     else
         return AsEndPointRef::create(ep, Ref<AsActorRef>(const_cast<AsActorRef*>(this)));
 }
+
+/**
+ * Stops an actor execution
+ * @param result
+ * @param error
+ */
+void AsActor::stop(Ref<JSValue> result, Ref<JSValue> error)
+{
+    m_result = result;
+    m_error = error;
+    m_finished = true;
+}
+
 
 Ref<JSObject> AsActor::clone (bool _mutable)
 {

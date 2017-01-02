@@ -90,6 +90,11 @@ Ref<JSValue> asBlockingExec (Ref<MvmRoutine> code, Ref<GlobalScope> globals)
     
     execMessageLoop (runtime);
     
+    auto errVal = rootActor->getError();
+    
+    if (!errVal->isNull())
+        throw CScriptException(errVal->toString());
+    
     return rootActor->getResult();
 }
 
@@ -111,11 +116,7 @@ void execMessageLoop (Ref<ActorRuntime> runtime)
  */
 Ref<JSValue> connectOperator (FunctionScope* pScope)
 {
-    auto runtime = pScope->getGlobals()->get("@actorRT");
-    
-    if (!runtime->isObject())
-        error ("Missing actor runtime");
-    
+    auto runtime = ActorRuntime::getRuntime(pScope);
     auto src = pScope->getParam("src");
     auto dst = pScope->getThis();
     
@@ -186,7 +187,7 @@ Ref<JSValue> asCallHook( Ref<JSValue> function,
 Ref<JSValue> inputEpCall(Ref<AsEndPointRef> endPoint, Ref<FunctionScope> scope)
 {
     auto globals = scope->getGlobals().staticCast<GlobalScope>();
-    auto runtime = globals->get("@actorRT").staticCast<ActorRuntime>();
+    auto runtime = ActorRuntime::getRuntime(scope.getPointer());
     auto params = scope->get("arguments").staticCast<JSArray>();
     
     runtime->sendMessage (endPoint, params);
@@ -222,7 +223,7 @@ Ref<JSValue> outputEpCall(Ref<AsEndPointRef> endPoint, Ref<FunctionScope> scope)
 Ref<JSValue> actorConstructor(Ref<AsActorClass> actorClass, Ref<FunctionScope> scope)
 {
     auto globals = scope->getGlobals().staticCast<GlobalScope>();
-    auto runtime = globals->get("@actorRT").staticCast<ActorRuntime>();
+    auto runtime = ActorRuntime::getRuntime(scope.getPointer());
     auto curActor = globals->get("@curActor").staticCast<AsActorRef>();
     auto newActor = AsActor::create(actorClass, globals, curActor);
     auto constructor = actorClass->getConstructor();
@@ -253,8 +254,14 @@ Ref<JSValue> actorConstructor(Ref<AsActorClass> actorClass, Ref<FunctionScope> s
 Ref<JSValue> actorChildStoppedDefaultHandler(FunctionScope* pScope)
 {
     auto actor = pScope->getThis().staticCast<AsActor>();
+    auto actorRef = AsActorRef::create(actor);
+    auto runtime = ActorRuntime::getRuntime(pScope);
     
-    actor->stop(jsNull());
+    auto result = pScope->getParam("result");
+    auto errVal = pScope->getParam("error");
+    
+    runtime->stopActor(actorRef, result, errVal);
+
     return undefined();
 }
 
@@ -270,6 +277,21 @@ Ref<ActorRuntime> ActorRuntime::create(Ref<AsActorRef> rootActor)
     result->sendMessage0 (rootActor, "@start");    
     
     return result;
+}
+
+/**
+ * Obtains the actor runtime from a function scope
+ * @param fnScope
+ * @return 
+ */
+Ref<ActorRuntime> ActorRuntime::getRuntime(FunctionScope* fnScope)
+{
+    auto runtime = fnScope->getGlobals()->get("@actorRT");
+    
+    if (!runtime->isObject())
+        error ("Missing actor runtime");
+
+    return runtime.staticCast<ActorRuntime>();
 }
 
 /**
@@ -322,6 +344,29 @@ void ActorRuntime::sendMessage2 (Ref<AsActorRef> dstActor,
 }
 
 /**
+ * Sends a message with three parameters.
+ * @param dstActor
+ * @param epName
+ * @param p1
+ * @param p2
+ * @param p3
+ */
+void ActorRuntime::sendMessage3 (Ref<AsActorRef> dstActor, 
+                                 const std::string& epName, 
+                                 Ref<JSValue> p1,
+                                 Ref<JSValue> p2,
+                                 Ref<JSValue> p3)
+{
+    auto params = JSArray::create();
+    
+    params->push(p1);
+    params->push(p2);
+    params->push(p3);
+
+    sendMessage(dstActor, epName, params);
+}
+
+/**
  * 'sendMessage' version which looks up for the message name
  * @param dstActor
  * @param epName
@@ -350,6 +395,24 @@ void ActorRuntime::sendMessage (Ref<AsEndPointRef> dstEndPoint, Ref<JSArray> par
         error ("Destination is not an input end point");
     
     m_messageQueue.push_back(SMessage(dstEndPoint, params));
+}
+
+/**
+ * Stops an actor execution
+ * @param actorRef
+ * @param value
+ * @param error
+ */
+void ActorRuntime::stopActor (Ref<AsActorRef> actorRef, Ref<JSValue> value, Ref<JSValue> error)
+{
+    auto actor = actorRef->getActor();
+    
+    actor->stop(value, error);
+
+    auto parent = actor->getParent();
+    
+    if (parent.notNull())
+        sendMessage3 (parent, "childStopped", actorRef, value, error);
 }
 
 /**
@@ -408,16 +471,12 @@ bool ActorRuntime::dispatchMessage()
 void ActorRuntime::actorCrashed(Ref<AsActorRef> actorRef, const CScriptException& ex)
 {
     auto actor = actorRef->getActor();
-    actor->forceStop();
-
-    auto parent = actor->getParent();
     
-    if (parent.notNull())
-    {
-        //TODO: Better error logging
+    this->stopActor(actorRef, undefined(), jsString(ex.what()));
+
+    //TODO: Better error logging
+    if (actor->getParent().notNull())
         fprintf (stderr, "Actor crashed: %s\n", ex.what());
-        sendMessage2 (parent, "childStopped", jsTrue(), jsString(ex.what()));
-    }
     else
         fprintf (stderr, "Root actor crashed: %s\n", ex.what());
 }

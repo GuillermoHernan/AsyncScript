@@ -16,6 +16,7 @@
 #include <deque>
 
 struct MvmRoutine;
+class FunctionScope;
 
 Ref<JSValue> asBlockingExec(Ref<MvmRoutine> code, Ref<GlobalScope> globals);
 
@@ -34,6 +35,7 @@ class ActorRuntime : public JSObject
 public:
 
     static Ref<ActorRuntime> create(Ref<AsActorRef> rootActor);
+    static Ref<ActorRuntime> getRuntime(FunctionScope* fnScope);
 
     //void connectMessages (Ref<AsMessageRef> dst, Ref<AsMessageRef> src);
 
@@ -45,13 +47,20 @@ public:
                       const std::string& msgName,
                       Ref<JSValue> p1,
                       Ref<JSValue> p2);
+    void sendMessage3(Ref<AsActorRef> dstActor,
+                      const std::string& msgName,
+                      Ref<JSValue> p1,
+                      Ref<JSValue> p2,
+                      Ref<JSValue> p3);
     void sendMessage(Ref<AsActorRef> dstActor, 
                      const std::string& msgName, 
                      Ref<JSArray> params);
     void sendMessage(Ref<AsEndPointRef> dstMessage, Ref<JSArray> params);
+    
+    void stopActor (Ref<AsActorRef> actorRef, Ref<JSValue> value, Ref<JSValue> error);
 
     bool dispatchMessage();
-
+    
 protected:
     void actorCrashed(Ref<AsActorRef> actor, const CScriptException& error);
 

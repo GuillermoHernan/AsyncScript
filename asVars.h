@@ -96,20 +96,21 @@ public:
         return !m_finished;
     }
     
-    void forceStop()
-    {
-        m_finished = true;
-    }
+//    void forceStop()
+//    {
+//        m_finished = true;
+//    }
     
-    void stop(Ref<JSValue> result)
-    {
-        m_result = result;
-        m_finished = true;
-    }
+    void stop(Ref<JSValue> result, Ref<JSValue> error);
         
     Ref<JSValue> getResult()
     {
         return m_result;
+    }
+        
+    Ref<JSValue> getError()
+    {
+        return m_error;
     }
     
     Ref<AsEndPoint> getEndPoint (const std::string& name)const
@@ -134,6 +135,7 @@ protected:
         , m_globals (globals)
         , m_parent (parent)
         , m_result(undefined())
+        , m_error(undefined())
         , m_finished(false)
     {
     }
@@ -150,6 +152,7 @@ private:
     typedef std::map<std::string, Ref<AsEndPointRef> > ConnectionMap;
     ConnectionMap       m_outputConections;
     Ref<JSValue>        m_result;
+    Ref<JSValue>        m_error;
     
     bool                m_finished;
 };
@@ -189,6 +192,14 @@ public:
             return undefined();
         else
             return m_ref->getResult();
+    }
+    
+    Ref<JSValue> getError()
+    {
+        if (isRunning())
+            return undefined();
+        else
+            return m_ref->getError();
     }
     
     Ref<AsEndPointRef> getEndPoint (const std::string& name)const;
