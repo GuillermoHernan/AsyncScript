@@ -28,7 +28,7 @@ typedef Ref<JSValue> (*MvmCallHook)(Ref<JSValue> function,
 
 Ref<JSValue>    mvmExecute (Ref<MvmRoutine> code, 
                             Ref<IScope> globals,
-                            Ref<IScope> locals = Ref<IScope>(),
+                            Ref<IScope> locals,
                             MvmCallHook callHook = NULL);
 Ref<JSValue>    mvmExecRoutine (Ref<MvmRoutine> code, ExecutionContext* ec);
 std::string     mvmDisassembly (Ref<MvmRoutine> code);

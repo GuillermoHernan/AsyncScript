@@ -12,6 +12,7 @@
 #include "OS_support.h"
 #include "microVM.h"
 #include "asVars.h"
+#include "executionScope.h"
 
 #include <vector>
 

@@ -13,6 +13,7 @@
 #pragma once
 
 #include "jsVars.h"
+#include "executionScope.h"
 #include <string>
 
 Ref<JSValue>    evaluate (const char* script, Ref<IScope> globals);

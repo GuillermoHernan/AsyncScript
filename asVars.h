@@ -14,6 +14,7 @@
 #pragma once
 
 #include "jsVars.h"
+#include "executionScope.h"
 
 class AsEndPoint;
 
