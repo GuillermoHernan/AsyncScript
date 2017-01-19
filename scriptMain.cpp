@@ -16,12 +16,13 @@
 #include "TinyJS_MathFunctions.h"
 #include "mvmFunctions.h"
 #include "semanticCheck.h"
+#include "asObjects.h"
 
 using namespace std;
 
 // Functions forward declarations.
 //////////////////////////////////////////
-CScriptToken parseArgumentList(Ref<JSFunction> function, CScriptToken token);
+StringVector parseArgumentList(CScriptToken token);
 
 /**
  * Script evaluation function. Runs a script, and returns its result.
@@ -58,6 +59,7 @@ Ref<GlobalScope> createDefaultGlobals()
     auto    globals = GlobalScope::create();
     
     registerMvmFunctions(globals);
+    registerObjectsFunctions(globals);
     registerFunctions(globals);
     registerMathFunctions(globals);
     
@@ -98,7 +100,7 @@ Ref<JSFunction> addNative (const std::string& szFunctionHeader,
         // if it doesn't exist or it is not an object, make an object class
         if (!child->isObject())
         {
-            child = JSObject::create( JSObject::DefaultPrototype );
+            child = JSObject::create();
             scope->newVar(funcName, child, true);
         }
         container = child.staticCast<JSObject>();
@@ -118,7 +120,7 @@ Ref<JSFunction> addNative (const std::string& szFunctionHeader,
         // if it doesn't exist or it is not an object, make an object class
         if (!child->isObject())
         {
-            child = JSObject::create( JSObject::DefaultPrototype );
+            child = JSObject::create();
             scope->set(funcName, child);
         }
         container = child.staticCast<JSObject>();
@@ -127,8 +129,9 @@ Ref<JSFunction> addNative (const std::string& szFunctionHeader,
         token = token.match(LEX_ID);
     }
 
-    Ref<JSFunction> function = JSFunction::createNative(funcName, pFn);
-    parseArgumentList(function, token);
+    Ref<JSFunction> function = JSFunction::createNative(funcName,
+                                                        parseArgumentList(token),
+                                                        pFn);
 
     if (container.notNull())
         container->writeFieldStr(funcName, function);
@@ -138,31 +141,63 @@ Ref<JSFunction> addNative (const std::string& szFunctionHeader,
     return function;
 }
 
+/**
+ * Adds a new native function to a variable map.
+ * @param szFunctionHeader
+ * @param pFn
+ * @param varMap
+ * @return 
+ */
+Ref<JSFunction> addNative (const std::string& szFunctionHeader, 
+                           JSNativeFn pFn, 
+                           VarMap& varMap)
+{
+    CScriptToken token(szFunctionHeader.c_str());
+    token = token.next();
+
+    token = token.match(LEX_R_FUNCTION);
+    string funcName = token.text();
+    token = token.match(LEX_ID);
+    
+    Ref<JSObject>   container;
+
+    Ref<JSFunction> function = JSFunction::createNative(funcName, 
+                                                        parseArgumentList(token),
+                                                        pFn);
+
+    varMap[funcName] = VarProperties(function, true);
+    
+    return function;
+}
+
 
 /**
  * Parses a function argument list.
  * @note Used by 'addNative' function
- * @param function  Function into which add the arguments
  * @param token 
- * @return Next token
+ * @return A vector with argument names.
  */
-CScriptToken parseArgumentList(Ref<JSFunction> function, CScriptToken token)
+StringVector parseArgumentList(CScriptToken token)
 {
     //TODO: It is a copy & paste from the function of the same name in 'jsParser.cpp'
-    //But the other version uses a 'AstFunction', not a 'JSFunction'
+    //But the other version uses a 'AstFunction', not a 'StringVector'
     token = token.match('(');
+    
+    StringVector arguments;
 
     while (token.type() != ')')
     {
         const string name = token.text();
 
         token = token.match(LEX_ID);
-        function->addParam(name);
+        arguments.push_back(name);
 
         if (token.type() != ')')
             token = token.match(',');
     }
-    return token.match(')');
+    token.match(')');
+    
+    return arguments;
 }
 
 
@@ -177,7 +212,7 @@ Ref<JSFunction> addNative0 (const std::string& szName,
                            JSNativeFn pFn, 
                            Ref<IScope> scope)
 {
-    Ref<JSFunction> function = JSFunction::createNative(szName, pFn);
+    Ref<JSFunction> function = JSFunction::createNative(szName, StringVector(), pFn);
 
     scope->newVar(szName, function, true);
     
@@ -198,9 +233,11 @@ Ref<JSFunction> addNative1 (const std::string& szName,
                            JSNativeFn pFn, 
                            Ref<IScope> scope)
 {
-    Ref<JSFunction> function = JSFunction::createNative(szName, pFn);
+    StringVector    arguments;
+    
+    arguments.push_back(p1);
+    Ref<JSFunction> function = JSFunction::createNative(szName, arguments, pFn);
 
-    function->addParam(p1);
     scope->newVar(szName, function, true);
     
     return function;
@@ -222,10 +259,12 @@ Ref<JSFunction> addNative2 (const std::string& szName,
                            JSNativeFn pFn, 
                            Ref<IScope> scope)
 {
-    Ref<JSFunction> function = JSFunction::createNative(szName, pFn);
+    StringVector    arguments;
+    
+    arguments.push_back(p1);
+    arguments.push_back(p2);
+    Ref<JSFunction> function = JSFunction::createNative(szName, arguments, pFn);
 
-    function->addParam(p1);
-    function->addParam(p2);
     scope->newVar(szName, function, true);
     
     return function;

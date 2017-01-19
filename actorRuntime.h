@@ -22,6 +22,11 @@ Ref<JSValue> asBlockingExec(Ref<MvmRoutine> code, Ref<GlobalScope> globals);
 
 Ref<JSValue> actorChildStoppedDefaultHandler(FunctionScope* pScope);
 
+Ref<JSValue>    inputEpCall(Ref<AsEndPointRef> endPoint, Ref<FunctionScope> scope);
+Ref<JSValue>    outputEpCall(Ref<AsEndPointRef> endPoint, Ref<FunctionScope> scope);
+Ref<JSValue>    actorConstructor(Ref<AsActorClass> actorClass, Ref<FunctionScope> scope);
+
+
 /**
  * Keeps shared state of the actor system.
  * It contains the message queue. It only supports single-threaded dispatching
@@ -67,7 +72,6 @@ protected:
     virtual Ref<JSObject>   clone (bool _mutable);
 
 private:
-
     struct SMessage
     {
         Ref<AsEndPointRef> destination;
@@ -82,7 +86,7 @@ private:
     typedef std::deque<SMessage> MessageQueue;
 
     ActorRuntime(Ref<AsActorRef> rootActor)
-    : JSObject(JSObject::DefaultPrototype, MT_DEEPFROZEN)
+    : JSObject(DefaultClass, MT_DEEPFROZEN)
     , m_rootActor(rootActor)
     {
     }

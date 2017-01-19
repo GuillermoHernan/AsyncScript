@@ -13,26 +13,24 @@
 
 #pragma once
 
-#include "jsVars.h"
+#include "asObjects.h"
 #include "executionScope.h"
+#include "microVM.h"
 
 class AsEndPoint;
+class MvmRoutine;
 
 /**
  * Actor class runtime object
  */
-class AsActorClass : public JSObject
+class AsActorClass : public JSValueBase<VT_ACTOR_CLASS>
 {
 public:
-    static Ref<AsActorClass>    create (const std::string& name)
-    {
-        return refFromNew (new AsActorClass(name));
-    }
+    static Ref<AsActorClass> create (const std::string& name, 
+                                     const VarMap& members, 
+                                     const StringVector& params);
 
-    virtual JSValueTypes getType()const
-    {
-        return VT_ACTOR_CLASS;
-    }
+    Ref<JSValue> call (Ref<FunctionScope> scope);
     
     Ref<AsEndPoint> getEndPoint (const std::string& name);
 
@@ -41,22 +39,28 @@ public:
         return getEndPoint("@start");
     }
     
-    const std::string& getName()const
+    virtual const StringVector& getParams()const
+    {
+        return m_params;
+    }
+
+    virtual const std::string& getName()const
     {
         return m_name;
     }
 
-    void createDefaultEndPoints ();
-
-    
 protected:
-    AsActorClass (const std::string& name);
+    AsActorClass(const std::string& name,
+                 const VarMap& members,
+                 const StringVector& params);
 
-    AsActorClass(const AsActorClass& src, bool _mutable);
-    virtual Ref<JSObject>   clone (bool _mutable);
+    static VarMap createDefaultEndPoints (const VarMap& members);
+//    static Ref<JSClass> ActorBaseClass;
     
 private:
-    std::string m_name;
+    std::string     m_name;
+    VarMap          m_members;
+    StringVector    m_params;
 };
 
 class AsActorRef;
@@ -66,7 +70,7 @@ typedef std::vector < Ref<AsActorRef> > AsActorList;
 /**
  * Actor runtime object
  */
-class AsActor : public JSObject
+class AsActor : public JSValueBase<VT_ACTOR>
 {
 public:
     
@@ -83,6 +87,8 @@ public:
     }
     
     virtual Ref<JSValue> readField(Ref<JSValue> key)const;    
+    virtual Ref<JSValue> writeField(Ref<JSValue> key, Ref<JSValue> value);
+    virtual Ref<JSValue> newConstField(Ref<JSValue> key, Ref<JSValue> value);
     
     
     void setOutputConnection (const std::string& msgName, Ref<AsEndPointRef> dst)
@@ -130,9 +136,8 @@ public:
     }
     
 protected:
-    AsActor (Ref<AsActorClass> cls, Ref<GlobalScope> globals, Ref<AsActorRef> parent) : 
-        JSObject(DefaultPrototype, MT_MUTABLE)
-        , m_cls (cls)
+    AsActor (Ref<AsActorClass> cls, Ref<GlobalScope> globals, Ref<AsActorRef> parent) :
+        m_cls (cls)
         , m_globals (globals)
         , m_parent (parent)
         , m_result(undefined())
@@ -141,12 +146,14 @@ protected:
     {
     }
         
-    virtual Ref<JSObject> clone (bool _mutable);
+//    virtual Ref<JSObject> clone (bool _mutable);
     
 private:
     const Ref<AsActorClass> m_cls;
     Ref<GlobalScope>    m_globals;
     Ref<AsActorRef>     m_parent;
+
+    VarMap              m_members;
     
     AsActorList         m_childActors;
     
@@ -221,12 +228,28 @@ private:
 class AsEndPoint : public JSFunction
 {
 public:
-    static Ref<AsEndPoint> create (const std::string& name, bool input)
+    static Ref<AsEndPoint> create (const std::string& name, 
+                                   const StringVector& params,  
+                                   bool input)
     {
-        auto ep = refFromNew (new AsEndPoint (name, input));
-        
-        return ep->freeze().staticCast<AsEndPoint>();
+        return refFromNew (new AsEndPoint (name, params, input));
     }
+
+    static Ref<AsEndPoint> createInput (const std::string& name, 
+                                        const StringVector& params, 
+                                        Ref<MvmRoutine> code)
+    {
+        return refFromNew (new AsEndPoint (name, params, code));
+    }
+
+    static Ref<AsEndPoint> createNative(const std::string& name,
+                                        const StringVector& params,
+                                        JSNativeFn fnPtr
+                                        )
+    {
+        return refFromNew (new AsEndPoint (name, params, fnPtr));
+    }
+    
     
     bool isInput()const
     {
@@ -241,14 +264,14 @@ public:
     virtual std::string toString()const;
     
 protected:
-    AsEndPoint (const std::string& name, bool input) :
-    JSFunction(name, NULL), m_isInput (input)
+    AsEndPoint (const std::string& name, const StringVector& params, bool input) :
+    JSFunction(name, params, NULL), m_isInput (input)
     {
     }
+
+    AsEndPoint (const std::string& name, const StringVector& params, Ref<MvmRoutine> code);
+    AsEndPoint (const std::string& name, const StringVector& params, JSNativeFn pNative);
    
-    AsEndPoint(const AsEndPoint& src, bool _mutable);
-    virtual Ref<JSObject>   clone (bool _mutable);
-    
 private:
     const bool m_isInput;
 };
@@ -277,6 +300,8 @@ public:
     {
         return (m_endPoint->getType() == VT_OUTPUT_EP) ? VT_OUTPUT_EP_REF : VT_INPUT_EP_REF;
     }
+    
+    Ref<JSValue> call (Ref<FunctionScope> scope);
     
     Ref<AsActorRef> getActor()const
     {

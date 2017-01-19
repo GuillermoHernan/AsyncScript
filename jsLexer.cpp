@@ -79,6 +79,8 @@ string getTokenStr(int token)
     case LEX_R_PROTOCOL:return "protocol";
     case LEX_R_SOCKET:  return "socket";
 
+    case LEX_R_CLASS:  return "class";
+
     }
 
     ostringstream msg;
@@ -315,6 +317,8 @@ CScriptToken CScriptToken::parseId(const char * code)const
         keywords["output"] = LEX_R_OUTPUT;
         keywords["protocol"] = LEX_R_PROTOCOL;
         keywords["socket"] = LEX_R_SOCKET;
+
+        keywords["class"] = LEX_R_CLASS;
     }
 
     const char* end = code + 1;

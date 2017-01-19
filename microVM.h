@@ -19,17 +19,10 @@
 struct MvmRoutine;
 struct ExecutionContext;
 
-//TODO: The last parameter should be a 'MvmCallHook', but C++ doesn't allow
-//to use the defined type inside the typedef. Find a better solution.
-typedef Ref<JSValue> (*MvmCallHook)(Ref<JSValue> function, 
-                                    Ref<FunctionScope> scope, 
-                                    ExecutionContext* ec, 
-                                    void* prevHook);
 
 Ref<JSValue>    mvmExecute (Ref<MvmRoutine> code, 
                             Ref<IScope> globals,
-                            Ref<IScope> locals,
-                            MvmCallHook callHook = NULL);
+                            Ref<IScope> locals);
 Ref<JSValue>    mvmExecRoutine (Ref<MvmRoutine> code, ExecutionContext* ec);
 std::string     mvmDisassembly (Ref<MvmRoutine> code);
 Ref<JSObject>   toJSObject (Ref<MvmRoutine> code);

@@ -20,6 +20,12 @@ using namespace std;
  */
 struct SemCheckState
 {    
+    StringSet   definedClasses;
+    
+    bool isClassDefined (const std::string& name)const
+    {
+        return definedClasses.find(name) != definedClasses.end();
+    }
 };
 
 //Forward declarations
@@ -34,6 +40,7 @@ void assignmentSemCheck (Ref<AstNode> node, SemCheckState* pState);
 void postfixOpSemCheck (Ref<AstNode> node, SemCheckState* pState);
 void prefixOpSemCheck (Ref<AstNode> node, SemCheckState* pState);
 void objectSemCheck (Ref<AstNode> node, SemCheckState* pState);
+void classSemCheck (Ref<AstNode> node, SemCheckState* pState);
 
 void checkReservedNames (const std::string& name, ScriptPosition pos, const char* errorMsg);
 void checkReservedNames (Ref<AstNode> node, const char* errorMsg);
@@ -83,7 +90,7 @@ void semCheck (Ref<AstNode> node, SemCheckState* pState)
         types [AST_FUNCTION] = functionSemCheck;
         types [AST_ASSIGNMENT] = assignmentSemCheck;
         types [AST_FNCALL] = childrenSemCheck;
-        types [AST_NEWCALL] = childrenSemCheck;
+//        types [AST_NEWCALL] = childrenSemCheck;
         types [AST_LITERAL] = childrenSemCheck;
         types [AST_IDENTIFIER] = childrenSemCheck;
         types [AST_ARRAY] = childrenSemCheck;
@@ -98,6 +105,8 @@ void semCheck (Ref<AstNode> node, SemCheckState* pState)
         types [AST_CONNECT] = childrenSemCheck;
         types [AST_INPUT] = childrenSemCheck;
         types [AST_OUTPUT] = childrenSemCheck;
+        types [AST_CLASS] = classSemCheck;
+        types [AST_EXTENDS] = childrenSemCheck;
     }
 
     types[node->getType()](node, pState);
@@ -146,7 +155,8 @@ void functionSemCheck (Ref<AstNode> node, SemCheckState* pState)
     for (size_t i = 0; i < params.size(); ++i)
         checkReservedNames (params[i], node->position(), "Invalid parameter name: %s");
     
-    semCheck (fnNode->getCode(), pState);
+    SemCheckState   fnState (*pState);
+    semCheck (fnNode->getCode(), &fnState);
 }
 
 /**
@@ -207,6 +217,35 @@ void objectSemCheck(Ref<AstNode> node, SemCheckState* pState)
                      props[i].name.c_str());
         }
     }
+}
+
+/**
+ * Semantic check for class definitions.
+ * @param node
+ * @param pState
+ */
+void classSemCheck (Ref<AstNode> node, SemCheckState* pState)
+{
+    auto classNode = node.staticCast<AstClassNode>();
+    
+    auto name = classNode->getName();
+
+    checkReservedNames (node, "Invalid class name");
+
+    if (pState->isClassDefined(name))
+        errorAt(node->position(), "'%s' class already defined. Use another name", name.c_str());
+    
+    auto extends = classNode->getExtendsNode();
+    if (extends.notNull())
+    {
+        auto parentName = extends->getName();
+
+        if (!pState->isClassDefined(parentName))
+            errorAt(extends->position(), "Base class '%s' not defined.", parentName.c_str());
+    }
+    
+    SemCheckState   classState (*pState);
+    childrenSemCheck(node, &classState);
 }
 
 /**

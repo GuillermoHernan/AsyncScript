@@ -9,6 +9,7 @@
 
 #include "OS_support.h"
 #include "mvmFunctions.h"
+#include "asObjects.h"
 #include "scriptMain.h"
 
 #include <math.h>
@@ -21,6 +22,7 @@ using namespace std;
  * @param pScope
  * @return 
  */
+#if 0
 Ref<JSValue> mvmNewObj (FunctionScope* pScope)
 {
     Ref<JSValue>    constructor = pScope->getThis();
@@ -34,6 +36,7 @@ Ref<JSValue> mvmNewObj (FunctionScope* pScope)
     else
         return JSObject::create(prototype.staticCast<JSObject>());
 }
+#endif
 
 /**
  * Creates a new array
@@ -428,7 +431,7 @@ Ref<JSValue> mvmNotTypeEqual (FunctionScope* pScope)
  */
 void registerMvmFunctions(Ref<IScope> scope)
 {
-    addNative0("@newObj", mvmNewObj, scope);
+    //addNative0("@newObj", mvmNewObj, scope);
     addNative0("@newArray", mvmNewArray, scope);
 
     addNative0("@inc", mvmInc, scope);

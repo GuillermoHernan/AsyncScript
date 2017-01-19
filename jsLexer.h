@@ -74,6 +74,9 @@ enum LEX_TYPES
     LEX_R_OUTPUT,
     LEX_R_PROTOCOL,
     LEX_R_SOCKET,
+    
+    //Classes and objects keywords.
+    LEX_R_CLASS,
 
     LEX_R_LIST_END /* always the last entry */
 };

@@ -98,6 +98,7 @@ public:
     ExprResult then(ChainParseFunction parseFn);
     ExprResult require(TokenCheck checkFn);
     ExprResult require(int tokenType);
+    ExprResult requireId(const char* text);
     ExprResult skip();
     ExprResult getError(const char* format, ...);
 

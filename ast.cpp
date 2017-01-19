@@ -9,6 +9,7 @@
 
 #include "OS_support.h"
 #include "ast.h"
+#include "asObjects.h"
 
 using namespace std;
 
@@ -125,11 +126,10 @@ Ref<AstNode> astCreateBinaryOp(CScriptToken token,
     result->addChild(rexpr);
     return result;
 }
-                                 
-Ref<AstNode> astCreateFnCall(ScriptPosition pos, Ref<AstNode> fnExpr, bool newCall)
+
+Ref<AstNode> astCreateFnCall(ScriptPosition pos, Ref<AstNode> fnExpr)
 {
-    const AstNodeTypes  type = newCall ? AST_NEWCALL: AST_FNCALL;
-    auto result = refFromNew( new AstBranchNode(type, pos));
+    auto result = refFromNew( new AstBranchNode(AST_FNCALL, pos));
     
     result->addChild(fnExpr);
     return result;
@@ -140,18 +140,18 @@ Ref<AstNode> astCreateFnCall(ScriptPosition pos, Ref<AstNode> fnExpr, bool newCa
  * @param callExpr
  * @return 
  */
-Ref<AstNode> astToNewCall(Ref<AstNode> callExpr)
-{
-    auto result = astCreateFnCall(callExpr->position(), 
-                                  callExpr->children()[0], true);
-    
-    auto children = callExpr->children();
-    
-    for (size_t i = 1; i < children.size(); ++i)
-        result->addChild(children[i]);
-    
-    return result;
-}
+//Ref<AstNode> astToNewCall(Ref<AstNode> callExpr)
+//{
+//    auto result = astCreateFnCall(callExpr->position(), 
+//                                  callExpr->children()[0], true);
+//    
+//    auto children = callExpr->children();
+//    
+//    for (size_t i = 1; i < children.size(); ++i)
+//        result->addChild(children[i]);
+//    
+//    return result;
+//}
 
 /**
  * Creates an array literal AST node.
@@ -235,6 +235,29 @@ Ref<AstNode> astCreateSend(ScriptPosition pos,
     return result;
 }
 
+Ref<AstNode> astCreateExtends (ScriptPosition pos,
+                                const std::string& parentName)
+{
+    return refFromNew (new AstNamedBranch(AST_EXTENDS, pos, parentName));
+}
+
+/**
+ * Gets the 'extends' node of a class node.
+ * @param node
+ * @return 
+ */
+Ref<AstNode> astGetExtends(Ref<AstNode> node)
+{
+    ASSERT (node->getType() == AST_CLASS);
+    if (!node->childExists(0))
+        return Ref<AstNode>();
+    
+    auto child = node->children().front();
+    if (child->getType() != AST_EXTENDS)
+        return Ref<AstNode>();
+    else
+        return child;    
+}
 
 /**
  * Creates an 'AstLiteral' object from a source token.
@@ -276,6 +299,24 @@ Ref<AstLiteral> AstLiteral::create(ScriptPosition pos, int value)
 }
 
 /**
+ * Gets the 'extends' node of a class. The 'extends' node contains inheritance 
+ * information.
+ * @return The node or a NULL pointer if not present.
+ */
+Ref<AstNamedBranch> AstClassNode::getExtendsNode()const
+{
+    if (this->childExists(0))
+    {
+        auto child = this->children().front();
+        
+        if (child->getType() == AST_EXTENDS)
+            return child.staticCast<AstNamedBranch>();
+    }
+    
+    return Ref<AstNamedBranch>();
+}
+
+/**
  * Transforms an AST statement into a Javascript object. 
  * This particular version creates an object containing all its children
  * @return 
@@ -313,6 +354,19 @@ Ref<JSValue> AstFunction::toJS()const
     obj->writeFieldStr("c_parameters", JSArray::createStrArray(m_params));
     if (m_code.notNull())
         obj->writeFieldStr("d_code", m_code->toJS());
+    
+    return obj;
+}
+
+/**
+ * Class node to javascript object
+ * @return 
+ */
+Ref<JSValue> AstClassNode::toJS()const
+{
+    Ref<JSObject>   obj = AstNamedBranch::toJS().staticCast<JSObject>();
+    
+    obj->writeFieldStr("c_parameters", JSArray::createStrArray(m_params));
     
     return obj;
 }
@@ -423,7 +477,7 @@ std::string astTypeToString(AstNodeTypes type)
         types[AST_FUNCTION] = "AST_FUNCTION";
         types[AST_ASSIGNMENT] = "AST_ASSIGNMENT";
         types[AST_FNCALL] = "AST_FNCALL";
-        types[AST_NEWCALL] = "AST_NEWCALL";
+//        types[AST_NEWCALL] = "AST_NEWCALL";
         types[AST_LITERAL] = "AST_LITERAL";
         types[AST_IDENTIFIER] = "AST_IDENTIFIER";
         types[AST_ARRAY] = "AST_ARRAY";
@@ -438,6 +492,8 @@ std::string astTypeToString(AstNodeTypes type)
         types[AST_CONNECT] = "AST_CONNECT";
         types[AST_INPUT] = "AST_INPUT";
         types[AST_OUTPUT] = "AST_OUTPUT";
+        types[AST_CLASS] = "AST_CLASS";
+        types[AST_EXTENDS] = "AST_EXTENDS";
         //types[AST_TYPES_COUNT] = "AST_TYPES_COUNT";
     }
     

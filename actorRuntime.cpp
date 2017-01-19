@@ -15,13 +15,6 @@
 void execMessageLoop (Ref<ActorRuntime> runtime);
 
 Ref<JSValue>    connectOperator (FunctionScope* pScope);
-Ref<JSValue>    asCallHook( Ref<JSValue> function, 
-                            Ref<FunctionScope> scope, 
-                            ExecutionContext* ec, 
-                            void* prevHook);
-Ref<JSValue>    inputEpCall(Ref<AsEndPointRef> endPoint, Ref<FunctionScope> scope);
-Ref<JSValue>    outputEpCall(Ref<AsEndPointRef> endPoint, Ref<FunctionScope> scope);
-Ref<JSValue>    actorConstructor(Ref<AsActorClass> actorClass, Ref<FunctionScope> scope);
 
 
 /**
@@ -41,11 +34,16 @@ public:
                                   Ref<GlobalScope> globals, 
                                   Ref<AsActorRef> parent)
     {
-        auto            ownClass = AsActorClass::create("");
+        auto            constructor = AsEndPoint::createNative("@start", 
+                                                               StringVector(),
+                                                               routineActorExec);
+        VarMap          members;
+
+        members[constructor->getName()] = VarProperties(constructor, true);
+
+        auto            ownClass = AsActorClass::create("", members, StringVector());
         RoutineActor*   newActor = new RoutineActor (ownClass, globals, parent);
 
-        ownClass->getConstructor()->setNativePtr(routineActorExec);
-        ownClass->createDefaultEndPoints();
         newActor->m_code = code;
         return AsActorRef::create(refFromNew(newActor));
         
@@ -64,7 +62,7 @@ public:
         
         globals->newNotSharedVar("@curActor", actorRef, true);
         
-        return mvmExecute(actor->m_code, pScope->getGlobals(), Ref<IScope>(), asCallHook);
+        return mvmExecute(actor->m_code, pScope->getGlobals(), Ref<IScope>());
     }
     
 private:
@@ -144,42 +142,6 @@ Ref<JSValue> connectOperator (FunctionScope* pScope)
     srcActor->setOutputConnection (msgName, dst.staticCast<AsEndPointRef>());
     
     return undefined();    
-}
-
-/**
- * This function manages ALL MVM function calls when using actor runtime.
- * @param function
- * @param scope
- * @param ec
- * @param prevHook
- * @return 
- */
-Ref<JSValue> asCallHook( Ref<JSValue> function, 
-                            Ref<FunctionScope> scope, 
-                            ExecutionContext* ec, 
-                            void* prevHook)
-{
-    auto type = function->getType();
-    
-    if (type == VT_FUNCTION)
-    {
-        auto hook = reinterpret_cast<MvmCallHook>(prevHook);
-        return hook(function, scope, ec, NULL);
-    }
-    
-    switch (type)
-    {
-    case VT_INPUT_EP_REF:
-        return inputEpCall(function.staticCast<AsEndPointRef>(), scope);
-    case VT_OUTPUT_EP_REF:
-        return outputEpCall(function.staticCast<AsEndPointRef>(), scope);
-    case VT_ACTOR_CLASS:
-        return actorConstructor (function.staticCast<AsActorClass>(), scope);
-        
-    default:
-        error ("Invalid function type: %s", function->getTypeName().c_str());
-        return undefined();        
-    }
 }
 
 /**
@@ -458,7 +420,7 @@ bool ActorRuntime::dispatchMessage()
             else
             {
                 auto routine = endPoint->getCodeMVM().staticCast<MvmRoutine>();
-                mvmExecute (routine, globals, scope, asCallHook);
+                mvmExecute (routine, globals, scope);
             }
         }
         catch (CScriptException& ex)

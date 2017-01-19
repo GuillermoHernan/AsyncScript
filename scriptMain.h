@@ -21,6 +21,10 @@ Ref<JSValue>    evaluate (const char* script, Ref<IScope> globals);
 Ref<GlobalScope> createDefaultGlobals();
 
 Ref<JSFunction> addNative (const std::string& szFunctionHeader, 
+                           JSNativeFn pFn,
+                           VarMap& varMap);
+
+Ref<JSFunction> addNative (const std::string& szFunctionHeader, 
                            JSNativeFn pFn, 
                            Ref<IScope> scope);
 

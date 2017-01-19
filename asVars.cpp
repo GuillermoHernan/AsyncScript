@@ -3,7 +3,6 @@
  * Author: ghernan
  * 
  * Async script basic data types. Contains the data types related to actor system.
- * The rest are in 'jsVars.*'
  * 
  * Created on December 25, 2016, 12:53 PM
  */
@@ -14,46 +13,92 @@
 
 using namespace std;
 
+//Ref<JSClass> createActorBaseClass();
+//
+//Ref<JSClass> AsActorClass::ActorBaseClass = createActorBaseClass();
+
+/**
+ * Actor class construction function
+ * @param name
+ * @param members
+ * @return 
+ */
+Ref<AsActorClass> AsActorClass::create (const std::string& name, 
+                                        const VarMap& members,
+                                        const StringVector& params)
+{
+    auto newMembers = createDefaultEndPoints(members);
+//    auto constructor = AsEndPoint::create("@start", true);
+//    
+//    writeFieldStr(constructor->getName(), constructor);
+    return refFromNew (new AsActorClass(name, newMembers, params));
+}
+
 /**
  * Actor class constructor.
  * @param name
  */
-AsActorClass::AsActorClass (const std::string& name) 
-: JSObject(DefaultPrototype, MT_MUTABLE)
-, m_name (name)
+AsActorClass::AsActorClass(const std::string& name,
+                           const VarMap& members,
+                           const StringVector& params)
+: m_name(name),
+m_members(members),
+m_params(params)
 {
-    auto constructor = AsEndPoint::create("@start", true);
-    
-    writeFieldStr(constructor->getName(), constructor);
 }
 
-AsActorClass::AsActorClass(const AsActorClass& src, bool _mutable)
-: JSObject(src, _mutable)
-, m_name (src.m_name)
-{    
-}
+/**
+ * Gets the function used to create actor objects (but not the one used to initialize them)
+ * @return 
+ */
+//Ref<JSFunction> AsActorClass::getActorObjConstructor()
+//{
+//    static Ref<JSFunction> constructor = JSFunction::createNative("@constructor", StringVector(), actorObjConstructor);
+//    
+//    return constructor;
+//}
+//
+//static Ref<JSValue> AsActorClass::actorObjConstructor (FunctionScope* pScope)
+//{
+//    
+//}
 
-Ref<JSObject> AsActorClass::clone (bool _mutable)
-{
-    return refFromNew (new AsActorClass(*this, _mutable));
-}
 
 /**
  * Creates default endPoints of an actor class, if they are missing.
  */
-void AsActorClass::createDefaultEndPoints ()
+VarMap AsActorClass::createDefaultEndPoints (const VarMap& members)
 {
     const char* childStopped = "childStopped";
-    if (this->readFieldStr(childStopped)->isNull())
+    if (members.find(childStopped) == members.end())
     {
-        auto endPoint = AsEndPoint::create(childStopped, true);
+        StringVector    params;
+        auto            newMembers = members;
         
-        endPoint->addParam("child");
-        endPoint->addParam("result");
-        endPoint->addParam("error");
-        endPoint->setNativePtr(actorChildStoppedDefaultHandler);
-        this->writeFieldStr(childStopped, endPoint);
+        params.push_back("child");
+        params.push_back("result");
+        params.push_back("error");
+        auto            endPoint = AsEndPoint::createNative(childStopped, 
+                                                            params,
+                                                            actorChildStoppedDefaultHandler);
+        
+        newMembers[childStopped] = VarProperties(endPoint, true);
+        
+        return newMembers;
     }
+    else
+        return members;
+}
+
+/**
+ * Call to an actor class (invokes the actor constructor).
+ * @param scope
+ * @param ec
+ * @return 
+ */
+Ref<JSValue> AsActorClass::call (Ref<FunctionScope> scope)
+{
+    return actorConstructor(Ref<AsActorClass>(this), scope);
 }
 
 
@@ -64,7 +109,12 @@ void AsActorClass::createDefaultEndPoints ()
  */
 Ref<AsEndPoint> AsActorClass::getEndPoint (const std::string& name)
 {
-    auto item = readFieldStr(name);
+    auto it = m_members.find(name);
+    
+    if (it == m_members.end())
+        return Ref<AsEndPoint>();
+    
+    auto item = it->second.value();
     auto type = item->getType();
     
     if (type == VT_INPUT_EP || type == VT_OUTPUT_EP)
@@ -101,10 +151,24 @@ void AsActor::stop(Ref<JSValue> result, Ref<JSValue> error)
 }
 
 
-Ref<JSObject> AsActor::clone (bool _mutable)
-{
-    ASSERT (!"Clone operation not allowed on actors.");
-    return Ref<AsActor>(this);
+//Ref<JSObject> AsActor::clone (bool _mutable)
+//{
+//    ASSERT (!"Clone operation not allowed on actors.");
+//    return Ref<AsActor>(this);
+//}
+
+AsEndPoint::AsEndPoint (const std::string& name, 
+                        const StringVector& params, 
+                        Ref<MvmRoutine> code) :
+                        JSFunction(name, params, code), m_isInput(true)
+{    
+}
+
+AsEndPoint::AsEndPoint (const std::string& name, 
+                        const StringVector& params, 
+                        JSNativeFn pNative):
+                        JSFunction(name, params, pNative), m_isInput(true)
+{    
 }
 
 /**
@@ -117,16 +181,18 @@ std::string AsEndPoint::toString()const
     
     return header + JSFunction::toString().substr(8);
 }
-   
-AsEndPoint::AsEndPoint(const AsEndPoint& src, bool _mutable)
-: JSFunction(src, _mutable)
-, m_isInput(src.m_isInput)
-{
-}
 
-Ref<JSObject> AsEndPoint::clone (bool _mutable)
+/**
+ * Call made to a end point reference (will send a message)
+ * @param scope
+ * @return 
+ */
+Ref<JSValue> AsEndPointRef::call (Ref<FunctionScope> scope)
 {
-    return refFromNew (new AsEndPoint(*this, _mutable));
+    if (isInput())
+        return inputEpCall(Ref<AsEndPointRef>(this), scope);
+    else
+        return outputEpCall(Ref<AsEndPointRef>(this), scope);
 }
 
 /**
@@ -136,10 +202,11 @@ Ref<JSObject> AsEndPoint::clone (bool _mutable)
  */
 Ref<JSValue> AsActor::readField(Ref<JSValue> key)const
 {
-    auto result = JSObject::readField(key);
+    string keyStr = key2Str(key);
+    auto it = m_members.find(keyStr);
     
     // if not found at object fields, it may be an endpoint
-    if (result->isUndefined())
+    if (it == m_members.end())
     {
         auto ep = getEndPoint(key->toString());
         
@@ -149,7 +216,33 @@ Ref<JSValue> AsActor::readField(Ref<JSValue> key)const
             return undefined();
     }
     else
-        return result;    
+        return it->second.value();
+}
+
+/**
+ * Writes a field
+ * @param key
+ * @param value
+ * @return 
+ */
+Ref<JSValue> AsActor::writeField(Ref<JSValue> key, Ref<JSValue> value)
+{
+    //TODO: Check class fields
+    checkedVarWrite(m_members, key2Str(key), value, false);
+    return value;
+}
+
+/**
+ * Creates a new constant field
+ * @param key
+ * @param value
+ * @return 
+ */
+Ref<JSValue> AsActor::newConstField(Ref<JSValue> key, Ref<JSValue> value)
+{
+    //TODO: Check class fields
+    checkedVarWrite(m_members, key2Str(key), value, true);
+    return value;
 }
 
 /**
@@ -166,3 +259,19 @@ Ref<AsEndPointRef> AsActor::getConnectedEp (const std::string& msgName)const
     else
         return Ref<AsEndPointRef>();
 }
+
+
+//Ref<JSValue> scActorConstructor(FunctionScope* pScope)
+//{
+//    return AsActor::c ::create();
+//}
+//
+//
+//Ref<JSClass> createActorBaseClass()
+//{
+//    VarMap  members;
+//    
+//    
+//
+//    return JSClass::create("Actor", Ref<JSClass>(), members, StringVector());
+//}

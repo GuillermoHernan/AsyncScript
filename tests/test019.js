@@ -8,7 +8,7 @@ var parsed = parseInt("42");
 var aStr = "ABCD";
 var aChar = aStr.charAt(0);
 
-var obj1 = new Object();
+var obj1 = Object();
 obj1.food = "cake";
 obj1.desert = "pie";
 

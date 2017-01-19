@@ -1,14 +1,21 @@
-
-function Foo (x,y)
+class Foo (x,y)
 {
-    this.x = x;
-    this.y = y;
+    function value ()
+    {
+        return this.x + this.y;
+    }
 }
 
-Foo.prototype.value = function() { return this.x + this.y; }
+//function Foo (x,y)
+//{
+//    this.x = x;
+//    this.y = y;
+//}
 
-var a = new Foo(1,2);
-var b = new Foo(2,3); 
+//Foo.prototype.value = function() { return this.x + this.y; }
+
+var a = Foo(1,2);
+var b = Foo(2,3); 
 
 var result1 = a.value();
 var result2 = b.value();

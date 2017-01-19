@@ -29,7 +29,6 @@ struct ExecutionContext
     ValueVector*    constants;
     ScopeStack      scopes;
     Ref<JSValue>    auxRegister;
-    MvmCallHook     callHook;
     
     Ref<JSValue> pop()
     {
@@ -65,12 +64,6 @@ struct ExecutionContext
 
 typedef void (*OpFunction) (const int opCode, ExecutionContext* ec);
 
-Ref<JSValue> defaultCallHook (  Ref<JSValue> function, 
-                                Ref<FunctionScope> scope, 
-                                ExecutionContext* ec, 
-                                void* defaultHook);
-
-Ref<JSValue> execRoutine (Ref<MvmRoutine> code, ExecutionContext* ec);
 int execBlock (const MvmBlock& block, ExecutionContext* ec);
 void execInstruction16 (const int opCode, ExecutionContext* ec);
 void execInstruction8 (const int opCode, ExecutionContext* ec);
@@ -149,31 +142,25 @@ static const OpFunction s_instructions[64] =
  */
 Ref<JSValue> mvmExecute (Ref<MvmRoutine> code, 
                          Ref<IScope> globals, 
-                         Ref<IScope> locals, 
-                         MvmCallHook callHook)
+                         Ref<IScope> locals)
 {
     ExecutionContext    ec;
-    
-    if (callHook != NULL)
-        ec.callHook = callHook;
-    else
-        ec.callHook = defaultCallHook;
     
     ec.scopes.push_back(globals);
     if (locals.notNull())
         ec.scopes.push_back(locals);
     
-    return execRoutine (code, &ec);
+    return mvmExecRoutine (code, &ec);
 }
 
 /**
- * Executes an script.
+ * Executes a Micro VM routine
  *
  * @param code
  * @param ec        Execution context
  * @return 
  */
-Ref<JSValue> execRoutine (Ref<MvmRoutine> code, ExecutionContext* ec)
+Ref<JSValue> mvmExecRoutine (Ref<MvmRoutine> code, ExecutionContext* ec)
 {
     if (code->blocks.empty())
         return undefined();
@@ -360,7 +347,7 @@ void execCall (const int nArgs, ExecutionContext* ec)
 
     const size_t            initialStack = ec->stack.size();
     
-    Ref<JSValue> result = ec->callHook (fnVal, fnScope, ec, (void*)defaultCallHook);
+    Ref<JSValue> result = fnVal->call(fnScope);
     
     ASSERT (initialStack == ec->stack.size());
     ec->scopes.pop_back();      //Remove function scope
@@ -378,26 +365,26 @@ void execCall (const int nArgs, ExecutionContext* ec)
  * @param ec            Execution context object
  * @return 
  */
-Ref<JSValue> defaultCallHook (  Ref<JSValue> fnVal, 
-                                Ref<FunctionScope> scope, 
-                                ExecutionContext* ec, 
-                                void* defaultHook)
-{
-    if (fnVal->getType() != VT_FUNCTION)
-        error ("Micro VM default call handler only supports functions. Received: %s", 
-               fnVal->toString().c_str());
-    
-    auto function = fnVal.staticCast<JSFunction>();
-    
-    if (function->isNative())
-        return function->nativePtr()(scope.getPointer());
-    else
-    {
-        const Ref<MvmRoutine>    code = function->getCodeMVM().staticCast<MvmRoutine>();
-        
-        return execRoutine(code, ec);
-    }
-}
+//Ref<JSValue> defaultCallHook (  Ref<JSValue> fnVal, 
+//                                Ref<FunctionScope> scope, 
+//                                ExecutionContext* ec, 
+//                                void* defaultHook)
+//{
+//    if (fnVal->getType() != VT_FUNCTION)
+//        error ("Micro VM default call handler only supports functions. Received: %s", 
+//               fnVal->toString().c_str());
+//    
+//    auto function = fnVal.staticCast<JSFunction>();
+//    
+//    if (function->isNative())
+//        return function->nativePtr()(scope.getPointer());
+//    else
+//    {
+//        const Ref<MvmRoutine>    code = function->getCodeMVM().staticCast<MvmRoutine>();
+//        
+//        return mvmExecRoutine(code, ec);
+//    }
+//}
 
 
 /**

@@ -113,6 +113,24 @@ ExprResult ExprResult::require(int tokenType)
 }
 
 /**
+ * Requires that the current token is an identifier with the given text.
+ * @param text
+ * @return 
+ */
+ExprResult ExprResult::requireId(const char* text)
+{
+    if (error())
+        return *this;
+    
+    ExprResult  r = require(LEX_ID);
+    
+    if (r.ok() && token.text() == text)
+        return r;
+    else
+        return getError("Unexpected id. '%s' expected, '%s' found", text, token.text().c_str());
+}
+
+/**
  * Skips next token. Forwards the previous result
  * @return 
  */

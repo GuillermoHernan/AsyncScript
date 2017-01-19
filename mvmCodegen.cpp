@@ -61,10 +61,11 @@ typedef map<Ref<JSValue>, int, JsValueLessComp> ConstantsMap;
  */
 struct CodegenState
 {
-    Ref<MvmRoutine>         curRoutine;
-    Ref<AsActorClass>       curActor;
-    vector<CodegenScope>    scopes;
-    ConstantsMap            constants;
+    Ref<MvmRoutine>             curRoutine;
+    VarMap                      members;
+    vector<CodegenScope>        scopes;
+    ConstantsMap                constants;
+    map<string, Ref<JSValue> >  symbols;          
 };
 
 //Forward declarations
@@ -82,10 +83,11 @@ void ifCodegen (Ref<AstNode> statement, CodegenState* pState);
 void forCodegen (Ref<AstNode> statement, CodegenState* pState);
 void returnCodegen (Ref<AstNode> statement, CodegenState* pState);
 void functionCodegen (Ref<AstNode> statement, CodegenState* pState);
+Ref<JSFunction> createFunction (Ref<AstNode> node, CodegenState* pState);
 void assignmentCodegen (Ref<AstNode> statement, CodegenState* pState);
 void fncallCodegen (Ref<AstNode> statement, CodegenState* pState);
 void thisCallCodegen (Ref<AstNode> statement, CodegenState* pState);
-void constructorCodegen (Ref<AstNode> statement, CodegenState* pState);
+//void constructorCodegen (Ref<AstNode> statement, CodegenState* pState);
 void literalCodegen (Ref<AstNode> statement, CodegenState* pState);
 void identifierCodegen (Ref<AstNode> statement, CodegenState* pState);
 void arrayCodegen (Ref<AstNode> statement, CodegenState* pState);
@@ -101,6 +103,12 @@ void logicalOpCodegen (const int opCode, Ref<AstNode> statement, CodegenState* p
 void actorCodegen (Ref<AstNode> node, CodegenState* pState);
 void connectCodegen (Ref<AstNode> node, CodegenState* pState);
 void messageCodegen (Ref<AstNode> node, CodegenState* pState);
+
+void classCodegen (Ref<AstNode> node, CodegenState* pState);
+Ref<JSFunction> classConstructorCodegen (Ref<AstNode> node, CodegenState* pState);
+void baseConstructorCallCodegen (Ref<AstNode> node, CodegenState* pState);
+StringVector classConstructorParams(Ref<AstNode> node, CodegenState* pState);
+Ref<JSClass> getParentClass (Ref<AstNode> node, CodegenState* pState);
 
 void pushConstant (Ref<JSValue> value, CodegenState* pState);
 void pushConstant (const char* str, CodegenState* pState);
@@ -123,6 +131,7 @@ void setTrueJump (int blockId, int destinationId, CodegenState* pState);
 void setFalseJump (int blockId, int destinationId, CodegenState* pState);
 int  curBlockId (CodegenState* pState);
 
+CodegenState initFunctionState (Ref<AstNode> node, const StringVector& params);
 CodegenState initFunctionState (Ref<AstNode> node);
 
 /**
@@ -169,7 +178,7 @@ void codegen (Ref<AstNode> statement, CodegenState* pState)
         types [AST_FUNCTION] = functionCodegen;
         types [AST_ASSIGNMENT] = assignmentCodegen;
         types [AST_FNCALL] = fncallCodegen;
-        types [AST_NEWCALL] = fncallCodegen;
+//        types [AST_NEWCALL] = fncallCodegen;
         types [AST_LITERAL] = literalCodegen;
         types [AST_IDENTIFIER] = identifierCodegen;
         types [AST_ARRAY] = arrayCodegen;
@@ -184,6 +193,7 @@ void codegen (Ref<AstNode> statement, CodegenState* pState)
         types [AST_CONNECT] = connectCodegen;
         types [AST_INPUT] = messageCodegen;
         types [AST_OUTPUT] = messageCodegen;
+        types [AST_CLASS] = classCodegen;
     }
     
     types[statement->getType()](statement, pState);
@@ -299,8 +309,6 @@ void varCodegen (Ref<AstNode> node, CodegenState* pState)
     }
     else
     {
-//        pState->curActor->writeFieldStr(name, jsNull());
-        
         pushConstant ("this", pState);
         instruction8 (OC_RD_LOCAL, pState);
         pushConstant (name, pState);
@@ -430,28 +438,39 @@ void returnCodegen (Ref<AstNode> statement, CodegenState* pState)
  */
 void functionCodegen (Ref<AstNode> node, CodegenState* pState)
 {
-    Ref<AstFunction>    fnNode = node.staticCast<AstFunction>();
-    Ref<JSFunction>     function = JSFunction::createJS(fnNode->getName());
-    const AstFunction::Params& params = fnNode->getParams();
-    
-    CodegenState    fnState = initFunctionState(node);
-
-    function->setParams (params);
-    function->setCodeMVM (fnState.curRoutine);
-    
-    codegen (fnNode->getCode(), &fnState);
+    auto    function = createFunction(node, pState);
     
     //Push constant to return it.
     pushConstant(function, pState);
-    if (!fnNode->getName().empty())
+    if (!node->getName().empty())
     {
         //If it is a named function, create a constant at current scope.
-        pushConstant(fnNode->getName(), pState);
+        pushConstant(node->getName(), pState);
         
         //Copy function reference.
         instruction8(OC_CP+1, pState);
         instruction8(OC_NEW_CONST, pState);
     }
+}
+
+/**
+ * Compiles and creates a function.
+ * @param node
+ * @param pState
+ * @return 
+ */
+Ref<JSFunction> createFunction (Ref<AstNode> node, CodegenState* pState)
+{
+    Ref<AstFunction>    fnNode = node.staticCast<AstFunction>();
+    const AstFunction::Params& params = fnNode->getParams();
+    
+    CodegenState    fnState = initFunctionState(node);
+
+    auto    function = JSFunction::createJS(fnNode->getName(), params, fnState.curRoutine);
+
+    codegen (fnNode->getCode(), &fnState);
+    
+    return function;
 }
 
 /**
@@ -515,10 +534,10 @@ void assignmentCodegen (Ref<AstNode> statement, CodegenState* pState)
  */
 void fncallCodegen (Ref<AstNode> statement, CodegenState* pState)
 {
-    if (statement->getType() == AST_NEWCALL)
-        constructorCodegen(statement, pState);
-    else
-    {
+//    if (statement->getType() == AST_NEWCALL)
+//        constructorCodegen(statement, pState);
+//    else
+//    {
         const AstNodeTypes fnExprType = statement->children()[0]->getType();
         
         //If the expression to get the function reference is an object member access,
@@ -540,7 +559,7 @@ void fncallCodegen (Ref<AstNode> statement, CodegenState* pState)
 
             callInstruction (nChilds, pState);
         }
-    }
+//    }
 }
 
 /**
@@ -576,6 +595,8 @@ void thisCallCodegen (Ref<AstNode> statement, CodegenState* pState)
  * @param statement
  * @param pState
  */
+//TODO: Review.
+#if 0
 void constructorCodegen (Ref<AstNode> statement, CodegenState* pState)
 {
     childCodegen(statement, 0, pState); //[function]
@@ -605,6 +626,7 @@ void constructorCodegen (Ref<AstNode> statement, CodegenState* pState)
     //Discard function result, keep 'this' (the new object)
     instruction8(OC_POP, pState);
 }
+#endif
 
 /**
  * Generates code for a literal expression.
@@ -669,7 +691,7 @@ void objectCodegen (Ref<AstNode> statement, CodegenState* pState)
     Ref<AstObject>                  obj = statement.staticCast<AstObject>();
     const AstObject::PropertyList   properties= obj->getProperties();
     
-    callCodegen("@newObj", 0, pState);
+    callCodegen("Object", 0, pState);
 
     //TODO: Properties are not evaluated in definition order, but in 
     //alphabetical order, as they are defined in a map.
@@ -861,22 +883,22 @@ void logicalOpCodegen (const int opCode, Ref<AstNode> statement, CodegenState* p
  */
 void actorCodegen (Ref<AstNode> node, CodegenState* pState)
 {
-    auto actor = AsActorClass::create(node->getName());
-    
-    const AstNode::Params&  params = node->getParams();
+    auto  params = node->getParams();
     CodegenState            actorState = initFunctionState(node);
-    auto                    constructor = actor->getConstructor();
     
-    actorState.curActor = actor;
-    constructor->setParams (params);
-    constructor->setCodeMVM (actorState.curRoutine);
+    auto constructor = AsEndPoint::createInput("@start",
+                                               params,
+                                               actorState.curRoutine);
     
     childrenCodegen(node, &actorState);
     
-    actor->createDefaultEndPoints ();
+    VarMap members = actorState.members;
+    members["@start"] = VarProperties(constructor, true);
+    
+    auto actor = AsActorClass::create(node->getName(), members, params);
     
     //Create a new constant, and yield actor class reference
-    pushConstant( deepFreeze(actor), pState);
+    pushConstant( actor, pState);
     pushConstant(node->getName(), pState);
     instruction8(OC_CP+1, pState);
     instruction8(OC_NEW_CONST, pState);
@@ -904,13 +926,10 @@ void connectCodegen (Ref<AstNode> node, CodegenState* pState)
  */
 void messageCodegen (Ref<AstNode> node, CodegenState* pState)
 {
-    ASSERT(pState->curActor.notNull());
-    
     Ref<AsEndPoint>  msg = AsEndPoint::create(node->getName(), 
-                                            node->getType() == AST_INPUT);
+                                              node->getParams(), 
+                                              node->getType() == AST_INPUT);
 
-    msg->setParams(node->getParams());
-    
     if (node->getType() == AST_INPUT)
     {
         //TODO: This code is very simular in function, actor, and message code generation
@@ -923,7 +942,207 @@ void messageCodegen (Ref<AstNode> node, CodegenState* pState)
         codegen (node.staticCast<AstFunction>()->getCode(), &fnState);
     }
 
-    pState->curActor->writeFieldStr (msg->getName(), msg);
+    pState->members[msg->getName()] = VarProperties(msg, true);
+}
+
+/**
+ * Generates code for class definitions
+ * @param node
+ * @param pState
+ */
+void classCodegen (Ref<AstNode> node, CodegenState* pState)
+{
+    auto    constructorFn = classConstructorCodegen(node, pState);
+    auto    children = node->children();
+    VarMap  members;
+    
+    for (auto it = children.begin(); it != children.end(); ++it)
+    {
+        auto child = *it;
+        
+        if (child.notNull() && child->getType() == AST_FUNCTION)
+        {
+            auto function = createFunction(child, pState);
+            checkedVarWrite (members, function->getName(), function, true);
+        }
+    }
+    
+    auto parentClass = getParentClass (node, pState);
+    auto cls = JSClass::create(node->getName(), parentClass, members, constructorFn);
+    
+    //Register class
+    pState->symbols[node->getName()] = cls;
+    
+    //Create a new constant, and yield class reference
+    pushConstant( cls, pState);
+    pushConstant(node->getName(), pState);
+    instruction8(OC_CP+1, pState);
+    instruction8(OC_NEW_CONST, pState);
+}
+
+/**
+ * Generates the code for a class constructor function.
+ * @param node
+ * @param pState
+ * @return 
+ */
+Ref<JSFunction> classConstructorCodegen (Ref<AstNode> node, CodegenState* pState)
+{
+    auto            params = classConstructorParams(node, pState);
+    CodegenState    fnState = initFunctionState(node, params);
+
+    auto            function = JSFunction::createJS("@constructor", params, fnState.curRoutine);
+    auto            children = node->children();
+    set<string>     vars;
+    
+    pState = &fnState;
+    baseConstructorCallCodegen (node, pState);      //Stack:[newObj]
+    
+    for (auto it = children.begin(); it != children.end(); ++it)
+    {
+        auto child = *it;
+        
+        if (child.notNull())
+        {
+            auto type = child->getType();
+            
+            if (type == AST_VAR || type == AST_CONST)
+            {
+                instruction8(OC_CP, pState);
+                pushConstant (child->getName(), pState);//Stack:[newObj, newObj, name]
+                if (!childCodegen(child, 0, pState))
+                    pushConstant (jsNull(), pState);
+                
+                //Stack:[newObj, newObj, name, value]
+                instruction8 (type == AST_CONST ? OC_NEW_CONST_FIELD : OC_WR_FIELD, pState);
+                //Stack:[newObj]
+                
+                vars.insert(child->getName());
+            }
+        }
+    }//class members
+
+    //Stack:[newObj]
+
+    //Parameters as class variables
+    for (auto itParam = params.begin(); itParam != params.end(); ++itParam)
+    {
+        if (vars.count(*itParam) == 0)
+        {
+            instruction8(OC_CP, pState);
+            //Stack:[newObj, newObj]
+            
+            pushConstant (*itParam, pState);
+            instruction8(OC_CP, pState);
+            //Stack:[newObj, newObj, paramName, paramName]
+            
+            instruction8 (OC_RD_LOCAL, pState);
+            //Stack:[newObj, newObj, paramName, paramValue]
+            
+            instruction8 (OC_WR_FIELD, pState);
+            //Stack:[newObj]
+        }
+    }
+    
+    //Stack:[newObj]
+
+    return function;
+}
+
+/**
+ * Generates the code which calls the base class constructor.
+ * @param node
+ * @param pState
+ */
+void baseConstructorCallCodegen (Ref<AstNode> node, CodegenState* pState)
+{
+    auto    parentClass = getParentClass(node, pState);
+    auto    extends = astGetExtends (node);
+    
+    int     nParams;
+    
+    pushUndefined(pState);      //No 'this' pointer
+    
+    if (extends.notNull() && extends->childExists(0))
+    {
+        //Non-inherited parameters
+        auto paramsNode = extends->children().front();
+        nParams = childrenCodegen(paramsNode, pState);
+    }
+    else
+    {
+        //inherited parameters
+        StringVector    params = parentClass->getParams();
+
+        nParams = (int)params.size();
+        for (int i=0; i<nParams; ++i)
+        {
+            pushConstant(params[i], pState);
+            instruction8(OC_RD_LOCAL, pState);
+        }
+    }
+
+    callCodegen(parentClass->getName(), nParams+1, pState);
+//    pushConstant (parentClass->getName(), pState);
+//    instruction8 (OC_RD_GLOBAL, pState);
+//
+//    callCodegen("@baseConstructorCall", nParams+1, pState);
+}
+
+
+/**
+ * Gets class constructor parameter list, taking into account parameter inheritance rules.
+ * @param node
+ * @param pState
+ * @return 
+ */
+StringVector classConstructorParams(Ref<AstNode> node, CodegenState* pState)
+{
+    auto    extends = astGetExtends (node);
+    
+    if (extends.isNull())
+        return node->getParams();
+
+    if (extends->childExists(0))
+        return node->getParams();   //Non-inherited parameters
+    else
+    {
+        //inherited parameters
+        auto            parentClass = getParentClass (node, pState);
+        StringVector    params = parentClass->getParams();
+        auto            nodeParams = node->getParams();
+        
+        params.insert(params.end(), nodeParams.begin(), nodeParams.end());
+        return params;
+    }
+}
+
+/**
+ * Looks for a reference of the parent class in current scope.
+ * By the moment is limited to search in the current constants
+ * @param node
+ * @param pState
+ * @return 
+ */
+Ref<JSClass> getParentClass (Ref<AstNode> node, CodegenState* pState)
+{
+    auto extends = astGetExtends(node);
+    
+    if (extends.isNull())
+        return JSObject::DefaultClass;
+    
+    auto parentName = extends->getName();
+    auto itParent = pState->symbols.find(parentName);
+    
+    if (itParent == pState->symbols.end())
+        errorAt(node->position(), "Parent class '%s' does not exist", parentName.c_str());
+    
+    auto parentClass = itParent->second;
+    
+    if (parentClass->getType() != VT_CLASS)
+        errorAt(node->position(), "'%s' is not a class", parentName.c_str());
+    
+    return parentClass.staticCast<JSClass>();
 }
 
 
@@ -1222,8 +1441,18 @@ int curBlockId (CodegenState* pState)
  */
 CodegenState initFunctionState (Ref<AstNode> node)
 {
+    return initFunctionState(node, node->getParams());
+}
+
+/**
+ * Initializes a 'CodegenState' object for a function
+ * @param node
+ * @param params
+ * @return 
+ */
+CodegenState initFunctionState (Ref<AstNode> node, const StringVector& params)
+{
     Ref<MvmRoutine>         code = MvmRoutine::create(node->position());
-    const AstNode::Params&  params = node->getParams();
     CodegenState            fnState;
     
     fnState.curRoutine = code;

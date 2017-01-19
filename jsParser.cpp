@@ -43,7 +43,7 @@ ExprResult parseUnaryExpr (CScriptToken token);
 ExprResult parsePostFixExpr (CScriptToken token);
 ExprResult parseIdentifier (CScriptToken token);
 
-ExprResult parseNewExpr (CScriptToken token);
+//ExprResult parseNewExpr (CScriptToken token);
 ExprResult parseCallExpr (CScriptToken token);
 ExprResult parseMemberExpr (CScriptToken token);
 ExprResult parsePrimaryExpr (CScriptToken token);
@@ -65,6 +65,10 @@ ExprResult parseActorMember (CScriptToken token);
 ExprResult parseInputMessage (CScriptToken token);
 ExprResult parseOutputMessage (CScriptToken token);
 ExprResult parseConnectExpr (CScriptToken token);
+
+ExprResult parseClassExpr (CScriptToken token);
+ExprResult parseExtends (CScriptToken token);
+ExprResult parseClassMember (CScriptToken token);
 
     
 bool isAssignment(CScriptToken token)
@@ -156,6 +160,7 @@ ParseResult parseStatement (CScriptToken token)
     case LEX_R_RETURN:  return parseReturn (token);
     case LEX_R_FUNCTION:return parseFunctionExpr (token).toParseResult();
     case LEX_R_ACTOR:   return parseActorExpr (token).toParseResult();
+    case LEX_R_CLASS:   return parseClassExpr (token).toParseResult();
     
     default:
         return parseSimpleStatement(token);
@@ -522,7 +527,7 @@ ExprResult parseLeftExpr (CScriptToken token)
 {
     ExprResult     r = parseCallExpr (token);
     
-    return r.orElse (parseNewExpr).final();
+    return r.orElse (parseMemberExpr).final();
 }
 
 /**
@@ -738,28 +743,28 @@ ExprResult parseIdentifier (CScriptToken token)
  * @param token
  * @return 
  */
-ExprResult parseNewExpr (CScriptToken token)
-{
-    ExprResult     r = parseMemberExpr (token);
-    
-    if (r.ok())
-        return r;
-    else
-    {
-        ScriptPosition  newPos = r.token.getPosition();
-        
-        r = r.require(LEX_R_NEW).then(parseNewExpr);
-        
-        if (r.ok())
-        {
-            auto    call = astCreateFnCall(newPos, r.result, true);
-            
-            r.result = call;
-        }
-
-        return r.final();
-    }
-}
+//ExprResult parseNewExpr (CScriptToken token)
+//{
+//    ExprResult     r = parseMemberExpr (token);
+//    
+//    if (r.ok())
+//        return r;
+//    else
+//    {
+//        ScriptPosition  newPos = r.token.getPosition();
+//        
+//        r = r.require(LEX_R_NEW).then(parseNewExpr);
+//        
+//        if (r.ok())
+//        {
+//            auto    call = astCreateFnCall(newPos, r.result, true);
+//            
+//            r.result = call;
+//        }
+//
+//        return r.final();
+//    }
+//}
 
 /**
  * Parses a function call expression
@@ -797,17 +802,17 @@ ExprResult parseCallExpr (CScriptToken token)
  */
 ExprResult parseMemberExpr (CScriptToken token)
 {
-    if (token.type() == LEX_R_NEW)
-    {
-        ExprResult r(token);
-        r = r.require(LEX_R_NEW).then(parseMemberExpr).then(parseCallArguments);
-        
-        if (!r.error())
-            r.result = astToNewCall(r.result);
-        return r.final();
-    }
-    else
-    {
+//    if (token.type() == LEX_R_NEW)
+//    {
+//        ExprResult r(token);
+//        r = r.require(LEX_R_NEW).then(parseMemberExpr).then(parseCallArguments);
+//        
+//        if (!r.error())
+//            r.result = astToNewCall(r.result);
+//        return r.final();
+//    }
+//    else
+//    {
         ExprResult r = parsePrimaryExpr(token).orElse(parseFunctionExpr);
         
         while (!r.error() && oneOf (r.token, "[."))
@@ -824,7 +829,7 @@ ExprResult parseMemberExpr (CScriptToken token)
         }//while
 
         return r.final();
-    }
+//    }
 }
 
 /**
@@ -976,7 +981,7 @@ ExprResult parseCallArguments (CScriptToken token, Ref<AstNode> fnExpr)
     ExprResult      r(token);
 
     r = r.require('(');
-    auto    call = astCreateFnCall(token.getPosition(), fnExpr, false);
+    auto    call = astCreateFnCall(token.getPosition(), fnExpr/*, false*/);
     
     while (r.ok() && r.token.type() != ')')
     {
@@ -1323,4 +1328,118 @@ ExprResult parseConnectExpr (CScriptToken token)
         r.result = astCreateConnect (pos, lexpr, r.result);    
     
     return r.final();
+}
+
+
+/**
+ * Parses a class definition.
+ * @param token
+ * @return 
+ */
+ExprResult parseClassExpr (CScriptToken token)
+{
+    ScriptPosition      pos = token.getPosition();
+    ExprResult          r(token);
+    Ref<AstClassNode>   classNode;
+
+    r = r.require(LEX_R_CLASS);
+    if (r.error())
+        return r.final();
+
+    const string name = r.token.text();
+    
+    r = r.require(LEX_ID);
+    
+    if (r.ok())
+    {
+        classNode = AstClassNode::create(pos, name);
+        r.result = classNode;
+        
+        if (r.token.type() == '(')
+            r = r.then(parseArgumentList);
+        
+        if (r.ok() && r.token.type() == LEX_ID && r.token.text() == "extends")
+        {
+            r = r.then(parseExtends);
+            if (r.ok())
+                classNode->addChild(r.result);
+        }
+        
+        r = r.require('{');
+
+        while (r.ok() && r.token.type() != '}')
+        {
+            //Skip ';', which may (optionally) act as separators.
+            while (r.token.type() == ';')
+                r = r.skip();
+            
+            if (r.token.type() == '}')
+                break;
+            
+            r = parseClassMember(r.token);
+            if (r.ok())
+                classNode->addChild(r.result);
+        }
+        
+        r = r.require('}');
+    }//if
+    
+    if (r.ok())
+        r.result = classNode;
+    
+    return r.final();
+}
+
+/**
+ * Parses a 'extends' clause, used to define class inheritance.
+ * @param token
+ * @return 
+ */
+ExprResult parseExtends (CScriptToken token)
+{
+    ExprResult  r(token);
+
+    r = r.requireId("extends");
+    if (r.error())
+        return r.final();
+    
+    const string        parentName = r.token.text();
+    r = r.require(LEX_ID);
+    
+    if (r.ok())
+    {
+        auto    extNode = astCreateExtends(token.getPosition(), parentName);
+        
+        if (r.token.type() == '(')
+        {
+            r.result = extNode;
+            r = r.then(parseCallArguments);
+            if (r.ok())
+                extNode->addChild (r.result);
+        }
+        
+        if (r.ok())
+            r.result = extNode;    
+    }
+    
+    
+    return r.final();
+}
+
+/**
+ * Parses a class member.
+ * @param token
+ * @return 
+ */
+ExprResult parseClassMember (CScriptToken token)
+{
+    switch (token.type())
+    {
+    case LEX_R_VAR:
+    case LEX_R_CONST:
+        return parseVar(token);
+
+    default:
+        return parseFunctionExpr(token);
+    }
 }

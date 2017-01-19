@@ -14,6 +14,7 @@
 
 #include "jsVars.h"
 
+class JSArray;
 
 /**
  * Interface for name scopes. 

@@ -21,6 +21,7 @@
 
 class CScriptToken;
 struct IScope;
+class FunctionScope;
 
 /**
  * Enumeration of basic Javascript value types.
@@ -34,11 +35,12 @@ enum JSValueTypes
     VT_ACTOR_REF,
     VT_INPUT_EP_REF,
     VT_OUTPUT_EP_REF,
-    VT_OBJECT,  //All below are objects
+    VT_CLASS,
+    VT_OBJECT,
     VT_STRING,
     VT_ARRAY,
     VT_ACTOR,
-    VT_FUNCTION,//All below are functions
+    VT_FUNCTION,
     VT_ACTOR_CLASS,
     VT_INPUT_EP,
     VT_OUTPUT_EP,
@@ -46,6 +48,7 @@ enum JSValueTypes
 std::string getTypeName(JSValueTypes vType);
 
 typedef std::vector<std::string> StringVector;
+typedef std::set<std::string> StringSet;
 
 /**
  * The possible mutability states of a JSValue.
@@ -84,6 +87,10 @@ public:
     virtual Ref<JSValue> writeField(Ref<JSValue> key, Ref<JSValue> value) = 0;
     virtual Ref<JSValue> newConstField(Ref<JSValue> key, Ref<JSValue> value) = 0;
     virtual Ref<JSValue> deleteField(Ref<JSValue> key) = 0;
+    virtual StringSet    getFields()const=0;
+    
+    virtual Ref<JSValue> call (Ref<FunctionScope> scope);
+
     virtual std::string getJSON(int indent) = 0;
     
     virtual const StringVector& getParams()const=0;
@@ -91,6 +98,7 @@ public:
     
     Ref<JSValue> readFieldStr(const std::string& strKey)const;
     Ref<JSValue> writeFieldStr(const std::string& strKey, Ref<JSValue> value);
+    Ref<JSValue> newConstFieldStr(const std::string& strKey, Ref<JSValue> value);
 
     virtual std::string getTypeName()const
     {
@@ -149,6 +157,8 @@ Ref<JSValue> jsBool(bool value);
 Ref<JSValue> jsInt(int value);
 Ref<JSValue> jsDouble(double value);
 Ref<JSValue> jsString(const std::string& value);
+
+std::string  key2Str(Ref<JSValue> key);
 
 Ref<JSValue> createConstant(CScriptToken token);
 
@@ -239,7 +249,13 @@ public:
     {
         return undefined();
     }
-
+    
+    virtual StringSet getFields()const
+    {
+        static StringSet empty;
+        return empty;
+    }
+    
     virtual std::string getJSON(int indent)
     {
         if (V_TYPE == VT_NULL)
@@ -385,210 +401,6 @@ typedef std::map<std::string, VarProperties> VarMap;
 void checkedVarWrite (VarMap& map, const std::string& name, Ref<JSValue> value, bool isConst);
 Ref<JSValue> checkedVarDelete (VarMap& map, const std::string& name);
 
-
-/**
- * Javascript object class
- */
-class JSObject : public JSValue
-{
-public:
-    static Ref<JSObject> create();
-    static Ref<JSObject> create(Ref<JSObject> prototype);
-    
-    virtual JSMutability getMutability()const
-    {
-        return m_mutability;
-    }
-    
-    virtual Ref<JSValue>    freeze();
-    virtual Ref<JSValue>    unFreeze(bool forceClone=false);
-    
-    Ref<JSObject> getPrototype()const
-    {
-        return m_prototype;
-    }
-    
-    Ref<JSObject> setPrototype(Ref<JSObject> value)
-    {
-        if (isMutable())
-            return m_prototype = value;
-        else
-            return m_prototype;
-    }
-    
-    void setFrozen();
-    
-    std::vector <Ref<JSValue> >   getKeys()const;
-    
-    bool isWritable(const std::string& key)const;
-
-    // JSValue
-    /////////////////////////////////////////
-
-    virtual std::string toString()const
-    {
-        return "[object Object]";
-    }
-
-    virtual bool toBoolean()const
-    {
-        return true;
-    } //TODO: Should be 'undefined'. Check the spec.
-
-    virtual double toDouble()const
-    {
-        return 0;
-    }
-
-    virtual Ref<JSValue> readField(Ref<JSValue> key)const;
-    virtual Ref<JSValue> writeField(Ref<JSValue> key, Ref<JSValue> value);
-    virtual Ref<JSValue> newConstField(Ref<JSValue> key, Ref<JSValue> value);
-    virtual Ref<JSValue> deleteField(Ref<JSValue> key);
-
-    virtual std::string getJSON(int indent);
-
-    virtual JSValueTypes getType()const
-    {
-        return VT_OBJECT;
-    }
-    
-    virtual const StringVector& getParams()const
-    {
-        static const StringVector    empty;
-        return empty;
-    }
-
-    virtual const std::string& getName()const
-    {
-        static std::string empty;
-        return empty;
-    }
-    /////////////////////////////////////////
-
-    ///'JSObject' default prototype
-    static Ref<JSObject> DefaultPrototype;
-
-protected:
-
-    JSObject(Ref<JSObject> prototype, JSMutability mutability) : 
-    m_prototype (prototype), m_mutability(mutability)
-    {
-    }
-
-    ~JSObject();
-
-    JSObject(const JSObject& src, bool _mutable);
-    virtual Ref<JSObject>   clone (bool _mutable);
-    
-    static JSMutability     selectMutability(const JSObject& src, bool _mutable);
-    static std::string      key2Str(Ref<JSValue> key);
-
-private:
-    VarMap          m_members;
-    Ref<JSObject>   m_prototype;
-    JSMutability    m_mutability;
-    
-    friend Ref<JSValue> deepFreeze(Ref<JSValue> obj, JSValuesMap& transformed);
-};
-
-/**
- * Javascript string class.
- * Javascript strings are immutable. Once created, they cannot be modified.
- */
-class JSString : public JSObject
-{
-public:
-    static Ref<JSString> create(const std::string& value);
-
-    virtual Ref<JSValue> unFreeze(bool forceClone=false);
-
-    virtual bool toBoolean()const
-    {
-        return !m_text.empty();
-    }
-    virtual double toDouble()const;
-
-    virtual std::string toString()const
-    {
-        return m_text;
-    }
-
-    virtual Ref<JSValue> readField(Ref<JSValue> key)const;
-
-    virtual std::string getJSON(int indent);
-
-    virtual JSValueTypes getType()const
-    {
-        return VT_STRING;
-    }
-    
-    /// 'JSString' default prototype.
-    static Ref<JSObject> DefaultPrototype;
-
-protected:
-
-    JSString(const std::string& text) 
-    : JSObject(DefaultPrototype, MT_DEEPFROZEN), m_text(text)
-    {
-    }
-
-private:
-    const std::string m_text;
-
-};
-
-/**
- * Javascript array implementation
- */
-class JSArray : public JSObject
-{
-public:
-    static Ref<JSArray> create();
-    static Ref<JSArray> create(size_t size);
-    static Ref<JSArray> createStrArray(const StringVector& strList);
-
-    size_t push(Ref<JSValue> value);
-
-    size_t length()const
-    {
-        return m_length;
-    }
-
-    Ref<JSValue> getAt(size_t index)const;
-
-    // JSValue
-    /////////////////////////////////////////
-    virtual std::string toString()const;
-
-    virtual std::string getJSON(int indent);
-
-    virtual JSValueTypes getType()const
-    {
-        return VT_ARRAY;
-    }
-
-    virtual Ref<JSValue> readField(Ref<JSValue> key)const;
-    virtual Ref<JSValue> writeField(Ref<JSValue> key, Ref<JSValue> value);
-    /////////////////////////////////////////
-
-
-    /// 'JSArray' default prototype.
-    static Ref<JSObject> DefaultPrototype;
-    
-private:
-
-    JSArray() : JSObject(DefaultPrototype, MT_MUTABLE), m_length(0)
-    {
-    }
-    
-    JSArray(const JSArray& src, bool _mutable);
-    virtual Ref<JSObject>   clone (bool _mutable);
-
-    void setLength(Ref<JSValue> value);
-
-    size_t m_length;
-};
-
 class FunctionScope;
 
 /// Pointer to native function type. 
@@ -599,22 +411,26 @@ typedef Ref<JSValue> (*JSNativeFn)(FunctionScope* var);
  * Javascript function class.
  * Extends 'JSObject', as functions are objects.
  */
-class JSFunction : public JSObject
+class JSFunction : public JSValueBase<VT_FUNCTION>
 {
 public:
-    static Ref<JSFunction> createJS(const std::string& name);
-    static Ref<JSFunction> createNative(const std::string& name, JSNativeFn fnPtr);
+    static Ref<JSFunction> createJS(const std::string& name, 
+                                    const StringVector& params,
+                                    Ref<RefCountObj> code);
+    static Ref<JSFunction> createNative(const std::string& name, 
+                                        const StringVector& params, 
+                                        JSNativeFn fnPtr);
 
-    int addParam(const std::string& name)
-    {
-        m_params.push_back(name);
-        return (int) m_params.size();
-    }
-
-    void setParams(const StringVector& params)
-    {
-        m_params = params;
-    }
+//    int addParam(const std::string& name)
+//    {
+//        m_params.push_back(name);
+//        return (int) m_params.size();
+//    }
+//
+//    void setParams(const StringVector& params)
+//    {
+//        m_params = params;
+//    }
 
     const StringVector& getParams()const
     {
@@ -631,10 +447,10 @@ public:
         m_codeMVM = code;
     }
     
-    void setNativePtr(JSNativeFn pNative)
-    {
-        m_pNative = pNative;
-    }
+//    void setNativePtr(JSNativeFn pNative)
+//    {
+//        m_pNative = pNative;
+//    }
 
     Ref<RefCountObj> getCodeMVM()const
     {
@@ -666,23 +482,20 @@ public:
     {
         return VT_FUNCTION;
     }
-    /////////////////////////////////////////
-
     
-    /// 'JSFunction' default prototype.
-    static Ref<JSObject> DefaultPrototype;
+    virtual Ref<JSValue> call (Ref<FunctionScope> scope);
+    
+    /////////////////////////////////////////
 
 protected:
 
-    JSFunction(const std::string& name, JSNativeFn pNative);
+    JSFunction(const std::string& name, const StringVector& params, JSNativeFn pNative);
+    JSFunction(const std::string& name, const StringVector& params, Ref<RefCountObj> code);
     ~JSFunction();
 
-    JSFunction(const JSFunction& src, bool _mutable);
-    virtual Ref<JSObject>   clone (bool _mutable);
-    
 private:
     const std::string m_name;
+    StringVector m_params;
     Ref<RefCountObj> m_codeMVM;
     JSNativeFn m_pNative;
-    StringVector m_params;
 };

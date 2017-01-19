@@ -33,7 +33,7 @@ enum AstNodeTypes
     ,AST_FUNCTION
     ,AST_ASSIGNMENT
     ,AST_FNCALL
-    ,AST_NEWCALL
+    //,AST_NEWCALL
     ,AST_LITERAL
     ,AST_IDENTIFIER
     ,AST_ARRAY
@@ -48,11 +48,14 @@ enum AstNodeTypes
     ,AST_CONNECT
     ,AST_INPUT
     ,AST_OUTPUT
+    ,AST_CLASS
+    ,AST_EXTENDS
     ,AST_TYPES_COUNT
 };
 
 class AstNode;
 class AstFunction;
+class JSArray;
 typedef std::vector <Ref<AstNode> > AstNodeList;
 
 //AST conversion functions (mainly for AST /parser debugging)
@@ -87,8 +90,8 @@ Ref<AstNode> astCreatePostfixOp(CScriptToken token, Ref<AstNode> lexpr);
 Ref<AstNode> astCreateBinaryOp(CScriptToken token, 
                                  Ref<AstNode> lexpr, 
                                  Ref<AstNode> rexpr);
-Ref<AstNode> astCreateFnCall(ScriptPosition pos, Ref<AstNode> fnExpr, bool newCall);
-Ref<AstNode> astToNewCall(Ref<AstNode> callExpr);
+Ref<AstNode> astCreateFnCall(ScriptPosition pos, Ref<AstNode> fnExpr);
+//Ref<AstNode> astToNewCall(Ref<AstNode> callExpr);
 Ref<AstNode> astCreateArray(ScriptPosition pos);
 Ref<AstNode> astCreateArrayAccess(ScriptPosition pos,
                                   Ref<AstNode> arrayExpr, 
@@ -109,6 +112,10 @@ Ref<AstNode> astCreateSend (ScriptPosition pos,
                                  Ref<AstNode> lexpr, 
                                  Ref<AstNode> rexpr);
 
+Ref<AstNode> astCreateExtends (ScriptPosition pos,
+                                const std::string& parentName);
+
+Ref<AstNode> astGetExtends(Ref<AstNode> node);
 
 /**
  * Base class for AST nodes
@@ -435,6 +442,43 @@ protected:
     
     PropertyList m_properties;
 };
+
+
+/**
+ * AST node for class definitions
+ */
+class AstClassNode : public AstNamedBranch
+{
+public:
+    static Ref<AstClassNode> create(ScriptPosition position,
+                                   const std::string& name)
+    {
+        return refFromNew (new AstClassNode(position, name));
+    }
+
+    virtual void addParam(const std::string& paramName)
+    {
+        m_params.push_back(paramName);
+    }
+
+    virtual const Params& getParams()const
+    {
+        return m_params;
+    }
+    
+    Ref<AstNamedBranch> getExtendsNode()const;
+    
+    virtual Ref<JSValue> toJS()const;
+
+protected:
+    AstClassNode(ScriptPosition position, const std::string& name) :
+    AstNamedBranch(AST_CLASS, position, name)
+    {
+    }
+    
+    Params              m_params;
+};
+
 
 #endif	/* AST_H */
 

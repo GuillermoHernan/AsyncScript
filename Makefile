@@ -19,7 +19,9 @@ mvmFunctions.cpp \
 semanticCheck.cpp \
 actorRuntime.cpp \
 asVars.cpp \
-executionScope.cpp
+executionScope.cpp \
+asObjects.cpp \
+asString.cpp
 
 OBJECTS=$(SOURCES:.cpp=.o)
 

@@ -271,11 +271,11 @@ Ref<JSObject> disassemblyActorClass (Ref<AsActorClass> actorClass)
 
     obj->writeFieldStr ("actorClass", jsString(actorClass->getName()) );
     
-    auto keys = actorClass->getKeys();
-    for (size_t i = 0; i < keys.size(); ++i)
+    auto keys = actorClass->getFields();
+    for (auto it = keys.begin(); it != keys.end(); ++it)
     {
-        auto value = actorClass->readField(keys[i]);
-        obj->writeField (keys[i], constantToJS(value) );
+        auto value = actorClass->readFieldStr(*it);
+        obj->writeFieldStr (*it, constantToJS(value) );
     }        
 
     return obj;
