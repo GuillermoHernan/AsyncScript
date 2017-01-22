@@ -115,7 +115,7 @@ void pushConstant (const char* str, CodegenState* pState);
 void pushConstant (const std::string& str, CodegenState* pState);
 void pushConstant (int value, CodegenState* pState);
 void pushConstant (bool value, CodegenState* pState);
-void pushUndefined (CodegenState* pState);
+void pushNull (CodegenState* pState);
 
 void callCodegen (const std::string& fnName, int nParams, CodegenState* pState);
 void callInstruction (int nParams, CodegenState* pState);
@@ -279,8 +279,8 @@ void blockCodegen (Ref<AstNode> statement, CodegenState* pState)
 
     instruction8 (OC_POP_SCOPE, pState);
         
-    //Non expression stataments leave an 'undefined' on the stack.
-    pushUndefined(pState);
+    //Non expression stataments leave a 'null' on the stack.
+    pushNull(pState);
 }
 
 /**
@@ -301,11 +301,11 @@ void varCodegen (Ref<AstNode> node, CodegenState* pState)
 
         pushConstant (name, pState);
         if (!childCodegen(node, 0, pState))
-            pushUndefined(pState);
+            pushNull(pState);
         instruction8 (isConst ? OC_NEW_CONST : OC_NEW_VAR, pState);
 
-        //Non-expression statements leave an 'undefined' on the stack.
-        pushUndefined(pState);
+        //Non-expression statements leave a 'null' on the stack.
+        pushNull(pState);
     }
     else
     {
@@ -360,9 +360,9 @@ void ifCodegen (Ref<AstNode> statement, CodegenState* pState)
     //Fix else jump
     setFalseJump (thenInitialBlock-1, thenFinalBlock+1, pState);
     
-    //Non expression statements leave an 'undefined' on the stack.
+    //Non-expression statements leave a 'null' on the stack.
     if (!conditional)
-        pushUndefined(pState);
+        pushNull(pState);
 }
 
 /**
@@ -408,8 +408,8 @@ void forCodegen (Ref<AstNode> statement, CodegenState* pState)
     //Remove loop scope
     instruction8(OC_POP_SCOPE, pState);
     
-    //Non expression statements leave an 'undefined' on the stack.
-    pushUndefined(pState);
+    //Non-expression statements leave a 'null' on the stack.
+    pushNull(pState);
 }
 
 /**
@@ -423,8 +423,8 @@ void returnCodegen (Ref<AstNode> statement, CodegenState* pState)
     //indexes to (-1), which means that the current function shall end.
     if (!childCodegen(statement, 0, pState))
     {
-        //If it is an empty return statement, push a 'undefined' value on the stack
-        pushUndefined(pState);
+        //If it is an empty return statement, push a 'null' value on the stack
+        pushNull(pState);
     }
     
     //instruction8(OC_RETURN, pState);
@@ -547,7 +547,7 @@ void fncallCodegen (Ref<AstNode> statement, CodegenState* pState)
         else
         {
             //Regular function call (no this pointer)
-            pushUndefined(pState);      //No 'this' pointer.
+            pushNull(pState);      //No 'this' pointer.
             
             //Parameters evaluation
             const int nChilds = (int)statement->children().size();
@@ -1061,7 +1061,7 @@ void baseConstructorCallCodegen (Ref<AstNode> node, CodegenState* pState)
     
     int     nParams;
     
-    pushUndefined(pState);      //No 'this' pointer
+    pushNull(pState);      //No 'this' pointer
     
     if (extends.notNull() && extends->childExists(0))
     {
@@ -1221,12 +1221,12 @@ void pushConstant (bool value, CodegenState* pState)
 }
 
 /**
- * Pushes an 'undefined' value into the stack
+ * Pushes an 'null' value into the stack
  * @param pState
  */
-void pushUndefined (CodegenState* pState)
+void pushNull (CodegenState* pState)
 {
-    pushConstant(undefined(), pState);
+    pushConstant(jsNull(), pState);
 }
 
 /**

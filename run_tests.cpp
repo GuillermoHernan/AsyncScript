@@ -109,7 +109,7 @@ Ref<JSValue> assertFunction(FunctionScope* pScope)
         error("Assertion failed: %s", text.c_str());
     }
     
-    return undefined();
+    return jsNull();
 }
 
 /**
@@ -149,7 +149,7 @@ Ref<JSValue> printLn(FunctionScope* pScope)
     
     printf ("%s\n", text->toString().c_str());
     
-    return undefined();
+    return jsNull();
 }
 
 /**
@@ -238,7 +238,7 @@ bool run_test(const std::string& szFile, const string &testDir, const string& re
             auto entry = pScope->getParam("x");
             
             s_curFunctionLogger->log(entry->getJSON(0));
-            return undefined();
+            return jsNull();
         };
         //addNative("function callLogger(x)", logFn, globals);
 

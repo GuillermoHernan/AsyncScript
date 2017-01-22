@@ -92,7 +92,7 @@ Ref<JSFunction> addNative (const std::string& szFunctionHeader,
     if (token.type() == '.')        //First dot, read at global scope
     {
         token = token.match('.');
-        Ref<JSValue> child = undefined();
+        Ref<JSValue> child = jsNull();
         
         if (scope->isDefined(funcName))
             child = scope->get(funcName);
@@ -113,7 +113,7 @@ Ref<JSFunction> addNative (const std::string& szFunctionHeader,
     while (token.type() == '.')
     {
         token = token.match('.');
-        Ref<JSValue> child = undefined();
+        Ref<JSValue> child = jsNull();
         
         child = container->readFieldStr(funcName);
             

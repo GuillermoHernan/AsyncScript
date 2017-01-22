@@ -41,9 +41,9 @@ Ref<JSValue> constantToJS (Ref<JSValue> constant)
     case VT_OUTPUT_EP:
         return disassemblyOutputEndPoint (constant.staticCast<AsEndPoint>());
     
-    case VT_NULL:
-    case VT_UNDEFINED:
-        return jsNull();
+//    case VT_NULL:
+//    case VT_UNDEFINED:
+//        return jsNull();
         
     default:
         if (constant->isFunction())

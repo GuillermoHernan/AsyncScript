@@ -5,7 +5,7 @@ var v = [2,5,10,17,19];
 assert (v.length == 5, "Initial length check: "+ v.length);
 assert (v[2] == 10, "v[3] == " + v[2]);
 assert (v[4.0] == 19, "v[4.0] == "+ v[4.0]);
-assert (v[1.8] === undefined, "v[1.8] == "+ v[1.8]);
+assert (v[1.8] === null, "v[1.8] == "+ v[1.8]);
 
 v[1] = 9;
 assert (v.length == 5, "expected length(5): "+ v.length);

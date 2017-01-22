@@ -163,7 +163,7 @@ Ref<JSValue> mvmExecute (Ref<MvmRoutine> code,
 Ref<JSValue> mvmExecRoutine (Ref<MvmRoutine> code, ExecutionContext* ec)
 {
     if (code->blocks.empty())
-        return undefined();
+        return jsNull();
     
     ValueVector*    prevConstants = ec->constants;
     const size_t    scopesStackLen = ec->scopes.size();
@@ -186,10 +186,10 @@ Ref<JSValue> mvmExecRoutine (Ref<MvmRoutine> code, ExecutionContext* ec)
     
     //'AUX' register is cleared when finishing a script, to prevent memory leaks
     //(and may be also a good security measure)
-    ec->auxRegister = undefined();
+    ec->auxRegister = jsNull();
     
     if (ec->stack.empty())
-        return undefined();
+        return jsNull();
     else
         return ec->pop();
 }
@@ -422,12 +422,12 @@ void callLog (Ref<FunctionScope> fnScope, ExecutionContext* ec)
     obj->writeFieldStr("params", fnScope->get("arguments"));
     obj->writeFieldStr("this", fnScope->getThis());
     
-    ec->push(undefined());      //this
-    ec->push(obj);              //Log entry
+    ec->push(jsNull());     //this
+    ec->push(obj);          //Log entry
     ec->push(logFunction);
     
     execCall(2, ec);  
-    ec->pop();                  //Discard result.
+    ec->pop();              //Discard result.
 }
 
 /**
@@ -458,7 +458,7 @@ void returnLog (Ref<FunctionScope> fnScope, Ref<JSValue> result, ExecutionContex
         level = jsInt(0);
     
     if (toInt32 (level) < 0)
-        globals->set("callLogger", undefined());    //Remove call logger
+        globals->set("callLogger", jsNull());    //Remove call logger
     else
     {
         logFunction->writeFieldStr("callDepth", jsInt(toInt32( level )-1));
@@ -468,12 +468,12 @@ void returnLog (Ref<FunctionScope> fnScope, Ref<JSValue> result, ExecutionContex
         obj->writeFieldStr("name", jsString(fnScope->getFunction()->getName()));
         obj->writeFieldStr("result", result);
 
-        ec->push(undefined());      //this
-        ec->push(obj);              //log entry
+        ec->push(jsNull());     //this
+        ec->push(obj);          //log entry
         ec->push(logFunction);
 
         execCall(2, ec);    
-        ec->pop();                  //Discard result.
+        ec->pop();              //Discard result.
     }
 }
 
@@ -709,10 +709,11 @@ void execCpAux (const int opCode, ExecutionContext* ec)
  */
 void execPushAux (const int opCode, ExecutionContext* ec)
 {
+    //TODO: Review if this check is really necessary.
     if (ec->auxRegister.notNull())
         ec->stack.push_back(ec->auxRegister);
     else
-        ec->stack.push_back(undefined());
+        ec->stack.push_back(jsNull());
 }
 
 

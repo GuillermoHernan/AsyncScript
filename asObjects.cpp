@@ -99,7 +99,7 @@ Ref<JSValue> JSClass::readField(Ref<JSValue> key)const
     else if (m_parent.notNull())
         return m_parent->readField (key);
     else
-        return undefined();    
+        return jsNull();    
 }
 
 /**
@@ -284,7 +284,7 @@ bool JSObject::isWritable(const std::string& key)const
 }
 
 /**
- * Reads a field of the object. If it does not exist, it returns 'undefined'
+ * Reads a field of the object. If it does not exist, it returns 'null'
  * @param key
  * @return 
  */
@@ -349,7 +349,7 @@ Ref<JSValue> JSObject::deleteField(Ref<JSValue> key)
     auto it = m_members.find(keyStr);
     
     if (it == m_members.end())
-        return undefined();
+        return jsNull();
     else
     {
         auto result = it->second.value();
@@ -422,7 +422,7 @@ Ref<JSArray> JSArray::create()
 
 /**
  * Creates an array of a given initial length.
- * All elements in the array will be set to 'undefined'
+ * All elements in the array will be set to 'null'
  * @param size
  * @return 
  */

@@ -143,8 +143,8 @@ protected:
         m_cls (cls)
         , m_globals (globals)
         , m_parent (parent)
-        , m_result(undefined())
-        , m_error(undefined())
+        , m_result(jsNull())
+        , m_error(jsNull())
         , m_finished(false)
     {
     }
@@ -200,7 +200,7 @@ public:
     Ref<JSValue> getResult()
     {
         if (isRunning())
-            return undefined();
+            return jsNull();
         else
             return m_ref->getResult();
     }
@@ -208,7 +208,7 @@ public:
     Ref<JSValue> getError()
     {
         if (isRunning())
-            return undefined();
+            return jsNull();
         else
             return m_ref->getError();
     }

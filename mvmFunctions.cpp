@@ -18,27 +18,6 @@
 using namespace std;
 
 /**
- * Creates an empty object
- * @param pScope
- * @return 
- */
-#if 0
-Ref<JSValue> mvmNewObj (FunctionScope* pScope)
-{
-    Ref<JSValue>    constructor = pScope->getThis();
-    Ref<JSValue>    prototype = undefined();
-
-    if (constructor->isFunction())
-        prototype = constructor->readFieldStr("prototype");
-    
-    if (!prototype->isObject())
-        return JSObject::create();      //No constructor provided. Use default prototype.
-    else
-        return JSObject::create(prototype.staticCast<JSObject>());
-}
-#endif
-
-/**
  * Creates a new array
  * @param pScope
  * @return 
@@ -295,7 +274,7 @@ Ref<JSValue> mvmLess (FunctionScope* pScope)
     Ref<JSValue> opA = pScope->getThis();
     Ref<JSValue> opB = pScope->getParam("b");
     
-    if (opA->isUndefined() || opB->isUndefined())
+    if (opA->isNull() || opB->isNull())
         return jsFalse();
     else
         return jsBool (jsCompare(opA, opB) < 0);
@@ -311,7 +290,7 @@ Ref<JSValue> mvmGreater (FunctionScope* pScope)
     Ref<JSValue> opA = pScope->getThis();
     Ref<JSValue> opB = pScope->getParam("b");
     
-    if (opA->isUndefined() || opB->isUndefined())
+    if (opA->isNull() || opB->isNull())
         return jsFalse();
     else
         return jsBool (jsCompare(opA, opB) > 0);
@@ -327,7 +306,7 @@ Ref<JSValue> mvmLequal (FunctionScope* pScope)
     Ref<JSValue> opA = pScope->getThis();
     Ref<JSValue> opB = pScope->getParam("b");
     
-    if (opA->isUndefined() || opB->isUndefined())
+    if (opA->isNull() || opB->isNull())
         return jsFalse();
     else
         return jsBool (jsCompare(opA, opB) <= 0);
@@ -343,7 +322,7 @@ Ref<JSValue> mvmGequal (FunctionScope* pScope)
     Ref<JSValue> opA = pScope->getThis();
     Ref<JSValue> opB = pScope->getParam("b");
     
-    if (opA->isUndefined() || opB->isUndefined())
+    if (opA->isNull() || opB->isNull())
         return jsFalse();
     else
         return jsBool (jsCompare(opA, opB) <= 0);
@@ -356,7 +335,7 @@ Ref<JSValue> mvmGequal (FunctionScope* pScope)
  */
 bool mvmAreEqual (Ref<JSValue> opA, Ref<JSValue> opB)
 {
-    if (opA->isUndefined() || opB->isUndefined())
+    if (opA->isNull() || opB->isNull())
         return opA->isNull() && opB->isNull();
     else
         return jsCompare(opA, opB) == 0;
@@ -378,8 +357,8 @@ bool mvmAreTypeEqual (Ref<JSValue> opA, Ref<JSValue> opB)
 {
     if (opA->getType() != opB->getType() )
         return false;
-    else if (opA->isUndefined())
-        return true;        //Both are undefined, because they have the same types.
+    else if (opA->isNull())
+        return true;        //Both are 'null', because they have the same types.
     else
         return jsCompare(opA, opB) == 0;
 }
@@ -401,8 +380,8 @@ Ref<JSValue> mvmNotEqual (FunctionScope* pScope)
     Ref<JSValue> opA = pScope->getThis();
     Ref<JSValue> opB = pScope->getParam("b");
     
-    if (opA->isUndefined() || opB->isUndefined())
-        return jsBool( !opA->isNull() || !opB->isNull() );
+    if (opA->isNull() || opB->isNull())
+        return jsBool( !(opA->isNull() && opB->isNull()) );
     else
         return jsBool (jsCompare(opA, opB) != 0);
 }
@@ -419,8 +398,8 @@ Ref<JSValue> mvmNotTypeEqual (FunctionScope* pScope)
     
     if (opA->getType() != opB->getType() )
         return jsTrue();
-    else if (opA->isUndefined())
-        return jsFalse();        //Both are undefined, because they have the same types.
+    else if (opA->isNull())
+        return jsFalse();        //Both are null, because they have the same types.
     else
         return jsBool (jsCompare(opA, opB) != 0);
 }

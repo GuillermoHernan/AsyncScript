@@ -134,14 +134,14 @@ Ref<JSValue> connectOperator (FunctionScope* pScope)
     const auto srcActorRef = src.staticCast<AsEndPointRef>()->getActor();
     
     if (!srcActorRef->isRunning())
-        return undefined();
+        return jsNull();
     
     const auto srcActor = srcActorRef->getActor();
     const auto msgName = src.staticCast<AsEndPointRef>()->getEndPoint()->getName();
     
     srcActor->setOutputConnection (msgName, dst.staticCast<AsEndPointRef>());
     
-    return undefined();    
+    return jsNull();    
 }
 
 /**
@@ -157,7 +157,7 @@ Ref<JSValue> inputEpCall(Ref<AsEndPointRef> endPoint, Ref<FunctionScope> scope)
     auto params = scope->get("arguments").staticCast<JSArray>();
     
     runtime->sendMessage (endPoint, params);
-    return undefined();
+    return jsNull();
 }
 
 /**
@@ -175,7 +175,7 @@ Ref<JSValue> outputEpCall(Ref<AsEndPointRef> endPoint, Ref<FunctionScope> scope)
     auto destination = actor->getConnectedEp(endPoint->getEndPoint()->getName());
     
     if (destination.isNull())
-        return undefined();
+        return jsNull();
     else
         return inputEpCall(destination, scope);    
 }
@@ -231,7 +231,7 @@ Ref<JSValue> actorChildStoppedDefaultHandler(FunctionScope* pScope)
     
     runtime->stopActor(actorRef, result, errVal);
 
-    return undefined();
+    return jsNull();
 }
 
 /**
@@ -441,7 +441,7 @@ void ActorRuntime::actorCrashed(Ref<AsActorRef> actorRef, const CScriptException
 {
     auto actor = actorRef->getActor();
     
-    this->stopActor(actorRef, undefined(), jsString(ex.what()));
+    this->stopActor(actorRef, jsNull(), jsString(ex.what()));
 
     //TODO: Better error logging
     if (actor->getParent().notNull())

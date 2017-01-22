@@ -70,7 +70,7 @@ string getTokenStr(int token)
     case LEX_R_TRUE: return "true";
     case LEX_R_FALSE: return "false";
     case LEX_R_NULL: return "null";
-    case LEX_R_UNDEFINED: return "undefined";
+    //case LEX_R_UNDEFINED: return "undefined";
     case LEX_R_NEW: return "new";
     
     case LEX_R_ACTOR:   return "actor";
@@ -309,7 +309,7 @@ CScriptToken CScriptToken::parseId(const char * code)const
         keywords["true"] = LEX_R_TRUE;
         keywords["false"] = LEX_R_FALSE;
         keywords["null"] = LEX_R_NULL;
-        keywords["undefined"] = LEX_R_UNDEFINED;
+        //keywords["undefined"] = LEX_R_UNDEFINED;
         keywords["new"] = LEX_R_NEW;
 
         keywords["actor"] = LEX_R_ACTOR;

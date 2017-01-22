@@ -136,7 +136,7 @@ public:
     
     virtual Ref<JSValue> getValue()const
     {
-        return undefined();
+        return jsNull();
     }
     
     virtual void addChild(Ref<AstNode> child)
@@ -353,7 +353,8 @@ class AstLiteral : public AstNode
 public:
     static Ref<AstLiteral> create(CScriptToken token);
     static Ref<AstLiteral> create(ScriptPosition pos, int value);
-    static Ref<AstLiteral> undefined(ScriptPosition pos);
+    static Ref<AstLiteral> createNull(ScriptPosition pos);
+    //static Ref<AstLiteral> undefined(ScriptPosition pos);
     
     virtual Ref<JSValue> getValue()const
     {

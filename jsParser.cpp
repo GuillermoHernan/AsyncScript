@@ -108,7 +108,7 @@ bool oneOf (CScriptToken token, const int* ids)
  */
 Ref<AstNode> emptyStatement(ScriptPosition pos)
 {
-    return AstLiteral::undefined(pos);
+    return AstLiteral::createNull(pos);
 }
 
 /**
@@ -845,7 +845,7 @@ ExprResult parsePrimaryExpr (CScriptToken token)
     case LEX_R_TRUE:    //valueNode = AstLiteral::create(jsTrue()); break;
     case LEX_R_FALSE:   //valueNode = AstLiteral::create(jsFalse()); break;
     case LEX_R_NULL:
-    case LEX_R_UNDEFINED:
+    //case LEX_R_UNDEFINED:
     case LEX_FLOAT:
     case LEX_INT:
     case LEX_STR:       //valueNode = AstLiteral::create(createConstant(token)); break;
@@ -920,7 +920,7 @@ ExprResult parseArrayLiteral (CScriptToken token)
         //Skip empty entries
         while (r.token.type() == ',')
         {
-            array->addChild( AstLiteral::undefined(r.token.getPosition()));
+            array->addChild( AstLiteral::createNull(r.token.getPosition()));
             r = r.require(',');
         }
         

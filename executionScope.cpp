@@ -99,10 +99,10 @@ Ref<JSValue> BlockScope::newVar(const std::string& name, Ref<JSValue> value, boo
  */
 FunctionScope::FunctionScope(Ref<IScope> globals, Ref<JSValue> targetFn) :
 m_function(targetFn),
+m_arguments(JSArray::create()),
+m_this(jsNull()),
 m_globals(globals)
 {
-    m_this = undefined();
-    m_arguments = JSArray::create();
 }
 
 /**
@@ -134,7 +134,7 @@ int FunctionScope::addParam(Ref<JSValue> value)
  * For a broader scope search, use 'get'
  * 
  * @param name parameter name
- * @return Parameter value or 'undefined' if not found
+ * @return Parameter value or 'null' if not found
  */
 Ref<JSValue> FunctionScope::getParam(const std::string& name)const
 {
@@ -143,7 +143,7 @@ Ref<JSValue> FunctionScope::getParam(const std::string& name)const
     if (it != m_params.end())
         return it->second.value();
     else
-        return undefined();            
+        return jsNull();            
 }
 
 /**
@@ -165,7 +165,7 @@ bool FunctionScope::isDefined(const std::string& name)const
  * - 'arguments' array
  * - Function arguments
  * @param name Symbol name
- * @return The symbol value or undefined.
+ * @return The symbol value or 'null'.
  */
 Ref<JSValue> FunctionScope::get(const std::string& name)const
 {
@@ -183,7 +183,7 @@ Ref<JSValue> FunctionScope::get(const std::string& name)const
             error ("'%s' is undefined", name.c_str());
     }
     
-    return undefined();
+    return jsNull();
 }
 
 /**
@@ -217,7 +217,7 @@ Ref<JSValue> FunctionScope::newVar(const std::string& name, Ref<JSValue> value, 
 {
     ASSERT(!"Variables cannot be created at 'FunctionScope");
 
-    return undefined();
+    return jsNull();
 }
 
 // GlobalScope
@@ -270,7 +270,7 @@ Ref<JSValue> GlobalScope::get(const std::string& name)const
         else
         {
             error ("'%s' is not defined", name.c_str());
-            return undefined();
+            return jsNull();
         }
     }
 }

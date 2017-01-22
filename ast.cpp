@@ -273,7 +273,7 @@ Ref<AstLiteral> AstLiteral::create(CScriptToken token)
     case LEX_R_TRUE:        value = jsTrue(); break;
     case LEX_R_FALSE:       value = jsFalse(); break;
     case LEX_R_NULL:        value = jsNull(); break;
-    case LEX_R_UNDEFINED:   value = ::undefined(); break;
+    //case LEX_R_UNDEFINED:   value = ::undefined(); break;
     case LEX_STR:
     case LEX_INT:        
     case LEX_FLOAT:
@@ -288,7 +288,7 @@ Ref<AstLiteral> AstLiteral::create(CScriptToken token)
 }
 
 /**
- * Creates a literal form an integer
+ * Creates a literal from an integer
  * @param pos
  * @param value
  * @return 
@@ -296,6 +296,16 @@ Ref<AstLiteral> AstLiteral::create(CScriptToken token)
 Ref<AstLiteral> AstLiteral::create(ScriptPosition pos, int value)
 {
     return refFromNew(new AstLiteral(pos, jsInt(value)));
+}
+
+/**
+ * Creates a 'null' literal
+ * @param pos
+ * @return 
+ */
+Ref<AstLiteral> AstLiteral::createNull(ScriptPosition pos)
+{
+    return refFromNew(new AstLiteral(pos, jsNull()));
 }
 
 /**
@@ -336,7 +346,7 @@ Ref<JSValue> AstNode::toJS()const
         obj->writeFieldStr("z_children", toJSArray(c));
 
     const auto value = getValue();
-    if (!value->isUndefined())
+    if (!value->isNull())
         obj->writeFieldStr("v_value", value);
 
     return obj;
@@ -413,16 +423,6 @@ Ref<JSValue> AstObject::toJS()const
         props->writeFieldStr(it->name, it->expr->toJS());
     
     return obj;
-}
-
-/**
- * Creates a undefined literal
- * @param pos
- * @return 
- */
-Ref<AstLiteral> AstLiteral::undefined(ScriptPosition pos)
-{
-    return refFromNew(new AstLiteral(pos, ::undefined()));
 }
 
 /**

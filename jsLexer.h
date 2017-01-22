@@ -65,7 +65,7 @@ enum LEX_TYPES
     LEX_R_TRUE,
     LEX_R_FALSE,
     LEX_R_NULL,
-    LEX_R_UNDEFINED,
+    //LEX_R_UNDEFINED,
     LEX_R_NEW,
     
     //Actor system keywords

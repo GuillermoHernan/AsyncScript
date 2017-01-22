@@ -44,7 +44,7 @@ const char *code = "function myfunc(x, y) { return x + y; } var a = myfunc(1,2);
 Ref<JSValue> js_print(FunctionScope* pScope)
 {
     printf("> %s\n", pScope->getParam("text")->toString().c_str());
-    return undefined();
+    return jsNull();
 }
 
 Ref<JSValue> js_dump(FunctionScope* pScope)
@@ -54,7 +54,7 @@ Ref<JSValue> js_dump(FunctionScope* pScope)
 //    Ref<JSObject> globals = pScope->getGlobals().staticCast<JSObject>();
 //
 //    printf("> %s\n", globals->getJSON(0).c_str());
-    return undefined();
+    return jsNull();
 }
 
 int main(int argc, char **argv)

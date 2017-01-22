@@ -128,7 +128,7 @@ Ref<JSValue> AsActorClass::readField(Ref<JSValue> key)const
     if (it != m_members.end())
         return it->second.value();
     else
-        return undefined();    
+        return jsNull();    
 }
 
 /**
@@ -242,7 +242,7 @@ Ref<JSValue> AsActor::readField(Ref<JSValue> key)const
         if (ep.notNull())
             return AsEndPointRef::create(ep, AsActorRef::create(Ref<AsActor>(const_cast<AsActor*>(this))));
         else
-            return undefined();
+            return jsNull();
     }
     else
         return it->second.value();

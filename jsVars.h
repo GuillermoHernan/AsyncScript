@@ -28,7 +28,7 @@ class FunctionScope;
  */
 enum JSValueTypes
 {
-    VT_UNDEFINED,
+    //VT_UNDEFINED,
     VT_NULL,
     VT_NUMBER,
     VT_BOOL,
@@ -120,10 +120,10 @@ public:
         return getType() >= VT_OBJECT;
     }
 
-    bool isUndefined()const
-    {
-        return getType() == VT_UNDEFINED;
-    }
+//    bool isUndefined()const
+//    {
+//        return getType() == VT_UNDEFINED;
+//    }
 
     bool isNull()const
     {
@@ -149,7 +149,7 @@ public:
 class JSBool;
 class JSObject;
 
-Ref<JSValue> undefined();
+//Ref<JSValue> undefined();
 Ref<JSValue> jsNull();
 Ref<JSBool> jsTrue();
 Ref<JSBool> jsFalse();
@@ -164,17 +164,8 @@ Ref<JSValue> createConstant(CScriptToken token);
 
 Ref<JSObject> getObject(Ref<IScope> pScope, const std::string& name);
 
-Ref<JSValue> null2undef (Ref<JSValue> value);
-bool nullCheck (Ref<JSValue> value);
-
-template <class DestType, class SrcType> 
-Ref<DestType> castTo (Ref<SrcType> value)
-{
-    if (nullCheck(value))
-        return Ref<DestType>();
-    else
-        return Ref<DestType>( static_cast<DestType*> ( value.getPointer() ) );
-}
+//Ref<JSValue> null2undef (Ref<JSValue> value);
+//bool nullCheck (Ref<JSValue> value);
 
 double jsValuesCompare (Ref<JSValue> a, Ref<JSValue> b);
 
@@ -232,22 +223,22 @@ public:
 
     virtual Ref<JSValue> readField(Ref<JSValue> key)const
     {
-        return undefined();
+        return jsNull();
     }
     
     virtual Ref<JSValue> writeField(Ref<JSValue> key, Ref<JSValue> value)
     {
-        return undefined();
+        return jsNull();
     }
     
     virtual Ref<JSValue> newConstField(Ref<JSValue> key, Ref<JSValue> value)
     {
-        return undefined();
+        return jsNull();
     }
     
     virtual Ref<JSValue> deleteField(Ref<JSValue> key)
     {
-        return undefined();
+        return jsNull();
     }
     
     virtual StringSet getFields(bool inherited = true)const
@@ -387,7 +378,7 @@ public:
     }
     
     VarProperties () 
-    : m_value(undefined()), m_isConst(false)
+    : m_value(jsNull()), m_isConst(false)
     {        
     }
     

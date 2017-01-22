@@ -22,7 +22,7 @@ using namespace std;
 Ref<JSValue> JSValue::call (Ref<FunctionScope> scope)
 {
     error ("Not a callable object: %s", toString().c_str());
-    return undefined();
+    return jsNull();
 }
 
 Ref<JSValue> JSValue::readFieldStr(const std::string& strKey)const
@@ -51,7 +51,7 @@ std::string getTypeName(JSValueTypes vType)
 
     if (types.empty())
     {
-        types[VT_UNDEFINED] = "undefined";
+        //types[VT_UNDEFINED] = "undefined";
         types[VT_NULL] = "null";
         types[VT_NUMBER] = "Number";
         types[VT_BOOL] = "Boolean";
@@ -76,7 +76,7 @@ std::string getTypeName(JSValueTypes vType)
 /**
  * Class for 'undefined' values.
  */
-class JSUndefined : public JSValueBase<VT_UNDEFINED>
+/*class JSUndefined : public JSValueBase<VT_UNDEFINED>
 {
 public:
 
@@ -84,11 +84,12 @@ public:
     {
         return "undefined";
     }
-};
+};*/
 
 /**
  * Class for 'null' values.
  */
+//TODO: Move to '.h'
 class JSNull : public JSValueBase<VT_NULL>
 {
 public:
@@ -103,11 +104,11 @@ public:
  * Gets the 'undefined value.
  * @return 
  */
-Ref<JSValue> undefined()
+/*Ref<JSValue> undefined()
 {
     static Ref<JSValue> value = refFromNew(new JSUndefined);
     return value;
-}
+}*/
 
 Ref<JSValue> jsNull()
 {
@@ -241,27 +242,13 @@ Ref<JSObject> getObject(Ref<IScope> pScope, const std::string& name)
  * @param value input value to check
  * @return 
  */
-Ref<JSValue> null2undef(Ref<JSValue> value)
+/*Ref<JSValue> null2undef(Ref<JSValue> value)
 {
     if (value.isNull())
-        return undefined();
+        return jsNull();
     else
         return value;
-}
-
-/**
- * Checks if the object has any kind of 'null' states: internal NULL pointer,
- * Javascript null, Javascript undefined.
- * @param value
- * @return 
- */
-bool nullCheck(Ref<JSValue> value)
-{
-    if (value.isNull())
-        return true;
-    else
-        return value->isNull();
-}
+}*/
 
 /**
  * Compares two javascript values.

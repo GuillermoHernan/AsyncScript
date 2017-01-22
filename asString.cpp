@@ -78,7 +78,7 @@ Ref<JSValue> JSString::readField(Ref<JSValue> key)const
         const size_t    index = toSizeT(key);
         
         if (index >= m_text.length())
-            return undefined();
+            return jsNull();
         else
             return jsString(m_text.substr(index, 1));
     }
