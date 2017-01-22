@@ -18,7 +18,7 @@ class JSArray;
 
 /**
  * Interface for name scopes. 
- * HAving a common interface helps to define custom logic for each kind of scope.
+ * Having a common interface helps to define custom logic for each kind of scope.
  */
 struct IScope : public RefCountObj
 {
