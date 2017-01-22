@@ -354,7 +354,6 @@ public:
     static Ref<AstLiteral> create(CScriptToken token);
     static Ref<AstLiteral> create(ScriptPosition pos, int value);
     static Ref<AstLiteral> createNull(ScriptPosition pos);
-    //static Ref<AstLiteral> undefined(ScriptPosition pos);
     
     virtual Ref<JSValue> getValue()const
     {

@@ -273,7 +273,6 @@ Ref<AstLiteral> AstLiteral::create(CScriptToken token)
     case LEX_R_TRUE:        value = jsTrue(); break;
     case LEX_R_FALSE:       value = jsFalse(); break;
     case LEX_R_NULL:        value = jsNull(); break;
-    //case LEX_R_UNDEFINED:   value = ::undefined(); break;
     case LEX_STR:
     case LEX_INT:        
     case LEX_FLOAT:

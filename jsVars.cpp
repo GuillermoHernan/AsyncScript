@@ -51,7 +51,6 @@ std::string getTypeName(JSValueTypes vType)
 
     if (types.empty())
     {
-        //types[VT_UNDEFINED] = "undefined";
         types[VT_NULL] = "null";
         types[VT_NUMBER] = "Number";
         types[VT_BOOL] = "Boolean";
@@ -74,19 +73,6 @@ std::string getTypeName(JSValueTypes vType)
 }
 
 /**
- * Class for 'undefined' values.
- */
-/*class JSUndefined : public JSValueBase<VT_UNDEFINED>
-{
-public:
-
-    virtual std::string toString()const
-    {
-        return "undefined";
-    }
-};*/
-
-/**
  * Class for 'null' values.
  */
 //TODO: Move to '.h'
@@ -99,16 +85,6 @@ public:
         return "null";
     }
 };
-
-/**
- * Gets the 'undefined value.
- * @return 
- */
-/*Ref<JSValue> undefined()
-{
-    static Ref<JSValue> value = refFromNew(new JSUndefined);
-    return value;
-}*/
 
 Ref<JSValue> jsNull()
 {
@@ -235,20 +211,6 @@ Ref<JSObject> getObject(Ref<IScope> pScope, const std::string& name)
 
     return Ref<JSObject>();
 }
-
-/**
- * Transforms a NULL pointer into an undefined value. If not undefined,
- * just returns the input value.
- * @param value input value to check
- * @return 
- */
-/*Ref<JSValue> null2undef(Ref<JSValue> value)
-{
-    if (value.isNull())
-        return jsNull();
-    else
-        return value;
-}*/
 
 /**
  * Compares two javascript values.

@@ -28,7 +28,6 @@ class FunctionScope;
  */
 enum JSValueTypes
 {
-    //VT_UNDEFINED,
     VT_NULL,
     VT_NUMBER,
     VT_BOOL,
@@ -120,14 +119,9 @@ public:
         return getType() >= VT_OBJECT;
     }
 
-//    bool isUndefined()const
-//    {
-//        return getType() == VT_UNDEFINED;
-//    }
-
     bool isNull()const
     {
-        return getType() <= VT_NULL;
+        return getType() == VT_NULL;
     }
 
     bool isPrimitive()const
@@ -149,7 +143,6 @@ public:
 class JSBool;
 class JSObject;
 
-//Ref<JSValue> undefined();
 Ref<JSValue> jsNull();
 Ref<JSBool> jsTrue();
 Ref<JSBool> jsFalse();

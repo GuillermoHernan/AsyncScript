@@ -845,7 +845,6 @@ ExprResult parsePrimaryExpr (CScriptToken token)
     case LEX_R_TRUE:    //valueNode = AstLiteral::create(jsTrue()); break;
     case LEX_R_FALSE:   //valueNode = AstLiteral::create(jsFalse()); break;
     case LEX_R_NULL:
-    //case LEX_R_UNDEFINED:
     case LEX_FLOAT:
     case LEX_INT:
     case LEX_STR:       //valueNode = AstLiteral::create(createConstant(token)); break;
