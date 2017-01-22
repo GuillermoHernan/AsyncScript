@@ -87,7 +87,7 @@ public:
     virtual Ref<JSValue> writeField(Ref<JSValue> key, Ref<JSValue> value) = 0;
     virtual Ref<JSValue> newConstField(Ref<JSValue> key, Ref<JSValue> value) = 0;
     virtual Ref<JSValue> deleteField(Ref<JSValue> key) = 0;
-    virtual StringSet    getFields()const=0;
+    virtual StringSet    getFields(bool inherited = true)const=0;
     
     virtual Ref<JSValue> call (Ref<FunctionScope> scope);
 
@@ -250,7 +250,7 @@ public:
         return undefined();
     }
     
-    virtual StringSet getFields()const
+    virtual StringSet getFields(bool inherited = true)const
     {
         static StringSet empty;
         return empty;

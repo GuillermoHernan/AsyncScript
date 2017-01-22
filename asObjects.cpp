@@ -68,13 +68,14 @@ Ref<JSClass> JSClass::createNative (const std::string& name,
 
 /**
  * Gets all fields of the class
+ * @param inherited     Include inherited fields
  * @return 
  */
-StringSet JSClass::getFields()const
+StringSet JSClass::getFields(bool inherited)const
 {
     StringSet    result;
     
-    if (m_parent.notNull())
+    if (inherited && m_parent.notNull())
         result = m_parent->getFields();
     
     for (auto it = m_members.begin(); it != m_members.end(); ++it)
@@ -208,9 +209,12 @@ std::vector <Ref<JSValue> > JSObject::getKeys()const
  * Gets a vector with all object keys (string format)
  * @return 
  */
-StringSet JSObject::getFields()const
+StringSet JSObject::getFields(bool inherited)const
 {
     StringSet result;
+    
+    if (inherited)
+        result = m_cls->getFields(true);
 
     for (auto it = m_members.begin(); it != m_members.end(); ++it)
         result.insert(it->first);

@@ -30,7 +30,10 @@ public:
                                      const VarMap& members, 
                                      const StringVector& params);
 
-    Ref<JSValue> call (Ref<FunctionScope> scope);
+    virtual Ref<JSValue> call (Ref<FunctionScope> scope);
+    
+    virtual StringSet getFields(bool inherited = true)const;
+    virtual Ref<JSValue> readField(Ref<JSValue> key)const;
     
     Ref<AsEndPoint> getEndPoint (const std::string& name);
 

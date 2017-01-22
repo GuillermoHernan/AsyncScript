@@ -17,6 +17,8 @@ Ref<JSObject> disassemblyFunction (Ref<JSFunction> function);
 Ref<JSObject> disassemblyActorClass (Ref<AsActorClass> actorClass);
 Ref<JSObject> disassemblyInputEndPoint (Ref<AsEndPoint> ep);
 Ref<JSObject> disassemblyOutputEndPoint (Ref<AsEndPoint> ep);
+Ref<JSObject> disassemblyClass (Ref<JSClass> cls);
+Ref<JSObject> disassemblyMembers (Ref<JSValue> container);
 
 /**
  * Generates a Javascript object representation of a single constant
@@ -29,6 +31,9 @@ Ref<JSValue> constantToJS (Ref<JSValue> constant)
     {
     case VT_ACTOR_CLASS:
         return disassemblyActorClass (constant.staticCast<AsActorClass>());
+        
+    case VT_CLASS:
+        return disassemblyClass (constant.staticCast<JSClass>());
     
     case VT_INPUT_EP:
         return disassemblyInputEndPoint (constant.staticCast<AsEndPoint>());
@@ -271,12 +276,8 @@ Ref<JSObject> disassemblyActorClass (Ref<AsActorClass> actorClass)
 
     obj->writeFieldStr ("actorClass", jsString(actorClass->getName()) );
     
-    auto keys = actorClass->getFields();
-    for (auto it = keys.begin(); it != keys.end(); ++it)
-    {
-        auto value = actorClass->readFieldStr(*it);
-        obj->writeFieldStr (*it, constantToJS(value) );
-    }        
+    auto members = disassemblyMembers(actorClass);
+    obj->writeFieldStr ("members", members);
 
     return obj;
 }
@@ -301,4 +302,50 @@ Ref<JSObject> disassemblyOutputEndPoint (Ref<AsEndPoint> ep)
     auto result = JSObject::create();
     result->writeFieldStr ("header", jsString(ep->toString() ));
     return result;
+}
+
+/**
+ * Disassemblies a class declaration
+ * @param cls
+ * @return 
+ */
+Ref<JSObject> disassemblyClass (Ref<JSClass> cls)
+{
+    auto result = JSObject::create();
+    result->writeFieldStr ("Class", jsString(cls->getName()));
+    
+    auto    parent = cls->getParent();
+    auto    constructor = constantToJS(cls->getConstructor());
+    string  parentName;
+    
+    if (parent.notNull())
+        parentName = parent->getName();
+    
+    result->writeFieldStr ("Parent", jsString(parentName));
+    result->writeFieldStr("constructor", constructor);
+    
+    auto members = disassemblyMembers(cls);
+    
+    result->writeFieldStr("members", members);
+    
+    return result;
+}
+
+/**
+ * Gets the disassembly representation of the members of a value
+ * @param container
+ * @return 
+ */
+Ref<JSObject> disassemblyMembers (Ref<JSValue> container)
+{
+    auto memberNames = container->getFields(false);
+    auto members = JSObject::create();
+    
+    for (auto it = memberNames.begin(); it != memberNames.end(); ++it)
+    {
+        auto member = container->readFieldStr(*it);
+        members->writeFieldStr(*it, constantToJS(member));
+    }
+    
+    return members;
 }

@@ -101,6 +101,35 @@ Ref<JSValue> AsActorClass::call (Ref<FunctionScope> scope)
     return actorConstructor(Ref<AsActorClass>(this), scope);
 }
 
+/**
+ * Gets the names of the class members
+ * @param inherited
+ * @return 
+ */
+StringSet AsActorClass::getFields(bool inherited)const
+{
+    StringSet    result;
+    
+    for (auto it = m_members.begin(); it != m_members.end(); ++it)
+        result.insert(it->first);
+    
+    return result;
+}
+
+/**
+ * Finds by name an actor member.
+ * @param key
+ * @return 
+ */
+Ref<JSValue> AsActorClass::readField(Ref<JSValue> key)const
+{
+    auto it = m_members.find(key2Str(key));
+
+    if (it != m_members.end())
+        return it->second.value();
+    else
+        return undefined();    
+}
 
 /**
  * Gets one of the endpoints defined in the class.

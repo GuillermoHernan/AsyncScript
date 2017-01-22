@@ -46,7 +46,7 @@ public:
         return true;
     }
     
-    virtual StringSet getFields()const;
+    virtual StringSet getFields(bool inherited = true)const;
 
     virtual Ref<JSValue> readField(Ref<JSValue> key)const;
     
@@ -106,7 +106,7 @@ public:
     void setFrozen();
     
     std::vector <Ref<JSValue> > getKeys()const;
-    virtual StringSet           getFields()const;
+    virtual StringSet           getFields(bool inherited = true)const;
     
     bool isWritable(const std::string& key)const;
 
