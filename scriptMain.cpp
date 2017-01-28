@@ -115,7 +115,7 @@ Ref<JSFunction> addNative (const std::string& szFunctionHeader,
         token = token.match('.');
         Ref<JSValue> child = jsNull();
         
-        child = container->readFieldStr(funcName);
+        child = container->readField(funcName);
             
         // if it doesn't exist or it is not an object, make an object class
         if (!child->isObject())
@@ -134,7 +134,7 @@ Ref<JSFunction> addNative (const std::string& szFunctionHeader,
                                                         pFn);
 
     if (container.notNull())
-        container->writeFieldStr(funcName, function);
+        container->writeField(funcName, function, false);
     else
         scope->newVar(funcName, function, true);
     

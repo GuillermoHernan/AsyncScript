@@ -334,19 +334,19 @@ Ref<JSValue> AstNode::toJS()const
 {
     Ref<JSObject>   obj = JSObject::create();
     
-    obj->writeFieldStr("a_type", jsString(astTypeToString(getType())));
+    obj->writeField("a_type", jsString(astTypeToString(getType())), false);
 
     const string name = getName();
     if (!name.empty())
-        obj->writeFieldStr("b_name", jsString(name));
+        obj->writeField("b_name", jsString(name), false);
     
     const AstNodeList&  c = children();
     if (!c.empty())
-        obj->writeFieldStr("z_children", toJSArray(c));
+        obj->writeField("z_children", toJSArray(c), false);
 
     const auto value = getValue();
     if (!value->isNull())
-        obj->writeFieldStr("v_value", value);
+        obj->writeField("v_value", value, false);
 
     return obj;
 }
@@ -360,9 +360,9 @@ Ref<JSValue> AstFunction::toJS()const
 {
     Ref<JSObject>   obj = AstNode::toJS().staticCast<JSObject>();
     
-    obj->writeFieldStr("c_parameters", JSArray::createStrArray(m_params));
+    obj->writeField("c_parameters", JSArray::createStrArray(m_params), false);
     if (m_code.notNull())
-        obj->writeFieldStr("d_code", m_code->toJS());
+        obj->writeField("d_code", m_code->toJS(), false);
     
     return obj;
 }
@@ -375,7 +375,7 @@ Ref<JSValue> AstClassNode::toJS()const
 {
     Ref<JSObject>   obj = AstNamedBranch::toJS().staticCast<JSObject>();
     
-    obj->writeFieldStr("c_parameters", JSArray::createStrArray(m_params));
+    obj->writeField("c_parameters", JSArray::createStrArray(m_params), false);
     
     return obj;
 }
@@ -388,7 +388,7 @@ Ref<JSValue> AstActor::toJS()const
 {
     Ref<JSObject>   obj = AstNamedBranch::toJS().staticCast<JSObject>();
     
-    obj->writeFieldStr("c_parameters", JSArray::createStrArray(m_params));
+    obj->writeField("c_parameters", JSArray::createStrArray(m_params), false);
     
     return obj;
 }
@@ -401,7 +401,7 @@ Ref<JSValue> AstOperator::toJS()const
 {
     Ref<JSObject>   obj = AstBranchNode::toJS().staticCast<JSObject>();
 
-    obj->writeFieldStr("d_operator", jsString(getTokenStr(code)));
+    obj->writeField("d_operator", jsString(getTokenStr(code)), false);
     return obj;
 }
 
@@ -414,12 +414,12 @@ Ref<JSValue> AstObject::toJS()const
     Ref<JSObject>   obj = JSObject::create();
     Ref<JSObject>   props = JSObject::create();
     
-    obj->writeFieldStr("a_type", jsString(astTypeToString(getType())));
-    obj->writeFieldStr("b_properties", props);
+    obj->writeField("a_type", jsString(astTypeToString(getType())), false);
+    obj->writeField("b_properties", props, false);
     
     PropertyList::const_iterator it;
     for (it = m_properties.begin(); it != m_properties.end(); ++it)
-        props->writeFieldStr(it->name, it->expr->toJS());
+        props->writeField(it->name, it->expr->toJS(), false);
     
     return obj;
 }
@@ -449,10 +449,10 @@ Ref<JSArray> toJSArray (const AstNodeList& statements)
  * @param statements
  * @return 
  */
-std::string toJSON (const AstNodeList& statements)
-{
-    return toJSArray(statements)->getJSON(0);
-}
+//std::string toJSON (const AstNodeList& statements)
+//{
+//    return toJSArray(statements)->getJSON(0);
+//}
 
 /**
  * Gets the string representation of an AST type

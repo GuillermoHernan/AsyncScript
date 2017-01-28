@@ -94,14 +94,12 @@ Ref<JSValue> BlockScope::newVar(const std::string& name, Ref<JSValue> value, boo
 
 /**
  * Constructor
- * @param globals
  * @param targetFn
  */
-FunctionScope::FunctionScope(Ref<IScope> globals, Ref<JSValue> targetFn) :
+FunctionScope::FunctionScope(Ref<JSValue> targetFn) :
 m_function(targetFn),
 m_arguments(JSArray::create()),
-m_this(jsNull()),
-m_globals(globals)
+m_this(jsNull())
 {
 }
 
@@ -356,10 +354,10 @@ Ref<JSObject> GlobalScope::toObject()
     auto result = JSObject::create();
     
     for (auto it = m_notShared.begin(); it != m_notShared.end(); ++it)
-        result->writeField(jsString(it->first), it->second.value());
+        result->writeField(it->first, it->second.value(), false);
     
     for (auto it = m_shared->vars.begin(); it != m_shared->vars.end(); ++it)
-        result->writeField(jsString(it->first), it->second.value());
+        result->writeField(it->first, it->second.value(), false);
     
     return result;
 }
@@ -393,4 +391,22 @@ void GlobalScope::copyOnWrite()
         m_shared = copy;
         m_sharing = false;
     }
+}
+
+//Global symbols global variable.
+static Ref<IScope>     s_globals;
+
+Ref<IScope> getGlobals()
+{
+    return s_globals;
+}
+
+GlobalsSetter::GlobalsSetter (Ref<IScope> newGlobals) : m_oldGlobals(s_globals)
+{
+    s_globals = newGlobals;
+}
+
+GlobalsSetter::~GlobalsSetter()
+{
+    s_globals = m_oldGlobals;
 }

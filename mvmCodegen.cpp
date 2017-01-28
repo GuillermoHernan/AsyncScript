@@ -486,7 +486,10 @@ void assignmentCodegen (Ref<AstNode> statement, CodegenState* pState)
     childCodegen(statement, 0, pState);
     const int           rdInst = removeLastInstruction (pState);
     
-    ASSERT (rdInst == OC_RD_LOCAL || rdInst == OC_RD_GLOBAL || rdInst == OC_RD_FIELD);
+    ASSERT (rdInst == OC_RD_LOCAL || 
+            rdInst == OC_RD_GLOBAL || 
+            rdInst == OC_RD_FIELD ||
+            rdInst == OC_RD_INDEX);
     const int wrInst = rdInst +1;
     
     if (op == '=')
@@ -501,7 +504,7 @@ void assignmentCodegen (Ref<AstNode> statement, CodegenState* pState)
     else
     {
         //Duplicate the values used to read the variable, to write it later.
-        if (rdInst != OC_RD_FIELD)
+        if (rdInst == OC_RD_LOCAL || rdInst == OC_RD_GLOBAL)
             instruction8 (OC_CP, pState);
         else
         {
@@ -675,7 +678,7 @@ void arrayCodegen (Ref<AstNode> statement, CodegenState* pState)
         instruction8(OC_CP, pState);        //Copy array reference
         pushConstant(i, pState);            //Array index
         childCodegen(statement, i, pState); //Value expression
-        instruction8(OC_WR_FIELD, pState);
+        instruction8(OC_WR_INDEX, pState);
     }
     
     //After the loop, the array reference is on the top of the stack
@@ -717,7 +720,7 @@ void objectCodegen (Ref<AstNode> statement, CodegenState* pState)
 void arrayAccessCodegen (Ref<AstNode> statement, CodegenState* pState)
 {
     childrenCodegen(statement, pState);
-    instruction8 (OC_RD_FIELD, pState);
+    instruction8 (OC_RD_INDEX, pState);
 }
 
 /**
@@ -821,13 +824,13 @@ void postfixOpCodegen (Ref<AstNode> statement, CodegenState* pState)
     const int rdInst = removeLastInstruction(pState);
     const int wrInst = rdInst + 1;
     
-    if (rdInst != OC_RD_FIELD)
-        instruction8 (OC_CP, pState);
-    else
+    if (rdInst == OC_RD_FIELD || rdInst == OC_RD_INDEX)
     {
         instruction8 (OC_CP+1, pState);
         instruction8 (OC_CP+1, pState);
     }
+    else
+        instruction8 (OC_CP, pState);
     
     instruction8(rdInst, pState);
     instruction8(OC_CP, pState);        //Save previous

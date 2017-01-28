@@ -121,9 +121,9 @@ StringSet AsActorClass::getFields(bool inherited)const
  * @param key
  * @return 
  */
-Ref<JSValue> AsActorClass::readField(Ref<JSValue> key)const
+Ref<JSValue> AsActorClass::readField(const std::string& key)const
 {
-    auto it = m_members.find(key2Str(key));
+    auto it = m_members.find(key);
 
     if (it != m_members.end())
         return it->second.value();
@@ -229,15 +229,14 @@ Ref<JSValue> AsEndPointRef::call (Ref<FunctionScope> scope)
  * @param key
  * @return 
  */
-Ref<JSValue> AsActor::readField(Ref<JSValue> key)const
+Ref<JSValue> AsActor::readField(const std::string& key)const
 {
-    string keyStr = key2Str(key);
-    auto it = m_members.find(keyStr);
+    auto it = m_members.find(key);
     
     // if not found at object fields, it may be an endpoint
     if (it == m_members.end())
     {
-        auto ep = getEndPoint(key->toString());
+        auto ep = getEndPoint(key);
         
         if (ep.notNull())
             return AsEndPointRef::create(ep, AsActorRef::create(Ref<AsActor>(const_cast<AsActor*>(this))));
@@ -254,23 +253,10 @@ Ref<JSValue> AsActor::readField(Ref<JSValue> key)const
  * @param value
  * @return 
  */
-Ref<JSValue> AsActor::writeField(Ref<JSValue> key, Ref<JSValue> value)
+Ref<JSValue> AsActor::writeField(const std::string& key, Ref<JSValue> value, bool isConst)
 {
     //TODO: Check class fields
-    checkedVarWrite(m_members, key2Str(key), value, false);
-    return value;
-}
-
-/**
- * Creates a new constant field
- * @param key
- * @param value
- * @return 
- */
-Ref<JSValue> AsActor::newConstField(Ref<JSValue> key, Ref<JSValue> value)
-{
-    //TODO: Check class fields
-    checkedVarWrite(m_members, key2Str(key), value, true);
+    checkedVarWrite(m_members, key, value, isConst);
     return value;
 }
 

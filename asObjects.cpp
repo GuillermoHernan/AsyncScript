@@ -90,9 +90,9 @@ StringSet JSClass::getFields(bool inherited)const
  * @param key
  * @return 
  */
-Ref<JSValue> JSClass::readField(Ref<JSValue> key)const
+Ref<JSValue> JSClass::readField(const std::string& key)const
 {
-    auto it = m_members.find(key2Str(key));
+    auto it = m_members.find(key);
 
     if (it != m_members.end())
         return it->second.value();
@@ -168,6 +168,39 @@ Ref<JSValue> JSObject::freeze()
 }
 
 /**
+ * Creates a 'deep-frozen' copy of the object, by making a frozen copy of the object
+ * and all referenced objects which are not 'deep-frozen' recursively.
+ * @param transformed
+ * @return 
+ */
+Ref<JSValue> JSObject::deepFreeze(JSValuesMap& transformed)
+{
+    auto me = ref(this);
+    
+    if (m_mutability == MT_DEEPFROZEN)
+        return me;
+
+    auto it = transformed.find(me);
+    if (it != transformed.end())
+        return it->second;
+
+    //Clone object
+    auto newObject = JSObject::create(m_cls);
+    transformed[me] = newObject;
+    
+    for (auto it = m_members.begin(); it != m_members.end(); ++it)
+    {
+        auto value = it->second.value()->deepFreeze(transformed);
+        newObject->writeField(it->first, value, it->second.isConst());
+    }
+
+    newObject->m_mutability = MT_DEEPFROZEN;
+
+    return newObject;
+}
+
+
+/**
  * Creates a mutable copy of an object
  * @param forceClone
  * @return 
@@ -223,6 +256,84 @@ StringSet JSObject::getFields(bool inherited)const
 }
 
 /**
+ * Handles array access operator reads
+ * @param index
+ * @return 
+ */
+Ref<JSValue> JSObject::indexedRead(Ref<JSValue> index)
+{
+    auto fn = readField("indexedRead");
+    
+    if (!fn->isNull())
+        return callMemberFn(fn, index);
+    else
+        return readField(index->toString());
+}
+
+/**
+ * Handles array access operator writes
+ * @param index
+ * @return 
+ */
+Ref<JSValue> JSObject::indexedWrite(Ref<JSValue> index, Ref<JSValue> value)
+{
+    auto fn = readField("indexedWrite");
+    
+    if (!fn->isNull())
+        return callMemberFn(fn, index, value);
+    else
+        return writeField(index->toString(), value, false);
+}
+
+/**
+ * Gets the head element of a sequence. The default implementation just returns
+ * a reference to the object.
+ * @return 
+ */
+Ref<JSValue> JSObject::head()
+{
+    auto fn = readField("head");
+    
+    if (!fn->isNull())
+        return callMemberFn(fn);
+    else
+        return ref(this);
+}
+
+/**
+ * Gets the next elements of a sequence. The default implementation just returns null.
+ * @return 
+ */
+Ref<JSValue> JSObject::tail()
+{
+    auto fn = readField("tail");
+    
+    if (!fn->isNull())
+        return callMemberFn(fn);
+    else
+        return jsNull();
+}
+
+/**
+ * Handles function calls, which allows to use objects as functions.
+ * Default implementation just returns 'null'
+ * @param scope
+ * @return 
+ */
+Ref<JSValue> JSObject::call (Ref<FunctionScope> scope)
+{
+    auto fn = readField("call");
+    
+    if (!fn->isNull())
+    {
+        scope->setThis(ref(this));
+        return fn->call(scope);
+    }
+    else
+        return jsNull();
+}
+
+/**
  * Copy constructor.
  * @param src       Reference to the source object
  * @param _mutable  
@@ -270,6 +381,50 @@ JSMutability JSObject::selectMutability(const JSObject& src, bool _mutable)
     }
 }
 
+/**
+ * Calls a member function defined in the script code.
+ * @param function
+ * @return 
+ */
+Ref<JSValue> JSObject::callMemberFn (Ref<JSValue> function)const
+{
+    auto    fnScope = FunctionScope::create(function);
+    fnScope->setThis(ref(const_cast<JSObject*>(this)));
+    return function->call(fnScope);
+}
+
+/**
+ * Calls a member function defined in the script code.
+ * One parameter version
+ * @param function
+ * @return 
+ */
+Ref<JSValue> JSObject::callMemberFn (Ref<JSValue> function, Ref<JSValue> p1)const
+{
+    auto    fnScope = FunctionScope::create(function);
+    fnScope->setThis(ref(const_cast<JSObject*>(this)));
+    fnScope->addParam(p1);
+    return function->call(fnScope);
+}
+
+/**
+ * Calls a member function defined in the script code.
+ * One parameter version
+ * @param function
+ * @return 
+ */
+Ref<JSValue> JSObject::callMemberFn (Ref<JSValue> function, 
+                                     Ref<JSValue> p1,
+                                     Ref<JSValue> p2)const
+{
+    auto    fnScope = FunctionScope::create(function);
+    fnScope->setThis(ref(const_cast<JSObject*>(this)));
+    fnScope->addParam(p1);
+    fnScope->addParam(p2);
+    return function->call(fnScope);
+}
+
+
 bool JSObject::isWritable(const std::string& key)const
 {
     //TODO: Check class fields
@@ -284,13 +439,56 @@ bool JSObject::isWritable(const std::string& key)const
 }
 
 /**
+ * String representation of an object. Calls 'toString' script function, if defined.
+ * @return 
+ */
+std::string JSObject::toString()const
+{
+    auto fn = readField ("toString");
+    
+    if (!fn->isNull())
+        return callMemberFn(fn)->toString();
+    else        
+        return std::string("[Object of ") + m_cls->toString() + "]";
+}
+
+/**
+ * Transforms the object into a boolean value. Calls 'toBoolean' script function, if defined.
+ * @return 
+ */
+bool JSObject::toBoolean()const
+{
+    auto fn = readField ("toBoolean");
+    
+    if (!fn->isNull())
+        return callMemberFn(fn)->toBoolean();
+    else        
+        return true;
+}
+
+/**
+ * Transforms the object into a 'double' value. Calls 'toNumber' script function, if defined.
+ * @return 
+ */
+double JSObject::toDouble()const
+{
+    auto fn = readField ("toNumber");
+    
+    if (!fn->isNull())
+        return callMemberFn(fn)->toDouble();
+    else        
+        return getNaN();
+}
+
+
+/**
  * Reads a field of the object. If it does not exist, it returns 'null'
  * @param key
  * @return 
  */
-Ref<JSValue> JSObject::readField(Ref<JSValue> key)const
+Ref<JSValue> JSObject::readField(const std::string& key)const
 {
-    auto it = m_members.find(key2Str(key));
+    auto it = m_members.find(key);
 
     if (it != m_members.end())
         return it->second.value();
@@ -302,34 +500,17 @@ Ref<JSValue> JSObject::readField(Ref<JSValue> key)const
  * Sets the value of a member, or creates it if not already present.
  * @param name
  * @param value
+ * @param isConst
  * @return 
  */
-Ref<JSValue> JSObject::writeField(Ref<JSValue> key, Ref<JSValue> value)
+Ref<JSValue> JSObject::writeField(const std::string& key, 
+                                  Ref<JSValue> value, 
+                                  bool isConst)
 {
-    const string keyStr = key2Str(key);
-    
-    if (!isWritable(keyStr))
+    if (!isWritable(key))
         return readField(key);
     
-    m_members[keyStr] = VarProperties(value, false);
-
-    return value;
-}
-
-/**
- * Creates a new constant field
- * @param name
- * @param value
- * @return 
- */
-Ref<JSValue> JSObject::newConstField(Ref<JSValue> key, Ref<JSValue> value)
-{
-    const string keyStr = key2Str(key);
-    
-    if (!isWritable(keyStr))
-        return readField(key);
-    
-    m_members[keyStr] = VarProperties(value, true);
+    m_members[key] = VarProperties(value, isConst);
 
     return value;
 }
@@ -339,14 +520,12 @@ Ref<JSValue> JSObject::newConstField(Ref<JSValue> key, Ref<JSValue> value)
  * @param key
  * @return 
  */
-Ref<JSValue> JSObject::deleteField(Ref<JSValue> key)
+Ref<JSValue> JSObject::deleteField(const std::string& key)
 {
-    const string keyStr = key2Str(key);
-    
-    if (!isWritable(keyStr))
+    if (!isWritable(key))
         return readField(key);
 
-    auto it = m_members.find(keyStr);
+    auto it = m_members.find(key);
     
     if (it == m_members.end())
         return jsNull();
@@ -429,8 +608,8 @@ Ref<JSArray> JSArray::create()
 Ref<JSArray> JSArray::create(size_t size)
 {
     Ref<JSArray>    a = refFromNew(new JSArray);
-    
-    a->m_length = size;
+
+    a->m_content.resize(size, jsNull());
     
     return a;
 }
@@ -458,12 +637,10 @@ Ref<JSArray> JSArray::createStrArray(const std::vector<std::string>& strList)
  */
 size_t JSArray::push(Ref<JSValue> value)
 {
-    if (!isMutable())
-        return m_length;
+    if (isMutable())
+        m_content.push_back(value);
     
-    //TODO: String conversion may be more efficient.
-    this->writeField(jsInt(m_length++), value);
-    return m_length;
+    return m_content.size();
 }
 
 /**
@@ -473,22 +650,24 @@ size_t JSArray::push(Ref<JSValue> value)
  */
 Ref<JSValue> JSArray::getAt(size_t index)const
 {
-    return readField (jsDouble(index));
+    if (index >= m_content.size())
+        return jsNull();
+    else
+        return m_content[index];
 }
 
 
 /**
  * JSArray 'get' override, to implement 'length' property reading.
  * @param name
- * @param exception
  * @return 
  */
-Ref<JSValue> JSArray::readField(Ref<JSValue> key)const
+Ref<JSValue> JSArray::readField(const std::string& key)const
 {
-    if (key->toString() == "length")
-        return jsInt(m_length);
+    if (key == "length")
+        return jsSizeT(m_content.size());
     else
-        return JSObject::readField(key);
+        return ArrayClass->readField(key);
 }
 
 /**
@@ -497,31 +676,78 @@ Ref<JSValue> JSArray::readField(Ref<JSValue> key)const
  * - Write an element past the last one, which enlarges the array.
  * @param key
  * @param value
+ * @param isConst
  * @return 
  */
-Ref<JSValue> JSArray::writeField(Ref<JSValue> key, Ref<JSValue> value)
+Ref<JSValue> JSArray::writeField(const std::string& key, Ref<JSValue> value, bool isConst)
 {
     if (!isMutable())
         return readField(key);
     
-    if (key->toString() == "length")
+    if (key == "length")
     {
         setLength(value);
-        return key;
+        return jsSizeT(m_content.size());
     }
     else
-    {
-        value = JSObject::writeField(key, value);
-        if (isUint(key))
-        {
-            const size_t index = toSizeT(key);
+        return jsNull();
+}
 
-            m_length = max(m_length, index + 1);
+/**
+ * Reads an element of the array
+ * @param index
+ * @return 
+ */
+Ref<JSValue> JSArray::indexedRead(Ref<JSValue> index)
+{
+    if (!isUint(index))
+        return jsNull();
+    else
+        return getAt( toSizeT (index) );
+}
+
+/**
+ * Returns the first element of the array
+ * @return 
+ */
+Ref<JSValue> JSArray::head()
+{
+    return getAt(0);
+}
+
+/**
+ * Returns an iterator which skips the first element
+ * @return 
+ */
+Ref<JSValue> JSArray::tail()
+{
+    return JSArrayIterator::create(ref(this), 1);
+}
+
+/**
+ * Writes an array element
+ * @param index
+ * @param value
+ * @return 
+ */
+Ref<JSValue> JSArray::indexedWrite(Ref<JSValue> index, Ref<JSValue> value)
+{
+    if (!isUint(index))
+        return jsNull();
+    else
+    {
+        size_t  i = toSizeT (index);
+        
+        if (m_content.size() <= i)
+        {
+            //Grow the backing vector if necessary
+            m_content.resize(i+1, jsNull());
         }
 
-        return value;
+        return m_content[i] = value;
     }
 }
+
 
 /**
  * String representation of the array
@@ -539,11 +765,12 @@ std::string JSArray::toString()const
 std::string JSArray::getJSON(int indent)
 {
     std::ostringstream output;
-    const bool multiLine = m_length > 4;
+    const size_t    n = m_content.size();
+    const bool      multiLine = n > 4;
 
     output << '[';
 
-    for (size_t i = 0; i < m_length; ++i)
+    for (size_t i = 0; i < n; ++i)
     {
         if (multiLine)
             output << "\n" << indentText(indent + 1);
@@ -551,7 +778,7 @@ std::string JSArray::getJSON(int indent)
         if (i > 0)
             output << ',';
 
-        const std::string childJSON = this->readField(jsInt(i))->getJSON(indent);
+        const std::string childJSON = this->getAt(i)->getJSON(indent);
 
         if (childJSON.empty())
             output << "null";
@@ -566,21 +793,90 @@ std::string JSArray::getJSON(int indent)
     return output.str();
 }
 
-JSArray::JSArray(const JSArray& src, bool _mutable)
-: JSObject(src, _mutable)
-, m_length (src.m_length)
-{    
+/**
+ * Creates an immutable copy of the array
+ * @return 
+ */
+Ref<JSValue> JSArray::freeze()
+{
+    if (m_mutability != MT_MUTABLE)
+        return ref(this);
+    else
+    {
+        auto newArray = JSArray::create();
+        
+        newArray->m_content = m_content;
+        newArray->m_mutability = MT_FROZEN;
+        return newArray;
+    }
 }
 
 /**
- * 'JSArray' clone operation.
- * @param _mutable
+ * Creates an immutable copy of the array which contains no references to
+ * any mutable object
  * @return 
  */
-Ref<JSObject> JSArray::clone (bool _mutable)
+Ref<JSValue> JSArray::deepFreeze(JSValuesMap& transformed)
 {
-    return refFromNew (new JSArray(*this, _mutable));
+    auto me = ref(this);
+    
+    if (m_mutability == MT_DEEPFROZEN)
+        return me;
+
+    auto it = transformed.find(me);
+    if (it != transformed.end())
+        return it->second;
+
+    //Clone array
+    auto newArray = JSArray::create();
+    transformed[me] = newArray;
+    
+    for (size_t i = 0; i < m_content.size(); ++i )
+    {
+        auto value = m_content[i]->deepFreeze(transformed);
+        newArray->m_content.push_back(value);
+    }
+
+    newArray->m_mutability = MT_DEEPFROZEN;
+
+    return newArray;
+}        
+
+/**
+ * Creates a mutable copy of the array
+ * @param forceClone
+ * @return 
+ */
+Ref<JSValue> JSArray::unFreeze(bool forceClone)
+{
+    if (m_mutability == MT_MUTABLE && !forceClone)
+        return ref(this);
+    else
+    {
+        auto newArray = JSArray::create();
+        
+        newArray->m_content = m_content;
+        newArray->m_mutability = MT_FROZEN;
+        return newArray;
+    }
 }
+
+
+//JSArray::JSArray(const JSArray& src, bool _mutable)
+//: JSObject(src, _mutable)
+//, m_content (src.m_content)
+//{    
+//}
+//
+///**
+// * 'JSArray' clone operation.
+// * @param _mutable
+// * @return 
+// */
+//Ref<JSObject> JSArray::clone (bool _mutable)
+//{
+//    return refFromNew (new JSArray(*this, _mutable));
+//}
 
 /**
  * Modifies array length
@@ -591,13 +887,33 @@ void JSArray::setLength(Ref<JSValue> value)
     if (!isUint(value))
         error ("Invalid array index: %s", value->toString().c_str());
     
-    //TODO: Not fully standard compliant
     const size_t length = toSizeT(value);
+    
+    m_content.resize(length, jsNull());
+}
 
-    for (size_t i = length; i < m_length; ++i)
-        this->deleteField(jsDouble(i));
+/**
+ * Creates an array iterator. If the iterator is beyond the end, returns 'null'
+ * @param arr
+ * @param index
+ * @return 
+ */
+Ref<JSValue> JSArrayIterator::create(Ref<JSArray> arr, size_t index)
+{
+    if (index < arr->length())
+        return refFromNew(new JSArrayIterator(arr, index));
+    else
+        return jsNull();
+}
 
-    m_length = length;
+Ref<JSValue> JSArrayIterator::head()const
+{
+    return m_array->getAt(m_index);
+}
+
+Ref<JSValue> JSArrayIterator::tail()const
+{
+    return create (m_array, m_index+1);
 }
 
 
@@ -612,8 +928,7 @@ Ref<JSValue> scObjectDeepFreeze(FunctionScope* pScope)
 {
     auto obj = pScope->getThis();
     
-    JSValuesMap transformed;    
-    return deepFreeze(obj, transformed);
+    return obj->deepFreeze();
 }
 
 Ref<JSValue> scObjectUnfreeze(FunctionScope* pScope)
@@ -722,7 +1037,7 @@ Ref<JSValue>scArraySlice(FunctionScope* pScope)
     const size_t    iBegin = toSizeT( begin );
     size_t          iEnd = arr->length();
     
-    if (isUint(end))                
+    if (isUint(end))
         iEnd = toSizeT( end );
     
     iEnd = max (iEnd, iBegin);

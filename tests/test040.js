@@ -21,7 +21,7 @@ assert (v[8.0] == 31, "v[8.0] == " + v[8.0]);
 
 v[19.9] = 127;
 assert (v.length == 9, "expected length(9): "+ v.length);
-assert (v[19.9] == 127, "v[19.9] == " + v[19.9]);
+assert (v[19.9] == null, "v[19.9] == " + v[19.9]);
 
 v[6.0] = 29;
 v[7] = 30;

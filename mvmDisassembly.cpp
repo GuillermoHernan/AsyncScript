@@ -64,7 +64,7 @@ Ref<JSObject> constantsToJS (const ValueVector& constants)
         sprintf_s (name, "%04lu", i);
         Ref<JSValue>    value = constantToJS(constants[i]);
         
-        obj->writeFieldStr(name, value);
+        obj->writeField(name, value, false);
     }
     
     return obj;
@@ -122,6 +122,8 @@ string disassembly8bitInst (int opCode, const ValueVector& constants)
         case OC_WR_GLOBAL:      return "WR_GLOBAL";
         case OC_RD_FIELD:       return "RD_FIELD";
         case OC_WR_FIELD:       return "WR_FIELD";
+        case OC_RD_INDEX:       return "RD_INDEX";
+        case OC_WR_INDEX:       return "WR_INDEX";
         case OC_NEW_VAR:        return "NEW_VAR";
         case OC_NEW_CONST:      return "NEW_CONST";
         case OC_NEW_CONST_FIELD:return "NEW_CONST_FIELD";
@@ -162,7 +164,8 @@ string disassembly16bitInst (int opCode, const ValueVector& constants)
  * @param constants
  * @return 
  */
-Ref<JSObject> disassemblyInstructions (const ByteVector& code, const ValueVector& constants)
+Ref<JSObject> disassemblyInstructions (const ByteVector& code, 
+                                       const ValueVector& constants)
 {
     auto    result = JSObject::create();
     char    position[64];
@@ -182,7 +185,7 @@ Ref<JSObject> disassemblyInstructions (const ByteVector& code, const ValueVector
         else
             instructionStr = disassembly8bitInst (code[i], constants);
         
-        result->writeFieldStr(position, jsString(instructionStr));
+        result->writeField(position, jsString(instructionStr), false);
     }
     
     return result;
@@ -194,7 +197,8 @@ Ref<JSObject> disassemblyInstructions (const ByteVector& code, const ValueVector
  * @param blocks
  * @return 
  */
-Ref<JSObject> blocksToJS (const BlockVector& blocks, const ValueVector& constants)
+Ref<JSObject> blocksToJS (const BlockVector& blocks, 
+                          const ValueVector& constants)
 {
     Ref<JSObject>   obj = JSObject::create();
     char            name[64];
@@ -204,11 +208,13 @@ Ref<JSObject> blocksToJS (const BlockVector& blocks, const ValueVector& constant
         sprintf_s (name, "Block%04lu", i);
         Ref<JSObject>   blockObj = JSObject::create();
 
-        obj->writeFieldStr(name, blockObj);
+        obj->writeField(name, blockObj, false);
         
-        blockObj->writeFieldStr("nextTrue", jsInt(blocks[i].nextBlocks[1]));
-        blockObj->writeFieldStr("nextFalse", jsInt(blocks[i].nextBlocks[0]));
-        blockObj->writeFieldStr("instructions", disassemblyInstructions (blocks[i].instructions, constants));
+        blockObj->writeField("nextTrue", jsInt(blocks[i].nextBlocks[1]), false);
+        blockObj->writeField("nextFalse", jsInt(blocks[i].nextBlocks[0]), false);
+        blockObj->writeField("instructions", 
+                             disassemblyInstructions (blocks[i].instructions, constants), 
+                             false);
         
     }
     
@@ -236,8 +242,8 @@ Ref<JSObject> toJSObject (Ref<MvmRoutine> code)
 {
     Ref<JSObject>   obj = JSObject::create();
     
-    obj->writeFieldStr ("constants", constantsToJS(code->constants));
-    obj->writeFieldStr ("blocks", blocksToJS(code->blocks, code->constants));
+    obj->writeField ("constants", constantsToJS(code->constants), false);
+    obj->writeField ("blocks", blocksToJS(code->blocks, code->constants), false);
     
     return obj;
 }
@@ -252,11 +258,11 @@ Ref<JSObject> disassemblyFunction (Ref<JSFunction> function)
 {
     Ref<JSObject>   obj = JSObject::create();
 
-    obj->writeFieldStr ("header", jsString(function->toString() ));
+    obj->writeField ("header", jsString(function->toString() ), false);
     if (function->isNative())
-        obj->writeFieldStr("code", jsString("native"));
+        obj->writeField("code", jsString("native"), false);
     else
-        obj->writeFieldStr("code", toJSObject(function->getCodeMVM().staticCast<MvmRoutine>()));
+        obj->writeField("code", toJSObject(function->getCodeMVM().staticCast<MvmRoutine>()), false);
 
     return obj;
 }
@@ -270,10 +276,10 @@ Ref<JSObject> disassemblyActorClass (Ref<AsActorClass> actorClass)
 {
     Ref<JSObject>   obj = JSObject::create();
 
-    obj->writeFieldStr ("actorClass", jsString(actorClass->getName()) );
+    obj->writeField ("actorClass", jsString(actorClass->getName()), false );
     
     auto members = disassemblyMembers(actorClass);
-    obj->writeFieldStr ("members", members);
+    obj->writeField ("members", members, false);
 
     return obj;
 }
@@ -296,7 +302,7 @@ Ref<JSObject> disassemblyInputEndPoint (Ref<AsEndPoint> ep)
 Ref<JSObject> disassemblyOutputEndPoint (Ref<AsEndPoint> ep)
 {
     auto result = JSObject::create();
-    result->writeFieldStr ("header", jsString(ep->toString() ));
+    result->writeField ("header", jsString(ep->toString() ), false);
     return result;
 }
 
@@ -308,7 +314,7 @@ Ref<JSObject> disassemblyOutputEndPoint (Ref<AsEndPoint> ep)
 Ref<JSObject> disassemblyClass (Ref<JSClass> cls)
 {
     auto result = JSObject::create();
-    result->writeFieldStr ("Class", jsString(cls->getName()));
+    result->writeField ("Class", jsString(cls->getName()), false);
     
     auto    parent = cls->getParent();
     auto    constructor = constantToJS(cls->getConstructor());
@@ -317,12 +323,12 @@ Ref<JSObject> disassemblyClass (Ref<JSClass> cls)
     if (parent.notNull())
         parentName = parent->getName();
     
-    result->writeFieldStr ("Parent", jsString(parentName));
-    result->writeFieldStr("constructor", constructor);
+    result->writeField ("Parent", jsString(parentName), false);
+    result->writeField("constructor", constructor, false);
     
     auto members = disassemblyMembers(cls);
     
-    result->writeFieldStr("members", members);
+    result->writeField("members", members, false);
     
     return result;
 }
@@ -339,8 +345,8 @@ Ref<JSObject> disassemblyMembers (Ref<JSValue> container)
     
     for (auto it = memberNames.begin(); it != memberNames.end(); ++it)
     {
-        auto member = container->readFieldStr(*it);
-        members->writeFieldStr(*it, constantToJS(member));
+        auto member = container->readField(*it);
+        members->writeField(*it, constantToJS(member), false);
     }
     
     return members;

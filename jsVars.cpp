@@ -25,20 +25,20 @@ Ref<JSValue> JSValue::call (Ref<FunctionScope> scope)
     return jsNull();
 }
 
-Ref<JSValue> JSValue::readFieldStr(const std::string& strKey)const
-{
-    return readField(jsString(strKey));
-}
-
-Ref<JSValue> JSValue::writeFieldStr(const std::string& strKey, Ref<JSValue> value)
-{
-    return writeField(jsString(strKey), value);
-}
-
-Ref<JSValue> JSValue::newConstFieldStr(const std::string& strKey, Ref<JSValue> value)
-{
-    return newConstField(jsString(strKey), value);
-}
+//Ref<JSValue> JSValue::readFieldStr(const std::string& strKey)const
+//{
+//    return readField(jsString(strKey));
+//}
+//
+//Ref<JSValue> JSValue::writeFieldStr(const std::string& strKey, Ref<JSValue> value)
+//{
+//    return writeField(jsString(strKey), value);
+//}
+//
+//Ref<JSValue> JSValue::newConstFieldStr(const std::string& strKey, Ref<JSValue> value)
+//{
+//    return newConstField(jsString(strKey), value);
+//}
 
 /**
  * Gives an string representation of the type name
@@ -84,6 +84,11 @@ public:
     {
         return "null";
     }
+    
+    virtual std::string getJSON(int indent)
+    {
+        return "null";
+    }
 };
 
 Ref<JSValue> jsNull()
@@ -117,6 +122,12 @@ Ref<JSValue> jsInt(int value)
     return JSNumber::create(value);
 }
 
+Ref<JSValue> jsSizeT(size_t value)
+{
+    return JSNumber::create((double)value);
+}
+
+
 Ref<JSValue> jsDouble(double value)
 {
     return JSNumber::create(value);
@@ -132,17 +143,17 @@ Ref<JSValue> jsString(const std::string& value)
  * @param key
  * @return 
  */
-std::string key2Str(Ref<JSValue> key)
-{
-    if (!key->isPrimitive())
-        error("Invalid array index: %s", key->toString().c_str());
-    else if (key->getType() == VT_NUMBER)
-        return double_to_string(key->toDouble());
-    else
-        return key->toString();
-
-    return "";
-}
+//std::string key2Str(Ref<JSValue> key)
+//{
+//    if (!key->isPrimitive())
+//        error("Invalid array index: %s", key->toString().c_str());
+//    else if (key->getType() == VT_NUMBER)
+//        return double_to_string(key->toDouble());
+//    else
+//        return key->toString();
+//
+//    return "";
+//}
 
 /**
  * Class for numeric constants. 
@@ -311,43 +322,11 @@ bool isUint(Ref<JSValue> a)
  * @param transformed
  * @return 
  */
-Ref<JSValue> deepFreeze(Ref<JSValue> obj, JSValuesMap& transformed)
-{
-    if (obj.isNull())
-        return obj;
 
-    if (obj->getMutability() == MT_DEEPFROZEN)
-        return obj;
-
-    auto it = transformed.find(obj);
-    if (it != transformed.end())
-        return it->second;
-
-    ASSERT(obj->isObject());
-
-    //Clone object
-    auto newObject = obj->unFreeze(true).staticCast<JSObject>();
-    transformed[obj] = newObject;
-
-    auto object = obj.staticCast<JSObject>();
-    auto keys = object->getKeys();
-
-    for (size_t i = 0; i < keys.size(); ++i)
-    {
-        auto key = keys[i];
-        auto value = deepFreeze(object->readField(key), transformed);
-        newObject->writeField(key, value);
-    }
-
-    newObject->m_mutability = MT_DEEPFROZEN;
-
-    return newObject;
-}
-
-Ref<JSValue> deepFreeze(Ref<JSValue> obj)
+Ref<JSValue> JSValue::deepFreeze()
 {
     JSValuesMap transformed;
-    return deepFreeze(obj, transformed);
+    return deepFreeze(transformed);
 }
 
 /**
@@ -414,6 +393,20 @@ std::string JSNumber::toString()const
     return double_to_string(m_value);
 }
 
+std::string JSNumber::getJSON(int indent)
+{
+    return double_to_string(m_value);
+}
+
+// JSBool
+//
+//////////////////////////////////////////////////
+
+
+std::string JSBool::getJSON(int indent)
+{
+    return toString();
+}
 
 
 // JSFunction
@@ -483,7 +476,7 @@ Ref<JSValue> JSFunction::call (Ref<FunctionScope> scope)
     {
         auto    code = getCodeMVM().staticCast<MvmRoutine>();
         
-        return mvmExecute(code, scope->getGlobals(), scope);
+        return mvmExecute(code, getGlobals(), scope);
     }
 }
 

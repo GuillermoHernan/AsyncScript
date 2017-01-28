@@ -68,24 +68,35 @@ std::string JSString::getJSON(int indent)
 /**
  * Member access function overridden to have access to 'length' property, and to
  * have access to individual characters.
- * @param name
+ * @param key
  * @return 
  */
-Ref<JSValue> JSString::readField(Ref<JSValue> key)const
+Ref<JSValue> JSString::readField(const string& key)const
 {
-    if (isUint(key))
-    {
-        const size_t    index = toSizeT(key);
-        
-        if (index >= m_text.length())
-            return jsNull();
-        else
-            return jsString(m_text.substr(index, 1));
-    }
-    else if (key->toString() == "length")
+    if (key == "length")
         return jsDouble (m_text.size());
     else
         return JSObject::readField(key);
+}
+
+/**
+ * It overrides 'indexedRead' to have access to individual characters.
+ * @param index
+ * @return 
+ */
+Ref<JSValue> JSString::indexedRead(Ref<JSValue> index)
+{
+    if (isUint(index))
+    {
+        const size_t    uIndex = toSizeT(index);
+        
+        if (uIndex >= m_text.length())
+            return jsNull();
+        else
+            return jsString(m_text.substr(uIndex, 1));
+    }
+    else
+        return jsNull();
 }
 
 
@@ -115,9 +126,7 @@ Ref<JSValue> scStringCharAt(FunctionScope* pScope)
 {
     Ref<JSString> str = pScope->getThis().staticCast<JSString>();
     
-    size_t pos = toSizeT( pScope->getParam("pos") );
-    
-    return str->readField (jsDouble(pos));
+    return str->indexedRead( pScope->getParam("pos") );
 }
 
 Ref<JSValue> scStringCharCodeAt(FunctionScope* pScope)

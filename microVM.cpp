@@ -85,6 +85,8 @@ void execRdGlobal (const int opCode, ExecutionContext* ec);
 void execWrGlobal (const int opCode, ExecutionContext* ec);
 void execRdField (const int opCode, ExecutionContext* ec);
 void execWrField (const int opCode, ExecutionContext* ec);
+void execRdIndex (const int opCode, ExecutionContext* ec);
+void execWrIndex (const int opCode, ExecutionContext* ec);
 void execNewVar (const int opCode, ExecutionContext* ec);
 void execNewConst (const int opCode, ExecutionContext* ec);
 void execNewConstField (const int opCode, ExecutionContext* ec);
@@ -108,10 +110,10 @@ static const OpFunction s_instructions[64] =
     
     //16
     execRdLocal,    execWrLocal,    execRdGlobal,   execWrGlobal,
-    execRdField,    execWrField,    execNewVar,     execNewConst,
+    execRdField,    execWrField,    execRdIndex,    execWrIndex,
     
     //24
-    execNewConstField, invalidOp,   invalidOp,      invalidOp,
+    execNewVar,     execNewConst,   execNewConstField, invalidOp,
     invalidOp,      invalidOp,      invalidOp,      invalidOp,
     
     //32
@@ -145,6 +147,7 @@ Ref<JSValue> mvmExecute (Ref<MvmRoutine> code,
                          Ref<IScope> locals)
 {
     ExecutionContext    ec;
+    GlobalsSetter       g(globals);
     
     ec.scopes.push_back(globals);
     if (locals.notNull())
@@ -327,7 +330,7 @@ void execCall (const int nArgs, ExecutionContext* ec)
     
 //    const Ref<JSFunction>   function = fnVal.staticCast<JSFunction>();
     
-    Ref<FunctionScope>  fnScope = FunctionScope::create (ec->scopes.front(), fnVal);
+    Ref<FunctionScope>  fnScope = FunctionScope::create (fnVal);
     
     //Set 'this' pointer
     size_t  i = ec->stack.size() - nArgs;
@@ -386,6 +389,7 @@ void execCall (const int nArgs, ExecutionContext* ec)
 //    }
 //}
 
+static const char *CALL_LOG_DEPTH = "@callLogDepth";
 
 /**
  * Logs function calls, if enabled.
@@ -393,34 +397,39 @@ void execCall (const int nArgs, ExecutionContext* ec)
  */
 void callLog (Ref<FunctionScope> fnScope, ExecutionContext* ec)
 {
-    const auto globals = fnScope->getGlobals();
+    const auto globals = getGlobals();
     
     if (!globals->isDefined("callLogger"))
         return;
     
     const auto logFunction = globals->get("callLogger");
     
-    if (!logFunction->isFunction())
+    if (logFunction->isNull())
         return;
     
     //Re-entry guard
     if (logFunction == fnScope->getFunction())
         return;
     
-    auto level = logFunction->readFieldStr("callDepth");
+    Ref<JSValue> depth;
     
-    if (level->getType() != VT_NUMBER)
-        level = jsInt(1);
+    if (!globals->isDefined(CALL_LOG_DEPTH))
+    {
+        depth = jsInt(1);
+        globals->newVar(CALL_LOG_DEPTH, depth, false);
+    }
     else
-        level = jsInt(toInt32( level ) + 1);
-    
-    logFunction->writeFieldStr("callDepth", level);
+    {
+        int iDepth = min (1, toInt32( depth ) + 1);
+        depth = jsInt(iDepth);
+        globals->set(CALL_LOG_DEPTH, depth);
+    }
     
     auto obj = JSObject::create();
-    obj->writeFieldStr("level", level);
-    obj->writeFieldStr("name", jsString(fnScope->getFunction()->getName()));
-    obj->writeFieldStr("params", fnScope->get("arguments"));
-    obj->writeFieldStr("this", fnScope->getThis());
+    obj->writeField("level", depth, false);
+    obj->writeField("name", jsString(fnScope->getFunction()->getName()), false);
+    obj->writeField("params", fnScope->get("arguments"), false);
+    obj->writeField("this", fnScope->getThis(), false);
     
     ec->push(jsNull());     //this
     ec->push(obj);          //Log entry
@@ -438,7 +447,7 @@ void callLog (Ref<FunctionScope> fnScope, ExecutionContext* ec)
  */
 void returnLog (Ref<FunctionScope> fnScope, Ref<JSValue> result, ExecutionContext* ec)
 {
-    const auto globals = fnScope->getGlobals();
+    const auto globals = getGlobals();
 
     if (!globals->isDefined("callLogger"))
         return;
@@ -452,21 +461,24 @@ void returnLog (Ref<FunctionScope> fnScope, Ref<JSValue> result, ExecutionContex
     if (logFunction == fnScope->getFunction())
         return;
     
-    auto level = logFunction->readFieldStr("callDepth");
+    if (!globals->isDefined(CALL_LOG_DEPTH))
+        return;
     
-    if (level->getType() != VT_NUMBER)
-        level = jsInt(0);
+    auto depth = globals->get(CALL_LOG_DEPTH);
     
-    if (toInt32 (level) < 0)
+    if (depth->getType() != VT_NUMBER)
+        depth = jsInt(0);
+    
+    if (toInt32 (depth) <= 0)
         globals->set("callLogger", jsNull());    //Remove call logger
     else
     {
-        logFunction->writeFieldStr("callDepth", jsInt(toInt32( level )-1));
+        globals->set(CALL_LOG_DEPTH, jsInt(toInt32( depth )-1));
     
         auto obj = JSObject::create();
-        obj->writeFieldStr("level", level);
-        obj->writeFieldStr("name", jsString(fnScope->getFunction()->getName()));
-        obj->writeFieldStr("result", result);
+        obj->writeField("level", depth, false);
+        obj->writeField("name", jsString(fnScope->getFunction()->getName()), false);
+        obj->writeField("result", result, false);
 
         ec->push(jsNull());     //this
         ec->push(obj);          //log entry
@@ -582,8 +594,10 @@ void execWrLocal (const int opCode, ExecutionContext* ec)
  */
 void execRdGlobal (const int opCode, ExecutionContext* ec)
 {
+    //auto globals = ec->scopes.front();
+    
     const Ref<JSValue>  name = ec->pop();
-    const Ref<JSValue>  val = ec->scopes.front()->get(name->toString());
+    const Ref<JSValue>  val = getGlobals()->get(name->toString());
     
     ec->push(val);
 }
@@ -595,10 +609,11 @@ void execRdGlobal (const int opCode, ExecutionContext* ec)
  */
 void execWrGlobal (const int opCode, ExecutionContext* ec)
 {
+    //auto globals = ec->scopes.front();
     const Ref<JSValue>  val = ec->pop();
     const Ref<JSValue>  name = ec->pop();
     
-    ec->scopes.front()->set(name->toString(), val);
+    getGlobals()->set(name->toString(), val);
 }
 
 
@@ -611,7 +626,7 @@ void execRdField (const int opCode, ExecutionContext* ec)
 {
     const Ref<JSValue>  name = ec->pop();
     const Ref<JSValue>  objVal = ec->pop();
-    const Ref<JSValue>  val = objVal->readField(name);
+    const Ref<JSValue>  val = objVal->readField(name->toString());
     
     ec->push(val);
 }
@@ -627,7 +642,35 @@ void execWrField (const int opCode, ExecutionContext* ec)
     const Ref<JSValue>  name = ec->pop();
     const Ref<JSValue>  objVal = ec->pop();
     
-    objVal->writeField (name, val);
+    objVal->writeField (name->toString(), val, false);
+}
+
+/**
+ * Executes an 'indexed read' operation.
+ * @param opCode
+ * @param ec
+ */
+void execRdIndex (const int opCode, ExecutionContext* ec)
+{
+    const Ref<JSValue>  key = ec->pop();
+    const Ref<JSValue>  container = ec->pop();
+    const Ref<JSValue>  val = container->indexedRead(key);
+    
+    ec->push(val);
+}
+
+/**
+ * Executes an 'indexed write operation
+ * @param opCode
+ * @param ec
+ */
+void execWrIndex (const int opCode, ExecutionContext* ec)
+{
+    const Ref<JSValue>  val = ec->pop();
+    const Ref<JSValue>  key = ec->pop();
+    const Ref<JSValue>  container = ec->pop();
+    
+    container->indexedWrite(key, val);    
 }
 
 /**
@@ -675,7 +718,7 @@ void execNewConstField (const int opCode, ExecutionContext* ec)
     const Ref<JSValue>  name = ec->pop();
     const Ref<JSValue>  objVal = ec->pop();
     
-    objVal->newConstField (name, val);
+    objVal->writeField (name->toString(), val, true);
 }
 
 /**

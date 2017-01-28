@@ -73,9 +73,9 @@ private:
 class FunctionScope : public IScope
 {
 public:
-    static Ref<FunctionScope> create(Ref<IScope> globals, Ref<JSValue> targetFn)
+    static Ref<FunctionScope> create(Ref<JSValue> targetFn)
     {
-        return refFromNew(new FunctionScope(globals, targetFn));
+        return refFromNew(new FunctionScope(targetFn));
     }
 
     void setThis(Ref<JSValue> value)
@@ -103,11 +103,6 @@ public:
         return false;
     }
     ////////////////////////////////////
-
-    Ref<IScope> getGlobals()const
-    {
-        return m_globals;
-    }
     
     Ref<JSValue> getFunction()const
     {
@@ -119,9 +114,8 @@ private:
     Ref<JSValue>    m_function;
     Ref<JSArray>    m_arguments;
     Ref<JSValue>    m_this;
-    Ref<IScope>     m_globals;
     
-    FunctionScope(Ref<IScope> globals, Ref<JSValue> targetFn);
+    FunctionScope(Ref<JSValue> targetFn);
 };
 
 /**
@@ -175,6 +169,19 @@ private:
     Ref<SharedVars>     m_shared;
     VarMap              m_notShared;
     bool                m_sharing;
+};
+
+//Gets the current globals
+Ref<IScope>   getGlobals();
+
+//Sets the current globals, and restores the old one when it goes out of scope
+struct GlobalsSetter
+{
+    GlobalsSetter (Ref<IScope> newGlobals);
+    ~GlobalsSetter();
+    
+private:
+    Ref<IScope> m_oldGlobals;   
 };
 
 

@@ -58,11 +58,11 @@ public:
     {
         auto actor = pScope->getThis().staticCast<RoutineActor>();
         auto actorRef = AsActorRef::create(actor);
-        auto globals = pScope->getGlobals().staticCast<GlobalScope>();
+        auto globals = ::getGlobals().staticCast<GlobalScope>();
         
         globals->newNotSharedVar("@curActor", actorRef, true);
         
-        return mvmExecute(actor->m_code, pScope->getGlobals(), Ref<IScope>());
+        return mvmExecute(actor->m_code, globals, Ref<IScope>());
     }
     
 private:
@@ -152,7 +152,6 @@ Ref<JSValue> connectOperator (FunctionScope* pScope)
  */
 Ref<JSValue> inputEpCall(Ref<AsEndPointRef> endPoint, Ref<FunctionScope> scope)
 {
-    auto globals = scope->getGlobals().staticCast<GlobalScope>();
     auto runtime = ActorRuntime::getRuntime(scope.getPointer());
     auto params = scope->get("arguments").staticCast<JSArray>();
     
@@ -188,7 +187,7 @@ Ref<JSValue> outputEpCall(Ref<AsEndPointRef> endPoint, Ref<FunctionScope> scope)
  */
 Ref<JSValue> actorConstructor(Ref<AsActorClass> actorClass, Ref<FunctionScope> scope)
 {
-    auto curGlobals = scope->getGlobals().staticCast<GlobalScope>();
+    auto curGlobals = ::getGlobals().staticCast<GlobalScope>();
     auto newGlobals = curGlobals->share();
     auto runtime = ActorRuntime::getRuntime(scope.getPointer());
     auto curActor = curGlobals->get("@curActor").staticCast<AsActorRef>();
@@ -205,7 +204,7 @@ Ref<JSValue> actorConstructor(Ref<AsActorClass> actorClass, Ref<FunctionScope> s
     for (size_t i=0; i<params.size(); ++i)
     {
         auto value = scope->getParam(params[i]);
-        newActor->writeFieldStr(params[i], value);
+        newActor->writeField(params[i], value, false);
         msgParams->push(value);
     }
     
@@ -257,7 +256,7 @@ Ref<ActorRuntime> ActorRuntime::create(Ref<AsActorRef> rootActor)
  */
 Ref<ActorRuntime> ActorRuntime::getRuntime(FunctionScope* fnScope)
 {
-    auto runtime = fnScope->getGlobals()->get("@actorRT");
+    auto runtime = ::getGlobals()->get("@actorRT");
     
     if (!runtime->isObject())
         error ("Missing actor runtime");
@@ -403,12 +402,14 @@ bool ActorRuntime::dispatchMessage()
     
     if (actorRef->isRunning())
     {
+        auto actor = actorRef->getActor();
+        auto globals = actor->getGlobals();
+        GlobalsSetter   g(globals);
+        
         try
         {
-            auto actor = actorRef->getActor();
-            auto globals = actor->getGlobals();
             auto endPoint = msg.destination->getEndPoint();
-            auto scope = FunctionScope::create(globals, endPoint);
+            auto scope = FunctionScope::create(endPoint);
 
             scope->setThis(actor);
             

@@ -37,6 +37,7 @@
 
 using namespace std;
 
+//TODO: Replace by constants
 #define k_E                 exp(1.0)
 #define k_PI                3.1415926535897932384626433832795
 

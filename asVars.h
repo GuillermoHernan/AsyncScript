@@ -33,7 +33,7 @@ public:
     virtual Ref<JSValue> call (Ref<FunctionScope> scope);
     
     virtual StringSet getFields(bool inherited = true)const;
-    virtual Ref<JSValue> readField(Ref<JSValue> key)const;
+    virtual Ref<JSValue> readField(const std::string& key)const;
     
     Ref<AsEndPoint> getEndPoint (const std::string& name);
 
@@ -89,9 +89,9 @@ public:
         return VT_ACTOR;
     }
     
-    virtual Ref<JSValue> readField(Ref<JSValue> key)const;    
-    virtual Ref<JSValue> writeField(Ref<JSValue> key, Ref<JSValue> value);
-    virtual Ref<JSValue> newConstField(Ref<JSValue> key, Ref<JSValue> value);
+    virtual Ref<JSValue> readField(const std::string& key)const;    
+    virtual Ref<JSValue> writeField(const std::string& key, Ref<JSValue> value, bool isConst);
+//    virtual Ref<JSValue> newConstField(Ref<JSValue> key, Ref<JSValue> value);
     
     
     void setOutputConnection (const std::string& msgName, Ref<AsEndPointRef> dst)
@@ -182,9 +182,9 @@ public:
         return refFromNew(new AsActorRef(actor));
     }
     
-    virtual Ref<JSValue> readField(Ref<JSValue> key)const
+    virtual Ref<JSValue> readField(const std::string& key)const
     {
-        return getEndPoint(key->toString());
+        return getEndPoint(key);
     }
 
     bool isRunning()

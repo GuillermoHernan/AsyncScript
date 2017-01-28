@@ -73,20 +73,31 @@ class JSValue : public RefCountObj
 {
 public:
     virtual JSValueTypes getType()const = 0;
+
+    typedef std::map< Ref<JSValue>, Ref<JSValue> >  JSValuesMap;
     
     virtual JSMutability    getMutability()const=0;
     virtual Ref<JSValue>    freeze()=0;
+    virtual Ref<JSValue>    deepFreeze(JSValuesMap& transformed)=0;
     virtual Ref<JSValue>    unFreeze(bool forceClone=false)=0;
 
+    //'toString' is problematic. It is heavily used. Also in places where 
+    //there is no access to the globals.
     virtual std::string toString()const = 0;
     virtual bool toBoolean()const = 0;
     virtual double toDouble()const = 0;
 
-    virtual Ref<JSValue> readField(Ref<JSValue> key)const = 0;
-    virtual Ref<JSValue> writeField(Ref<JSValue> key, Ref<JSValue> value) = 0;
-    virtual Ref<JSValue> newConstField(Ref<JSValue> key, Ref<JSValue> value) = 0;
-    virtual Ref<JSValue> deleteField(Ref<JSValue> key) = 0;
+    virtual Ref<JSValue> readField(const std::string& key)const = 0;
+    virtual Ref<JSValue> writeField(const std::string& key, Ref<JSValue> value, bool isConst) = 0;
+//    virtual Ref<JSValue> newConstField(const std::string& key, Ref<JSValue> value) = 0;
+    virtual Ref<JSValue> deleteField(const std::string& key) = 0;
     virtual StringSet    getFields(bool inherited = true)const=0;
+
+    virtual Ref<JSValue> indexedRead(Ref<JSValue> index) = 0;
+    virtual Ref<JSValue> indexedWrite(Ref<JSValue> index, Ref<JSValue> value) = 0;
+    
+    virtual Ref<JSValue> head() = 0;
+    virtual Ref<JSValue> tail() = 0;    
     
     virtual Ref<JSValue> call (Ref<FunctionScope> scope);
 
@@ -95,9 +106,7 @@ public:
     virtual const StringVector& getParams()const=0;
     virtual const std::string& getName()const=0;
     
-    Ref<JSValue> readFieldStr(const std::string& strKey)const;
-    Ref<JSValue> writeFieldStr(const std::string& strKey, Ref<JSValue> value);
-    Ref<JSValue> newConstFieldStr(const std::string& strKey, Ref<JSValue> value);
+    Ref<JSValue> deepFreeze();
 
     virtual std::string getTypeName()const
     {
@@ -116,6 +125,7 @@ public:
 
     bool isObject()const
     {
+        //TODO: Review this check
         return getType() >= VT_OBJECT;
     }
 
@@ -148,6 +158,7 @@ Ref<JSBool> jsTrue();
 Ref<JSBool> jsFalse();
 Ref<JSValue> jsBool(bool value);
 Ref<JSValue> jsInt(int value);
+Ref<JSValue> jsSizeT(size_t value);
 Ref<JSValue> jsDouble(double value);
 Ref<JSValue> jsString(const std::string& value);
 
@@ -168,11 +179,6 @@ size_t toSizeT (Ref<JSValue> a);
 bool isInteger (Ref<JSValue> a);
 bool isUint (Ref<JSValue> a);
 
-typedef std::map< Ref<JSValue>, Ref<JSValue> >  JSValuesMap;
-Ref<JSValue>    deepFreeze(Ref<JSValue> obj, JSValuesMap& transformed);
-Ref<JSValue>    deepFreeze(Ref<JSValue> obj);
-
-
 //////////////////////////////////////////
 
 /**
@@ -190,6 +196,11 @@ public:
     }
     
     virtual Ref<JSValue> freeze()
+    {
+        return Ref<JSValue>(this);
+    }
+    
+    virtual Ref<JSValue> deepFreeze(JSValuesMap& transformed)
     {
         return Ref<JSValue>(this);
     }
@@ -214,22 +225,42 @@ public:
         return getNaN();
     }
 
-    virtual Ref<JSValue> readField(Ref<JSValue> key)const
+    virtual Ref<JSValue> readField(const std::string& key)const
     {
         return jsNull();
     }
     
-    virtual Ref<JSValue> writeField(Ref<JSValue> key, Ref<JSValue> value)
+    virtual Ref<JSValue> writeField(const std::string& key, Ref<JSValue> value, bool isConst)
     {
         return jsNull();
     }
     
-    virtual Ref<JSValue> newConstField(Ref<JSValue> key, Ref<JSValue> value)
+//    virtual Ref<JSValue> newConstField(Ref<JSValue> key, Ref<JSValue> value)
+//    {
+//        return jsNull();
+//    }
+    
+    virtual Ref<JSValue> indexedRead(Ref<JSValue> index)
+    {
+        return jsNull();
+    }
+    virtual Ref<JSValue> indexedWrite(Ref<JSValue> index, Ref<JSValue> value)
     {
         return jsNull();
     }
     
-    virtual Ref<JSValue> deleteField(Ref<JSValue> key)
+    virtual Ref<JSValue> head()
+    {
+        return Ref<JSValue>(this);
+    }
+
+    virtual Ref<JSValue> tail()
+    {
+        return jsNull();
+    }
+    
+    
+    virtual Ref<JSValue> deleteField(const std::string& key)
     {
         return jsNull();
     }
@@ -242,10 +273,7 @@ public:
     
     virtual std::string getJSON(int indent)
     {
-        if (V_TYPE == VT_NULL)
-            return "null";
-        else
-            return "";
+        return "";
     }
 
     virtual JSValueTypes getType()const
@@ -265,21 +293,7 @@ public:
         return empty;
     }
     
-};
-
-/**
- * Base class for Javascript primitive types.
- */
-template <JSValueTypes V_TYPE>
-class JSPrimitive : public JSValueBase<V_TYPE>
-{
-public:
-
-    virtual std::string getJSON(int indent)
-    {
-        return this->toString();
-    }
-};
+};//class JSValueBase
 
 /**
  * Javascript number class.
@@ -287,7 +301,7 @@ public:
  * as a 64 floating point value.
  * Javascript numbers are immutable. Once created, they cannot be modified.
  */
-class JSNumber : public JSPrimitive<VT_NUMBER>
+class JSNumber : public JSValueBase<VT_NUMBER>
 {
 public:
     static Ref<JSNumber> create(double value);
@@ -303,6 +317,7 @@ public:
     }
 
     virtual std::string toString()const;
+    virtual std::string getJSON(int indent);
 
 protected:
 
@@ -319,7 +334,7 @@ private:
  * Javascript booleans class.
  * Javascript booleans are immutable. Once created, they cannot be modified.
  */
-class JSBool : public JSPrimitive<VT_BOOL>
+class JSBool : public JSValueBase<VT_BOOL>
 {
 public:
     friend Ref<JSBool> jsTrue();
@@ -339,6 +354,9 @@ public:
     {
         return m_value ? "true" : "false";
     }
+    
+    virtual std::string getJSON(int indent);
+   
 
 private:
 
@@ -404,17 +422,6 @@ public:
     static Ref<JSFunction> createNative(const std::string& name, 
                                         const StringVector& params, 
                                         JSNativeFn fnPtr);
-
-//    int addParam(const std::string& name)
-//    {
-//        m_params.push_back(name);
-//        return (int) m_params.size();
-//    }
-//
-//    void setParams(const StringVector& params)
-//    {
-//        m_params = params;
-//    }
 
     const StringVector& getParams()const
     {

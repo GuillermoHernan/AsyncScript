@@ -37,7 +37,8 @@ public:
         return m_text;
     }
 
-    virtual Ref<JSValue> readField(Ref<JSValue> key)const;
+    virtual Ref<JSValue> readField(const std::string& key)const;
+    virtual Ref<JSValue> indexedRead(Ref<JSValue> index);
 
     virtual std::string getJSON(int indent);
 

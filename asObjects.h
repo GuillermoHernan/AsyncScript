@@ -48,7 +48,7 @@ public:
     
     virtual StringSet getFields(bool inherited = true)const;
 
-    virtual Ref<JSValue> readField(Ref<JSValue> key)const;
+    virtual Ref<JSValue> readField(const std::string& key)const;
     
     virtual const StringVector& getParams()const
     {
@@ -101,38 +101,35 @@ public:
     }
     
     virtual Ref<JSValue>    freeze();
+    virtual Ref<JSValue>    deepFreeze(JSValuesMap& transformed);
     virtual Ref<JSValue>    unFreeze(bool forceClone=false);
     
     void setFrozen();
     
     std::vector <Ref<JSValue> > getKeys()const;
-    virtual StringSet           getFields(bool inherited = true)const;
     
     bool isWritable(const std::string& key)const;
 
     // JSValue
     /////////////////////////////////////////
 
-    virtual std::string toString()const
-    {
-        return std::string("[Object of ") + m_cls->toString() + "]";
-    }
+    virtual std::string toString()const;
+    virtual bool        toBoolean()const;
+    virtual double      toDouble()const;
 
-    virtual bool toBoolean()const
-    {
-        return true;
-    }
-
-    virtual double toDouble()const
-    {
-        return getNaN();
-    }
-
-    virtual Ref<JSValue> readField(Ref<JSValue> key)const;
-    virtual Ref<JSValue> writeField(Ref<JSValue> key, Ref<JSValue> value);
-    virtual Ref<JSValue> newConstField(Ref<JSValue> key, Ref<JSValue> value);
-    virtual Ref<JSValue> deleteField(Ref<JSValue> key);
-
+    virtual Ref<JSValue> readField(const std::string& key)const;
+    virtual Ref<JSValue> writeField(const std::string& key, Ref<JSValue> value, bool isConst);
+    virtual Ref<JSValue> deleteField(const std::string& key);
+    virtual StringSet    getFields(bool inherited = true)const;
+    
+    virtual Ref<JSValue> indexedRead(Ref<JSValue> index);
+    virtual Ref<JSValue> indexedWrite(Ref<JSValue> index, Ref<JSValue> value);
+    
+    virtual Ref<JSValue> head();
+    virtual Ref<JSValue> tail();
+    
+    virtual Ref<JSValue> call (Ref<FunctionScope> scope);
+    
     virtual std::string getJSON(int indent);
 
     virtual JSValueTypes getType()const
@@ -177,18 +174,19 @@ protected:
     
     static JSMutability     selectMutability(const JSObject& src, bool _mutable);
 
+    Ref<JSValue>    callMemberFn (Ref<JSValue> function)const;
+    Ref<JSValue>    callMemberFn (Ref<JSValue> function, Ref<JSValue> p1)const;
+    Ref<JSValue>    callMemberFn (Ref<JSValue> function, Ref<JSValue> p1, Ref<JSValue> p2)const;
 private:
     VarMap          m_members;
     Ref<JSClass>    m_cls;
     JSMutability    m_mutability;
-    
-    friend Ref<JSValue> deepFreeze(Ref<JSValue> obj, JSValuesMap& transformed);
 };
 
 /**
  * Javascript array implementation
  */
-class JSArray : public JSObject
+class JSArray : public JSValueBase<VT_ARRAY>
 {
 public:
     static Ref<JSArray> create();
@@ -199,7 +197,7 @@ public:
 
     size_t length()const
     {
-        return m_length;
+        return m_content.size();
     }
 
     Ref<JSValue> getAt(size_t index)const;
@@ -209,37 +207,70 @@ public:
     virtual std::string toString()const;
 
     virtual std::string getJSON(int indent);
-
-    virtual JSValueTypes getType()const
+    
+    virtual JSMutability getMutability()const
     {
-        return VT_ARRAY;
+        return m_mutability;
     }
 
-    virtual Ref<JSValue> readField(Ref<JSValue> key)const;
-    virtual Ref<JSValue> writeField(Ref<JSValue> key, Ref<JSValue> value);
-    /////////////////////////////////////////
+    virtual Ref<JSValue> freeze();
+    virtual Ref<JSValue> deepFreeze(JSValuesMap& transformed);
+    virtual Ref<JSValue> unFreeze(bool forceClone=false);
 
+    virtual Ref<JSValue> readField(const std::string& key)const;
+    virtual Ref<JSValue> writeField(const std::string& key, Ref<JSValue> value, bool isConst);
+    
+    virtual Ref<JSValue> indexedRead(Ref<JSValue> index);
+    virtual Ref<JSValue> indexedWrite(Ref<JSValue> index, Ref<JSValue> value);
+
+    virtual Ref<JSValue> head();
+    virtual Ref<JSValue> tail();
+    
+    /////////////////////////////////////////
 
     static Ref<JSClass> ArrayClass;
     
     static std::string join(Ref<JSArray> arr, Ref<JSValue> sep);
-    
-    
 private:
 
-    JSArray() : JSObject(ArrayClass, MT_MUTABLE), m_length(0)
+    JSArray() : m_mutability(MT_MUTABLE)
     {
     }
     
-    JSArray(const JSArray& src, bool _mutable);
-    virtual Ref<JSObject>   clone (bool _mutable);
+//    JSArray(const JSArray& src, bool _mutable);
+//    virtual Ref<JSObject>   clone (bool _mutable);
 
     void setLength(Ref<JSValue> value);
 
-    size_t m_length;
+    std::vector< Ref<JSValue> >     m_content;
+    JSMutability                    m_mutability;
 };
 
+/**
+ * Object to iterate over an array
+ * @return 
+ */
+class JSArrayIterator : public JSObject
+{
+public:
+    static Ref<JSValue> create(Ref<JSArray> arr, size_t index);
 
+    virtual Ref<JSValue> head()const;
+    virtual Ref<JSValue> tail()const;
+
+private:
+    //TODO: Should it has its own class?
+
+    JSArrayIterator(Ref<JSArray> arr, size_t index) :
+    JSObject(DefaultClass, arr->getMutability() == MT_DEEPFROZEN ? MT_DEEPFROZEN : MT_FROZEN),
+    m_array(arr),
+    m_index(index)
+    {
+    }
+
+    Ref<JSArray> m_array;
+    size_t m_index;
+};
 
 
 #endif	/* ASOBJECTS_H */
