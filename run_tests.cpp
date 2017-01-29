@@ -152,6 +152,22 @@ Ref<JSValue> printLn(FunctionScope* pScope)
     return jsNull();
 }
 
+Ref<JSValue> enableCallLog(FunctionScope* pScope)
+{
+    auto logFn = [](FunctionScope* pScope) -> Ref<JSValue>
+    {
+        auto entry = pScope->getParam("x");
+
+        s_curFunctionLogger->log(entry->getJSON(0));
+        return jsNull();
+    };
+    addNative("function callLogger(x)", logFn, getGlobals(), false);
+    
+    return jsNull();
+}
+
+
+
 /**
  * Gives access to the parser to the tested code.
  * Useful for tests which target the parser.
@@ -207,6 +223,7 @@ bool run_test(const std::string& szFile, const string &testDir, const string& re
     addNative("function printLn(text)", printLn, globals);
     addNative("function expectError(code)", expectError, globals);
     addNative("function asParse(code)", asParse, globals);
+    addNative("function enableCallLog()", enableCallLog, globals);
     try
     {
         //This code is copied from 'evaluate', to log the intermediate results 
@@ -230,17 +247,10 @@ bool run_test(const std::string& szFile, const string &testDir, const string& re
         //Write disassembly
         writeTextFile(testResultsDir + testName + ".asm.json", mvmDisassembly(code));
         
-        //Call logger setup
+        //Call logger setup. Not enabled until the script code calls
+        //'enableCallLog'
         JsonLogger  callLogger (testResultsDir + testName + ".calls.json");
         s_curFunctionLogger = &callLogger;
-        auto logFn = [](FunctionScope* pScope) -> Ref<JSValue>
-        {
-            auto entry = pScope->getParam("x");
-            
-            s_curFunctionLogger->log(entry->getJSON(0));
-            return jsNull();
-        };
-        addNative("function callLogger(x)", logFn, globals, false);
 
         //Execution
         //mvmExecute(code, globals);
