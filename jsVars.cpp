@@ -25,21 +25,6 @@ Ref<JSValue> JSValue::call (Ref<FunctionScope> scope)
     return jsNull();
 }
 
-//Ref<JSValue> JSValue::readFieldStr(const std::string& strKey)const
-//{
-//    return readField(jsString(strKey));
-//}
-//
-//Ref<JSValue> JSValue::writeFieldStr(const std::string& strKey, Ref<JSValue> value)
-//{
-//    return writeField(jsString(strKey), value);
-//}
-//
-//Ref<JSValue> JSValue::newConstFieldStr(const std::string& strKey, Ref<JSValue> value)
-//{
-//    return newConstField(jsString(strKey), value);
-//}
-
 /**
  * Gives an string representation of the type name
  * @return 
@@ -71,25 +56,6 @@ std::string getTypeName(JSValueTypes vType)
     ASSERT(types.find(vType) != types.end());
     return types[vType];
 }
-
-/**
- * Class for 'null' values.
- */
-//TODO: Move to '.h'
-class JSNull : public JSValueBase<VT_NULL>
-{
-public:
-
-    virtual std::string toString()const
-    {
-        return "null";
-    }
-    
-    virtual std::string getJSON(int indent)
-    {
-        return "null";
-    }
-};
 
 Ref<JSValue> jsNull()
 {
@@ -139,23 +105,6 @@ Ref<JSValue> jsString(const std::string& value)
 }
 
 /**
- * Transforms a 'JSValue' into a string which can be used to search the store.
- * @param key
- * @return 
- */
-//std::string key2Str(Ref<JSValue> key)
-//{
-//    if (!key->isPrimitive())
-//        error("Invalid array index: %s", key->toString().c_str());
-//    else if (key->getType() == VT_NUMBER)
-//        return double_to_string(key->toDouble());
-//    else
-//        return key->toString();
-//
-//    return "";
-//}
-
-/**
  * Class for numeric constants. 
  * It also stores the original string representation, to have an accurate string 
  * representation
@@ -193,7 +142,7 @@ private:
     }
 
     string m_text;
-};
+};//class JSNumberConstant
 
 Ref<JSValue> createConstant(CScriptToken token)
 {
@@ -201,26 +150,6 @@ Ref<JSValue> createConstant(CScriptToken token)
         return JSString::create(token.strValue());
     else
         return JSNumberConstant::create(token.text());
-}
-
-/**
- * Gets a member form a scope, and ensures it is an object.
- * If not an object, returns NULL
- * @param pScope
- * @param name
- * @return 
- */
-Ref<JSObject> getObject(Ref<IScope> pScope, const std::string& name)
-{
-    Ref<JSValue> value = pScope->get(name);
-
-    if (!value.isNull())
-    {
-        if (value->isObject())
-            return value.staticCast<JSObject>();
-    }
-
-    return Ref<JSObject>();
 }
 
 /**

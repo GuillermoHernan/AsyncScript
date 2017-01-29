@@ -16,9 +16,6 @@
 #include "jsVars.h"
 
 
-void registerObjectsFunctions(Ref<IScope> scope);
-
-
 /**
  * Runtime object for classes
  * @return 

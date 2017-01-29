@@ -58,7 +58,6 @@ protected:
                  const StringVector& params);
 
     static VarMap createDefaultEndPoints (const VarMap& members);
-//    static Ref<JSClass> ActorBaseClass;
     
 private:
     std::string     m_name;
@@ -91,8 +90,6 @@ public:
     
     virtual Ref<JSValue> readField(const std::string& key)const;    
     virtual Ref<JSValue> writeField(const std::string& key, Ref<JSValue> value, bool isConst);
-//    virtual Ref<JSValue> newConstField(Ref<JSValue> key, Ref<JSValue> value);
-    
     
     void setOutputConnection (const std::string& msgName, Ref<AsEndPointRef> dst)
     {
@@ -105,11 +102,6 @@ public:
     {
         return !m_finished;
     }
-    
-//    void forceStop()
-//    {
-//        m_finished = true;
-//    }
     
     void stop(Ref<JSValue> result, Ref<JSValue> error);
         
@@ -149,8 +141,6 @@ protected:
     {
     }
         
-//    virtual Ref<JSObject> clone (bool _mutable);
-    
 private:
     const Ref<AsActorClass> m_cls;
     Ref<GlobalScope>    m_globals;

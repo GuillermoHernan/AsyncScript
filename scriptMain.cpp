@@ -59,7 +59,6 @@ Ref<GlobalScope> createDefaultGlobals()
     auto    globals = GlobalScope::create();
     
     registerMvmFunctions(globals);
-    registerObjectsFunctions(globals);
     registerFunctions(globals);
     registerMathFunctions(globals);
     

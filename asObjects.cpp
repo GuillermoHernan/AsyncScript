@@ -861,23 +861,6 @@ Ref<JSValue> JSArray::unFreeze(bool forceClone)
     }
 }
 
-
-//JSArray::JSArray(const JSArray& src, bool _mutable)
-//: JSObject(src, _mutable)
-//, m_content (src.m_content)
-//{    
-//}
-//
-///**
-// * 'JSArray' clone operation.
-// * @param _mutable
-// * @return 
-// */
-//Ref<JSObject> JSArray::clone (bool _mutable)
-//{
-//    return refFromNew (new JSArray(*this, _mutable));
-//}
-
 /**
  * Modifies array length
  * @param value
@@ -1097,36 +1080,4 @@ Ref<JSClass> createArrayClass()
                                  members, 
                                  StringVector(),
                                  scArrayConstructor);
-}
-
-/**
- * Calls to the base class constructor.
- * @param pScope
- * @return 
- */
-//Ref<JSValue> baseConstructorCall (FunctionScope* pScope)
-//{
-//    auto parentClass = pScope->getThis();
-//    
-//    if (parentClass->getType() != VT_CLASS)
-//    {
-//        error ("@baseConstructorCall: First parameter is not a base class: ", 
-//               getTypeName(parentClass->getType()).c_str());
-//    }
-//    
-//    auto base = parentClass.staticCast<JSClass>();
-//    
-//    return base->getConstructor()->call(Ref<FunctionScope>(pScope));
-//}
-
-/**
- * Registers MVM primitive operations to the given scope.
- * @param scope
- */
-void registerObjectsFunctions(Ref<IScope> scope)
-{
-    //addNative0("@newObj", mvmNewObj, scope);
-//    addNative0("@baseConstructorCall", baseConstructorCall, scope);
-    
-    //scope->newVar("Object", JSObject::DefaultClass, true);
 }

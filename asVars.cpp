@@ -13,10 +13,6 @@
 
 using namespace std;
 
-//Ref<JSClass> createActorBaseClass();
-//
-//Ref<JSClass> AsActorClass::ActorBaseClass = createActorBaseClass();
-
 /**
  * Actor class construction function
  * @param name
@@ -28,9 +24,7 @@ Ref<AsActorClass> AsActorClass::create (const std::string& name,
                                         const StringVector& params)
 {
     auto newMembers = createDefaultEndPoints(members);
-//    auto constructor = AsEndPoint::create("@start", true);
-//    
-//    writeFieldStr(constructor->getName(), constructor);
+
     return refFromNew (new AsActorClass(name, newMembers, params));
 }
 
@@ -46,23 +40,6 @@ m_members(members),
 m_params(params)
 {
 }
-
-/**
- * Gets the function used to create actor objects (but not the one used to initialize them)
- * @return 
- */
-//Ref<JSFunction> AsActorClass::getActorObjConstructor()
-//{
-//    static Ref<JSFunction> constructor = JSFunction::createNative("@constructor", StringVector(), actorObjConstructor);
-//    
-//    return constructor;
-//}
-//
-//static Ref<JSValue> AsActorClass::actorObjConstructor (FunctionScope* pScope)
-//{
-//    
-//}
-
 
 /**
  * Creates default endPoints of an actor class, if they are missing.
@@ -179,13 +156,6 @@ void AsActor::stop(Ref<JSValue> result, Ref<JSValue> error)
     m_finished = true;
 }
 
-
-//Ref<JSObject> AsActor::clone (bool _mutable)
-//{
-//    ASSERT (!"Clone operation not allowed on actors.");
-//    return Ref<AsActor>(this);
-//}
-
 AsEndPoint::AsEndPoint (const std::string& name, 
                         const StringVector& params, 
                         Ref<MvmRoutine> code) :
@@ -274,19 +244,3 @@ Ref<AsEndPointRef> AsActor::getConnectedEp (const std::string& msgName)const
     else
         return Ref<AsEndPointRef>();
 }
-
-
-//Ref<JSValue> scActorConstructor(FunctionScope* pScope)
-//{
-//    return AsActor::c ::create();
-//}
-//
-//
-//Ref<JSClass> createActorBaseClass()
-//{
-//    VarMap  members;
-//    
-//    
-//
-//    return JSClass::create("Actor", Ref<JSClass>(), members, StringVector());
-//}

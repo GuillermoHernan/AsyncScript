@@ -81,15 +81,12 @@ public:
     virtual Ref<JSValue>    deepFreeze(JSValuesMap& transformed)=0;
     virtual Ref<JSValue>    unFreeze(bool forceClone=false)=0;
 
-    //'toString' is problematic. It is heavily used. Also in places where 
-    //there is no access to the globals.
     virtual std::string toString()const = 0;
     virtual bool toBoolean()const = 0;
     virtual double toDouble()const = 0;
 
     virtual Ref<JSValue> readField(const std::string& key)const = 0;
     virtual Ref<JSValue> writeField(const std::string& key, Ref<JSValue> value, bool isConst) = 0;
-//    virtual Ref<JSValue> newConstField(const std::string& key, Ref<JSValue> value) = 0;
     virtual Ref<JSValue> deleteField(const std::string& key) = 0;
     virtual StringSet    getFields(bool inherited = true)const=0;
 
@@ -153,31 +150,24 @@ public:
 class JSBool;
 class JSObject;
 
-Ref<JSValue> jsNull();
-Ref<JSBool> jsTrue();
-Ref<JSBool> jsFalse();
-Ref<JSValue> jsBool(bool value);
-Ref<JSValue> jsInt(int value);
-Ref<JSValue> jsSizeT(size_t value);
-Ref<JSValue> jsDouble(double value);
-Ref<JSValue> jsString(const std::string& value);
+Ref<JSValue>    jsNull();
+Ref<JSBool>     jsTrue();
+Ref<JSBool>     jsFalse();
+Ref<JSValue>    jsBool(bool value);
+Ref<JSValue>    jsInt(int value);
+Ref<JSValue>    jsSizeT(size_t value);
+Ref<JSValue>    jsDouble(double value);
+Ref<JSValue>    jsString(const std::string& value);
 
-std::string  key2Str(Ref<JSValue> key);
+Ref<JSValue>    createConstant(CScriptToken token);
 
-Ref<JSValue> createConstant(CScriptToken token);
+double          jsValuesCompare (Ref<JSValue> a, Ref<JSValue> b);
 
-Ref<JSObject> getObject(Ref<IScope> pScope, const std::string& name);
-
-//Ref<JSValue> null2undef (Ref<JSValue> value);
-//bool nullCheck (Ref<JSValue> value);
-
-double jsValuesCompare (Ref<JSValue> a, Ref<JSValue> b);
-
-int toInt32 (Ref<JSValue> a);
+int             toInt32 (Ref<JSValue> a);
 unsigned long long toUint64 (Ref<JSValue> a);
-size_t toSizeT (Ref<JSValue> a);
-bool isInteger (Ref<JSValue> a);
-bool isUint (Ref<JSValue> a);
+size_t          toSizeT (Ref<JSValue> a);
+bool            isInteger (Ref<JSValue> a);
+bool            isUint (Ref<JSValue> a);
 
 //////////////////////////////////////////
 
@@ -235,11 +225,6 @@ public:
         return jsNull();
     }
     
-//    virtual Ref<JSValue> newConstField(Ref<JSValue> key, Ref<JSValue> value)
-//    {
-//        return jsNull();
-//    }
-    
     virtual Ref<JSValue> indexedRead(Ref<JSValue> index)
     {
         return jsNull();
@@ -294,6 +279,24 @@ public:
     }
     
 };//class JSValueBase
+
+/**
+ * Class for 'null' values.
+ */
+class JSNull : public JSValueBase<VT_NULL>
+{
+public:
+
+    virtual std::string toString()const
+    {
+        return "null";
+    }
+    
+    virtual std::string getJSON(int indent)
+    {
+        return "null";
+    }
+};
 
 /**
  * Javascript number class.
@@ -400,8 +403,8 @@ private:
 
 typedef std::map<std::string, VarProperties> VarMap;
 
-void checkedVarWrite (VarMap& map, const std::string& name, Ref<JSValue> value, bool isConst);
-Ref<JSValue> checkedVarDelete (VarMap& map, const std::string& name);
+void            checkedVarWrite (VarMap& map, const std::string& name, Ref<JSValue> value, bool isConst);
+Ref<JSValue>    checkedVarDelete (VarMap& map, const std::string& name);
 
 class FunctionScope;
 
@@ -438,11 +441,6 @@ public:
         m_codeMVM = code;
     }
     
-//    void setNativePtr(JSNativeFn pNative)
-//    {
-//        m_pNative = pNative;
-//    }
-
     Ref<RefCountObj> getCodeMVM()const
     {
         return m_codeMVM;
