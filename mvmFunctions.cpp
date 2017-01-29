@@ -9,7 +9,7 @@
 
 #include "OS_support.h"
 #include "mvmFunctions.h"
-#include "asObjects.h"
+#include "jsArray.h"
 #include "scriptMain.h"
 
 #include <math.h>

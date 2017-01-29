@@ -36,6 +36,8 @@ const char* skipHexadecimal(const char* input);
 /// convert the given string into a quoted string suitable for javascript
 std::string escapeString(const std::string &str, bool quote = true);
 
+std::string indentText(int indent);
+
 /**
  * Exceptions throw in script execution / parsing
  */

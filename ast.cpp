@@ -9,7 +9,7 @@
 
 #include "OS_support.h"
 #include "ast.h"
-#include "asObjects.h"
+#include "jsArray.h"
 
 using namespace std;
 

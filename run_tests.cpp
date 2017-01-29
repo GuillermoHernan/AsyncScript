@@ -38,6 +38,7 @@
 #include "semanticCheck.h"
 #include "TinyJS_Functions.h"
 #include "actorRuntime.h"
+#include "jsArray.h"
 
 #include <assert.h>
 #include <sys/stat.h>

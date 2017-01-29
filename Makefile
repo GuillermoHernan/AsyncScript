@@ -21,7 +21,8 @@ actorRuntime.cpp \
 asVars.cpp \
 executionScope.cpp \
 asObjects.cpp \
-asString.cpp
+asString.cpp \
+jsArray.cpp
 
 OBJECTS=$(SOURCES:.cpp=.o)
 

@@ -11,6 +11,7 @@
 #include "actorRuntime.h"
 #include "microVM.h"
 #include "scriptMain.h"
+#include "jsArray.h"
 
 void execMessageLoop (Ref<ActorRuntime> runtime);
 

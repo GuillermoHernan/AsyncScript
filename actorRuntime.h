@@ -13,6 +13,7 @@
 #pragma once
 
 #include "asVars.h"
+#include "jsArray.h"
 #include <deque>
 
 struct MvmRoutine;

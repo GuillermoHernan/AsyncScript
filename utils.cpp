@@ -392,3 +392,20 @@ std::string fileFromPath (const std::string& szPath)
     else
         return szPath;
 }
+
+/**
+ * Indents a text in two space increments.
+ * @param indent
+ * @return 
+ */
+std::string indentText(int indent)
+{
+    std::string result;
+    
+    result.reserve(indent * 2);
+    
+    for (int i=0; i < indent; ++i)
+        result += "  ";
+    
+    return result;
+}

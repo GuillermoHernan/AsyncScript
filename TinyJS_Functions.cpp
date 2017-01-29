@@ -31,7 +31,7 @@
 #include "TinyJS_Functions.h"
 #include "scriptMain.h"
 #include "mvmFunctions.h"
-#include "asObjects.h"
+#include "jsArray.h"
 #include "asString.h"
 
 #include <math.h>
