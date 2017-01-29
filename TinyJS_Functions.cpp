@@ -41,22 +41,6 @@
 using namespace std;
 // ----------------------------------------------- Actual Functions
 
-//TODO: Reactivate
-
-/*void scTrace(CScriptVar *c, void *userdata) {
-    CTinyJS *js = (CTinyJS*)userdata;
-    js->root->trace();
-}
-
-void scObjectDump(FunctionScope* pScope) {
-    pScope->getThis()->trace("> ");
-}
-
-void scObjectClone(FunctionScope* pScope) {
-    CScriptVar *obj = pScope->getThis();
-    c->getReturnVar()->copyValue(obj);
-}*/
-
 Ref<JSValue> scMathRand(FunctionScope* pScope)
 {
     return jsDouble(double(rand()) / RAND_MAX);
@@ -129,9 +113,6 @@ void registerFunctions(Ref<IScope> scope)
     registerDefaultClasses(scope);
     
     addNative("function eval(jsCode)", scEval, scope); // execute the given string (an expression) and return the result
-    //    addNative("function trace()", scTrace, scope);
-    //    addNative("function Object.dump()", scObjectDump, scope);
-    //    addNative("function Object.clone()", scObjectClone, scope);
     
     addNative("function Math.rand()", scMathRand, scope);
     addNative("function Math.randInt(min, max)", scMathRandInt, scope);
