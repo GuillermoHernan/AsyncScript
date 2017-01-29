@@ -73,11 +73,14 @@ Ref<GlobalScope> createDefaultGlobals()
  * function name and parameters.
  * @param pFn               Pointer to native function.
  * @param scope             Scope object to which the function will be added.
+ * @param isConst           To specify if the function shall be added as a constant or as
+ *                          a variable.
  * @return A new Javascript function object
  */
 Ref<JSFunction> addNative (const std::string& szFunctionHeader, 
                            JSNativeFn pFn, 
-                           Ref<IScope> scope)
+                           Ref<IScope> scope,
+                           bool isConst)
 {
     CScriptToken token(szFunctionHeader.c_str());
     token = token.next();
@@ -101,7 +104,7 @@ Ref<JSFunction> addNative (const std::string& szFunctionHeader,
         if (!child->isObject())
         {
             child = JSObject::create();
-            scope->newVar(funcName, child, true);
+            scope->newVar(funcName, child, isConst);
         }
         container = child.staticCast<JSObject>();
 
@@ -136,7 +139,7 @@ Ref<JSFunction> addNative (const std::string& szFunctionHeader,
     if (container.notNull())
         container->writeField(funcName, function, false);
     else
-        scope->newVar(funcName, function, true);
+        scope->newVar(funcName, function, isConst);
     
     return function;
 }

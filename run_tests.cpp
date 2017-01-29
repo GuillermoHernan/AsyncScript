@@ -240,7 +240,7 @@ bool run_test(const std::string& szFile, const string &testDir, const string& re
             s_curFunctionLogger->log(entry->getJSON(0));
             return jsNull();
         };
-        //addNative("function callLogger(x)", logFn, globals);
+        addNative("function callLogger(x)", logFn, globals, false);
 
         //Execution
         //mvmExecute(code, globals);

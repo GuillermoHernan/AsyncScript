@@ -26,7 +26,8 @@ Ref<JSFunction> addNative (const std::string& szFunctionHeader,
 
 Ref<JSFunction> addNative (const std::string& szFunctionHeader, 
                            JSNativeFn pFn, 
-                           Ref<IScope> scope);
+                           Ref<IScope> scope,
+                           bool isConst=true);
 
 Ref<JSFunction> addNative0 (const std::string& szName, 
                            JSNativeFn pFn, 

@@ -420,7 +420,8 @@ void callLog (Ref<FunctionScope> fnScope, ExecutionContext* ec)
     }
     else
     {
-        int iDepth = min (1, toInt32( depth ) + 1);
+        depth = globals->get(CALL_LOG_DEPTH);
+        const int iDepth = max (1, toInt32( depth ) + 1);
         depth = jsInt(iDepth);
         globals->set(CALL_LOG_DEPTH, depth);
     }
