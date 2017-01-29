@@ -9,7 +9,7 @@
 
 #include "OS_support.h"
 #include "microVM.h"
-#include "asVars.h"
+#include "asActors.h"
 
 using namespace std;
 

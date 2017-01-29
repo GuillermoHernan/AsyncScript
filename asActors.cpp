@@ -8,7 +8,7 @@
  */
 
 #include "OS_support.h"
-#include "asVars.h"
+#include "asActors.h"
 #include "actorRuntime.h"
 
 using namespace std;

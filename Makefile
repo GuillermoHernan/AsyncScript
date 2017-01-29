@@ -18,7 +18,7 @@ scriptMain.cpp \
 mvmFunctions.cpp \
 semanticCheck.cpp \
 actorRuntime.cpp \
-asVars.cpp \
+asActors.cpp \
 executionScope.cpp \
 asObjects.cpp \
 asString.cpp \

@@ -12,7 +12,7 @@
 
 #pragma once
 
-#include "asVars.h"
+#include "asActors.h"
 #include "jsArray.h"
 #include <deque>
 

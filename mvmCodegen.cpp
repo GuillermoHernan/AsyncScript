@@ -9,7 +9,7 @@
 
 #include "OS_support.h"
 #include "mvmCodegen.h"
-#include "asVars.h"
+#include "asActors.h"
 
 #include <set>
 #include <map>
