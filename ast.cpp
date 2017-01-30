@@ -74,6 +74,21 @@ Ref<AstNode> astCreateFor (ScriptPosition pos,
     return result;
 }
 
+Ref<AstNode> astCreateForEach (ScriptPosition pos, 
+                          Ref<AstNode> itemDeclaration,
+                          Ref<AstNode> sequenceExpr,
+                          Ref<AstNode> body)
+{
+    auto result = refFromNew( new AstBranchNode(AST_FOR_EACH, pos));
+    
+    result->addChild(itemDeclaration);
+    result->addChild(sequenceExpr);
+    result->addChild(body);
+
+    return result;
+}
+
+
 Ref<AstNode> astCreateReturn (ScriptPosition pos, Ref<AstNode> expr)
 {
     auto result = refFromNew( new AstBranchNode(AST_RETURN, pos));
@@ -472,6 +487,7 @@ std::string astTypeToString(AstNodeTypes type)
         types[AST_CONST] = "AST_CONST";
         types[AST_IF] = "AST_IF";
         types[AST_FOR] = "AST_FOR";
+        types[AST_FOR_EACH] = "AST_FOR_EACH";
         types[AST_RETURN] = "AST_RETURN";
         types[AST_FUNCTION] = "AST_FUNCTION";
         types[AST_ASSIGNMENT] = "AST_ASSIGNMENT";

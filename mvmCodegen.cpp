@@ -34,8 +34,10 @@ public:
     }
     
     const Ref<AstNode>          ownerNode;
+    const bool                  isBlock;
     
-    CodegenScope (const Ref<AstNode> _ownerNode) : ownerNode(_ownerNode)
+    CodegenScope (const Ref<AstNode> _ownerNode, bool block) 
+    : ownerNode (_ownerNode), isBlock(block)
     {
     }
     
@@ -63,9 +65,47 @@ struct CodegenState
 {
     Ref<MvmRoutine>             curRoutine;
     VarMap                      members;
-    vector<CodegenScope>        scopes;
     ConstantsMap                constants;
-    map<string, Ref<JSValue> >  symbols;          
+    map<string, Ref<JSValue> >  symbols;
+    
+    void declare (const std::string& name)
+    {
+        assert (!m_scopes.empty());
+        m_scopes.back().declare(name);
+    }
+
+    bool isDeclared (const std::string& name)const
+    {
+        auto it = m_scopes.rbegin();
+        
+        for (; it != m_scopes.rend(); ++it)
+        {
+            if (it->isDeclared(name))
+                return true;
+            else if (!it->isBlock)
+                return false;
+        }
+        
+        return false;
+    }
+    
+    void pushScope (const Ref<AstNode> _ownerNode, bool block)
+    {
+        m_scopes.push_back(CodegenScope(_ownerNode, block));
+    }
+   
+    void popScope()
+    {
+        m_scopes.pop_back();
+    }
+    
+    CodegenScope* curScope ()
+    {
+        return &m_scopes.back();
+    }
+    
+private:
+    vector<CodegenScope>        m_scopes;
 };
 
 //Forward declarations
@@ -81,6 +121,7 @@ void blockCodegen (Ref<AstNode> statement, CodegenState* pState);
 void varCodegen (Ref<AstNode> statement, CodegenState* pState);
 void ifCodegen (Ref<AstNode> statement, CodegenState* pState);
 void forCodegen (Ref<AstNode> statement, CodegenState* pState);
+void forEachCodegen (Ref<AstNode> statement, CodegenState* pState);
 void returnCodegen (Ref<AstNode> statement, CodegenState* pState);
 void functionCodegen (Ref<AstNode> statement, CodegenState* pState);
 Ref<JSFunction> createFunction (Ref<AstNode> node, CodegenState* pState);
@@ -145,7 +186,7 @@ Ref<MvmRoutine> scriptCodegen (Ref<AstNode> script)
     ASSERT (script->getType() == AST_SCRIPT);
     
     state.curRoutine = MvmRoutine::create(ScriptPosition(1,1));
-    state.scopes.push_back(CodegenScope(script));
+    state.pushScope(script, false);
     
     auto statements = script->children();
     
@@ -173,6 +214,7 @@ void codegen (Ref<AstNode> statement, CodegenState* pState)
         types [AST_CONST] = varCodegen;
         types [AST_IF] = ifCodegen;
         types [AST_FOR] = forCodegen;
+        types [AST_FOR_EACH] = forEachCodegen;
         types [AST_RETURN] = returnCodegen;
         types [AST_FUNCTION] = functionCodegen;
         types [AST_ASSIGNMENT] = assignmentCodegen;
@@ -261,9 +303,7 @@ void blockCodegen (Ref<AstNode> statement, CodegenState* pState)
 {
     const AstNodeList&  children = statement->children();
     
-    //It does not create a code generation scope, because it just needs to know
-    //if a variable is local or global. Therefore, code generation scopes are
-    //only created at function-level.
+    pState->pushScope(statement, true);
     instruction8 (OC_PUSH_SCOPE, pState);
     
     for (size_t i=0; i < children.size(); ++i)
@@ -276,8 +316,9 @@ void blockCodegen (Ref<AstNode> statement, CodegenState* pState)
     }
 
     instruction8 (OC_POP_SCOPE, pState);
+    pState->popScope();
         
-    //Non expression stataments leave a 'null' on the stack.
+    //Non expression statements leave a 'null' on the stack.
     pushNull(pState);
 }
 
@@ -289,13 +330,13 @@ void blockCodegen (Ref<AstNode> statement, CodegenState* pState)
 void varCodegen (Ref<AstNode> node, CodegenState* pState)
 {
     const string name = node->getName();
-    const bool inActor = pState->scopes.back().ownerNode->getType() == AST_ACTOR;
+    const bool inActor = pState->curScope()->ownerNode->getType() == AST_ACTOR;
     const bool isConst = node->getType() == AST_CONST;
 
     if (!inActor)
     {
         //Not inside an actor
-        pState->scopes.back().declare(name);
+        pState->declare(name);
 
         pushConstant (name, pState);
         if (!childCodegen(node, 0, pState))
@@ -408,6 +449,55 @@ void forCodegen (Ref<AstNode> statement, CodegenState* pState)
     
     //Non-expression statements leave a 'null' on the stack.
     pushNull(pState);
+}
+
+/**
+ * Generates code for a 'for (... in ...)' loop, which iterates over the members 
+ * of a sequence.
+ * @param node
+ * @param pState
+ */
+void forEachCodegen (Ref<AstNode> node, CodegenState* pState)
+{
+    //Loop initialization
+    childCodegen (node, 1, pState);             //[sequence]
+    
+    //Generate code for condition
+    const int conditionBlock = curBlockId(pState)+1;
+    endBlock (conditionBlock, conditionBlock, pState);
+    instruction8(OC_CP, pState);                //[sequence, sequence]
+    pushNull(pState);                           //[sequence, sequence, null]
+    callCodegen("@notTypeEqual", 2, pState);    //[sequence, bool]
+    endBlock (conditionBlock+1, -1, pState);
+    
+    //Generate code for body
+    instruction8(OC_PUSH_SCOPE, pState);
+    pState->pushScope(node, true);
+
+    string itemVarName = node->children().front()->getName();
+    pState->declare(itemVarName);
+    pushConstant(itemVarName, pState);          //[sequence, itemVarName]
+    instruction8(OC_CP+1, pState);              //[sequence, itemVarName, sequence]
+    callCodegen("@head", 1, pState);            //[sequence, itemVarName, head]
+    instruction8(OC_NEW_VAR, pState);           //[sequence]
+
+    callCodegen("@tail", 1, pState);            //[sequence+1]
+    childCodegen(node, 2, pState);              //[sequence+1, body_result]
+    instruction8(OC_POP, pState);               //[sequence+1]
+
+    instruction8(OC_POP_SCOPE, pState);
+    pState->popScope();
+    
+    endBlock (conditionBlock, conditionBlock, pState);
+    
+    const int nextBlock = curBlockId(pState);
+    
+    //Fix condition jump destination
+    setFalseJump(conditionBlock, nextBlock, pState);    
+    
+    //Non-expression statements leave a 'null' on the stack.
+    //The content of the stack at this point is a 'null', because the last returned
+    //value of 'tail' has been a 'null'.
 }
 
 /**
@@ -610,7 +700,7 @@ void identifierCodegen (Ref<AstNode> statement, CodegenState* pState)
     ASSERT (!name.empty());
     
     pushConstant(name, pState);
-    if (pState->scopes.back().isDeclared(name))
+    if (pState->isDeclared(name))
         instruction8 (OC_RD_LOCAL, pState);
     else
         instruction8 (OC_RD_GLOBAL, pState);
@@ -1193,7 +1283,7 @@ void callCodegen (const std::string& fnName, int nParams, CodegenState* pState)
 {
     pushConstant(fnName, pState);
     
-    if (pState->scopes.back().isDeclared(fnName))
+    if (pState->isDeclared(fnName))
         instruction8(OC_RD_LOCAL, pState);
     else
         instruction8(OC_RD_GLOBAL, pState);
@@ -1410,14 +1500,14 @@ CodegenState initFunctionState (Ref<AstNode> node, const StringVector& params)
     CodegenState            fnState;
     
     fnState.curRoutine = code;
-    fnState.scopes.push_back(CodegenScope(node));
+    fnState.pushScope(node, false);
 
     //Declare function reserved symbols.
-    fnState.scopes.back().declare("this");
-    fnState.scopes.back().declare("arguments");
+    fnState.declare("this");
+    fnState.declare("arguments");
 
     for (size_t i = 0; i < params.size(); ++i)
-        fnState.scopes.back().declare(params[i]);
+        fnState.declare(params[i]);
 
     return fnState;
 }

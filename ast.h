@@ -29,6 +29,7 @@ enum AstNodeTypes
     ,AST_CONST
     ,AST_IF
     ,AST_FOR
+    ,AST_FOR_EACH
     ,AST_RETURN
     ,AST_FUNCTION
     ,AST_ASSIGNMENT
@@ -79,6 +80,10 @@ Ref<AstNode> astCreateFor (ScriptPosition pos,
                           Ref<AstNode> initSt,
                           Ref<AstNode> condition,
                           Ref<AstNode> incrementSt,
+                          Ref<AstNode> body);
+Ref<AstNode> astCreateForEach (ScriptPosition pos, 
+                          Ref<AstNode> itemDeclaration,
+                          Ref<AstNode> sequenceExpr,
                           Ref<AstNode> body);
 Ref<AstNode> astCreateReturn (ScriptPosition pos, Ref<AstNode> expr);
 Ref<AstNode> astCreateAssignment(ScriptPosition pos, 

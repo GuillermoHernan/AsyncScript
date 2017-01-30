@@ -86,6 +86,7 @@ void semCheck (Ref<AstNode> node, SemCheckState* pState)
         types [AST_CONST] = varSemCheck;
         types [AST_IF] = childrenSemCheck;
         types [AST_FOR] = childrenSemCheck;
+        types [AST_FOR_EACH] = childrenSemCheck;
         types [AST_RETURN] = childrenSemCheck;
         types [AST_FUNCTION] = functionSemCheck;
         types [AST_ASSIGNMENT] = assignmentSemCheck;

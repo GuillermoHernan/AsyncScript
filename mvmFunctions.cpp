@@ -246,6 +246,26 @@ Ref<JSValue> mvmRshiftu (FunctionScope* pScope)
 }
 
 /**
+ * Gets the current element of a sequence.
+ * @param pScope
+ * @return 
+ */
+Ref<JSValue> mvmHead (FunctionScope* pScope)
+{    
+    return pScope->getThis()->head();
+}
+
+/**
+ * Gets the 'tail' of a sequence. A sublist which excludes the current one.
+ * @param pScope
+ * @return 
+ */
+Ref<JSValue> mvmTail (FunctionScope* pScope)
+{    
+    return pScope->getThis()->tail();
+}
+
+/**
  * Performs Javascript comparision operations.
  * @param opA
  * @param opB
@@ -443,4 +463,7 @@ void registerMvmFunctions(Ref<IScope> scope)
     addNative1("@notTypeEqual", "b", mvmNotTypeEqual, scope);
     addNative1("@lequal", "b", mvmLequal, scope);
     addNative1("@gequal", "b", mvmGequal, scope);
+
+    addNative0("@head", mvmHead, scope);
+    addNative0("@tail", mvmTail, scope);
 }

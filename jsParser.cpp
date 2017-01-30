@@ -15,12 +15,13 @@ using namespace std;
 Ref<AstNode>   emptyStatement(ScriptPosition pos);
 
 ParseResult parseSimpleStatement (CScriptToken token);
-ParseResult parseBodyStatement (CScriptToken token);
+ExprResult parseBodyStatement (CScriptToken token);
 ExprResult parseBlock (CScriptToken token);
 ExprResult  parseVar (CScriptToken token);
 ParseResult parseIf (CScriptToken token);
 ParseResult parseWhile (CScriptToken token);
 ParseResult parseFor (CScriptToken token);
+ExprResult parseForEach (CScriptToken token);
 ParseResult parseReturn (CScriptToken token);
 ExprResult parseArgumentList(CScriptToken token, Ref<AstNode> function);
 
@@ -204,10 +205,15 @@ ParseResult parseSimpleStatement (CScriptToken token)
  * @param token
  * @return 
  */
-ParseResult parseBodyStatement (CScriptToken token)
+ExprResult parseBodyStatement (CScriptToken token)
 {
+    ExprResult  r(token);
+    
     if (token.type() == ';')
-        return ParseResult (token.next(), emptyStatement(token.getPosition()));
+    {
+        r = r.skip();
+        r.result = emptyStatement(token.getPosition());
+    }
     else
     {
         ParseResult     result = parseStatement(token);
@@ -227,8 +233,11 @@ ParseResult parseBodyStatement (CScriptToken token)
                 result.nextToken = result.nextToken.next();
         }
         
-        return result;        
+        r.token = result.nextToken;
+        r.result = result.ast;
     }//else.
+    
+    return r.final();
 }
 
 
@@ -321,7 +330,7 @@ ParseResult parseIf (CScriptToken token)
 
     token = rCondition.token;
     
-    ParseResult r = parseBodyStatement(token.match(')'));
+    ParseResult r = parseBodyStatement(token.match(')')).toParseResult();
     Ref<AstNode>   thenSt = r.ast;
     Ref<AstNode>   elseSt;
     
@@ -329,7 +338,7 @@ ParseResult parseIf (CScriptToken token)
     
     if (token.type() == LEX_R_ELSE)
     {
-        r = parseBodyStatement(token.next());
+        r = parseBodyStatement(token.next()).toParseResult();
         elseSt = r.ast;
         token = r.nextToken;
     }
@@ -356,7 +365,7 @@ ParseResult parseWhile (CScriptToken token)
 
     token = rCondition.token;
     
-    ParseResult r = parseBodyStatement(token.match(')'));
+    ParseResult r = parseBodyStatement(token.match(')')).toParseResult();
     
     auto result = astCreateFor (pos, 
                                 Ref<AstNode>(), 
@@ -374,6 +383,11 @@ ParseResult parseWhile (CScriptToken token)
  */
 ParseResult parseFor (CScriptToken token)
 {
+    ExprResult  res = parseForEach(token);
+    
+    if (res.ok())
+        return res.toParseResult();
+    
     //TODO: Better handling of ';'
     ScriptPosition      pos = token.getPosition();
     Ref<AstNode>   init;
@@ -409,7 +423,7 @@ ParseResult parseFor (CScriptToken token)
     }
     
     token = token.match(')');
-    r = parseBodyStatement(token);
+    r = parseBodyStatement(token).toParseResult();
     body = r.ast;
     token = r.nextToken;
 
@@ -417,6 +431,41 @@ ParseResult parseFor (CScriptToken token)
     
     return ParseResult (token, result);
 }
+
+/**
+ * Parses a for loop which iterates over the elements of a sequence. 
+ * 'for (x in z)...'
+ * @param token
+ * @return 
+ */
+ExprResult parseForEach (CScriptToken token)
+{
+    ExprResult  r(token);
+    
+    r = r.require(LEX_R_FOR).require('(');
+    if (r.error())
+        return r.final();
+
+    r = r.then(parseIdentifier).requireId("in");
+    if (r.error())
+        return r.final();
+    
+    auto itemDecl = r.result;
+    r = r.then(parseExpression).require(')');
+    
+    if (r.error())
+        return r.final();
+    
+    auto seqExpression = r.result;
+    
+    r = r.then (parseBodyStatement);
+    
+    if (r.ok())
+        r.result = astCreateForEach (token.getPosition(), itemDecl, seqExpression, r.result);
+    
+    return r.final();
+}
+
 
 /**
  * Parses a return statement

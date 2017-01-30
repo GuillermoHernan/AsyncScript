@@ -84,8 +84,8 @@ class JSArrayIterator : public JSObject
 public:
     static Ref<JSValue> create(Ref<JSArray> arr, size_t index);
 
-    virtual Ref<JSValue> head()const;
-    virtual Ref<JSValue> tail()const;
+    virtual Ref<JSValue> head();
+    virtual Ref<JSValue> tail();
 
 private:
     //TODO: Should it has its own class?

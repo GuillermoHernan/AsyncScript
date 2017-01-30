@@ -325,12 +325,12 @@ Ref<JSValue> JSArrayIterator::create(Ref<JSArray> arr, size_t index)
         return jsNull();
 }
 
-Ref<JSValue> JSArrayIterator::head()const
+Ref<JSValue> JSArrayIterator::head()
 {
     return m_array->getAt(m_index);
 }
 
-Ref<JSValue> JSArrayIterator::tail()const
+Ref<JSValue> JSArrayIterator::tail()
 {
     return create (m_array, m_index+1);
 }
