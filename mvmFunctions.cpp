@@ -424,6 +424,39 @@ Ref<JSValue> mvmNotTypeEqual (FunctionScope* pScope)
         return jsBool (jsCompare(opA, opB) != 0);
 }
 
+Ref<JSValue> mvmToString (FunctionScope* pScope)
+{
+    return jsString(pScope->getThis()->toString());
+}
+
+Ref<JSValue> mvmToBoolean (FunctionScope* pScope)
+{
+    return jsBool(pScope->getThis()->toBoolean());
+}
+
+Ref<JSValue> mvmToNumber (FunctionScope* pScope)
+{
+    return jsDouble(pScope->getThis()->toDouble());
+}
+
+Ref<JSValue> mvmIndexedRead (FunctionScope* pScope)
+{
+    auto index = pScope->getParam("index");
+    return pScope->getThis()->indexedRead(index);
+}
+
+Ref<JSValue> mvmIndexedWrite (FunctionScope* pScope)
+{
+    auto index = pScope->getParam("index");
+    auto value = pScope->getParam("value");
+    return pScope->getThis()->indexedWrite(index, value);
+}
+
+Ref<JSValue> mvmCall (FunctionScope* pScope)
+{
+    return pScope->getThis()->call(pScope);
+}
+
 /**
  * Registers MVM primitive operations to the given scope.
  * @param scope
@@ -466,4 +499,11 @@ void registerMvmFunctions(Ref<IScope> scope)
 
     addNative0("@head", mvmHead, scope);
     addNative0("@tail", mvmTail, scope);
+    
+    addNative0("@toString", mvmToString, scope);
+    addNative0("@toBoolean", mvmToBoolean, scope);
+    addNative0("@toNumber", mvmToNumber, scope);
+    addNative1("@indexedRead", "index", mvmIndexedRead, scope);
+    addNative2("@indexedWrite", "index", "value", mvmIndexedWrite, scope);
+    addNative0("@call", mvmCall, scope);
 }

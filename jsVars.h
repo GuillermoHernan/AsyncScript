@@ -85,7 +85,7 @@ public:
     virtual bool toBoolean()const = 0;
     virtual double toDouble()const = 0;
 
-    virtual Ref<JSValue> readField(const std::string& key)const = 0;
+    virtual Ref<JSValue> readField(const std::string& key)const;
     virtual Ref<JSValue> writeField(const std::string& key, Ref<JSValue> value, bool isConst) = 0;
     virtual Ref<JSValue> deleteField(const std::string& key) = 0;
     virtual StringSet    getFields(bool inherited = true)const=0;
@@ -215,11 +215,6 @@ public:
         return getNaN();
     }
 
-    virtual Ref<JSValue> readField(const std::string& key)const
-    {
-        return jsNull();
-    }
-    
     virtual Ref<JSValue> writeField(const std::string& key, Ref<JSValue> value, bool isConst)
     {
         return jsNull();

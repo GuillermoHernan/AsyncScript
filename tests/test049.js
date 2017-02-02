@@ -22,10 +22,8 @@ class list (h,t)
 
 function reverse (sequence)
 {
-    //TODO: This part of the test still does not work, because 'head' 
-    //and 'tail' functions are not exported for all values.
-//    if (sequence.tail() == null)
-//        return sequence;
+    if (sequence.tail() == null)
+        return sequence;
     
     var result = null;
     

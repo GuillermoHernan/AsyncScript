@@ -301,6 +301,34 @@ Ref<JSValue> checkedVarDelete(VarMap& map, const std::string& name)
     return value;
 }
 
+/**
+ * Default implementation of 'readField'. Tries to read it from class members.
+ * @param key
+ * @return 
+ */
+Ref<JSValue> JSValue::readField(const std::string& key)const
+{
+    typedef set<string>  FnSet;
+    static FnSet functions;
+    
+    if (functions.empty())
+    {
+        functions.insert("toString");
+        functions.insert("toBoolean");
+        functions.insert("toNumber");
+        functions.insert("indexedRead");
+        functions.insert("indexedWrite");
+        functions.insert("head");
+        functions.insert("tail");
+        functions.insert("call");
+    }
+    
+    if (functions.count(key) > 0)
+        return getGlobals()->get("@" + key);
+    else
+        return jsNull();
+}
+
 
 // JSNumber
 //
