@@ -73,10 +73,13 @@ private:
 class FunctionScope : public IScope
 {
 public:
-    static Ref<FunctionScope> create(Ref<JSValue> targetFn)
-    {
-        return refFromNew(new FunctionScope(targetFn));
-    }
+    static Ref<FunctionScope> create(Ref<JSValue> targetFn, 
+                                     Ref<JSValue> thisObj, 
+                                     const std::vector <Ref<JSValue> >& params);
+
+    static Ref<FunctionScope> create(Ref<JSValue> targetFn, 
+                                     Ref<JSValue> thisObj, 
+                                     Ref<JSArray> params);
 
     void setThis(Ref<JSValue> value)
     {
@@ -91,6 +94,7 @@ public:
     int addParam(Ref<JSValue> value);
     
     Ref<JSValue> getParam(const std::string& name)const;
+    Ref<JSArray> getParams()const;
 
     // IScope
     ////////////////////////////////////
@@ -110,12 +114,16 @@ public:
     }
 
 private:
-    VarMap          m_params;
-    Ref<JSValue>    m_function;
-    Ref<JSArray>    m_arguments;
-    Ref<JSValue>    m_this;
+    //VarMap m_params;
+    Ref<JSValue> m_function;
+    Ref<JSArray> m_arguments;
+    Ref<JSValue> m_this;
+
+    FunctionScope(Ref<JSValue> targetFn,
+                  Ref<JSValue> thisObj,
+                  Ref<JSArray> params);
     
-    FunctionScope(Ref<JSValue> targetFn);
+    int paramIndex (const std::string& name)const;
 };
 
 /**

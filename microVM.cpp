@@ -329,17 +329,16 @@ void execCall (const int nArgs, ExecutionContext* ec)
 //        error ("Trying to call a non-function value");
     
 //    const Ref<JSFunction>   function = fnVal.staticCast<JSFunction>();
-    
-    Ref<FunctionScope>  fnScope = FunctionScope::create (fnVal);
+
+    Ref<JSValue> thisObj = jsNull();
     
     //Set 'this' pointer
     size_t  i = ec->stack.size() - nArgs;
     if (nArgs > 0)
-        fnScope->setThis(ec->stack[i++]);
+        thisObj = ec->stack[i++];
     
-    //Set parameter values in scope
-    for (; i < ec->stack.size(); ++i)
-        fnScope->addParam(ec->stack[i]);
+    ValueVector params(ec->stack.begin()+i, ec->stack.end());
+    Ref<FunctionScope>  fnScope = FunctionScope::create (fnVal, thisObj, params);
     
     //Remove function parameters from the stack
     ec->stack.resize(ec->stack.size() - nArgs);

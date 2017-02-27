@@ -12,6 +12,8 @@
 #include "asObjects.h"
 #include "executionScope.h"
 #include "scriptMain.h"
+#include "microVM.h"
+#include "jsArray.h"
 
 using namespace std;
 
@@ -93,7 +95,7 @@ Ref<JSValue> JSClass::readField(const std::string& key)const
     else if (m_parent.notNull())
         return m_parent->readField (key);
     else
-        return jsNull();    
+        return JSValue::readField(key);
 }
 
 /**
@@ -320,8 +322,10 @@ Ref<JSValue> JSObject::call (Ref<FunctionScope> scope)
     
     if (!fn->isNull())
     {
-        scope->setThis(ref(this));
-        return fn->call(scope);
+        //Create a new scope, to map argument names to the new function.
+        auto newScope = FunctionScope::create(fn, ref(this), scope->getParams());
+        
+        return fn->call(newScope);
     }
     else
         return jsNull();
@@ -382,8 +386,8 @@ JSMutability JSObject::selectMutability(const JSObject& src, bool _mutable)
  */
 Ref<JSValue> JSObject::callMemberFn (Ref<JSValue> function)const
 {
-    auto    fnScope = FunctionScope::create(function);
-    fnScope->setThis(ref(const_cast<JSObject*>(this)));
+    auto    me = ref(const_cast<JSObject*>(this));
+    auto    fnScope = FunctionScope::create(function, me, ValueVector());
     return function->call(fnScope);
 }
 
@@ -395,9 +399,11 @@ Ref<JSValue> JSObject::callMemberFn (Ref<JSValue> function)const
  */
 Ref<JSValue> JSObject::callMemberFn (Ref<JSValue> function, Ref<JSValue> p1)const
 {
-    auto    fnScope = FunctionScope::create(function);
-    fnScope->setThis(ref(const_cast<JSObject*>(this)));
-    fnScope->addParam(p1);
+    auto    me = ref(const_cast<JSObject*>(this));
+    ValueVector params;
+    params.push_back(p1);
+    
+    auto    fnScope = FunctionScope::create(function, me, params);
     return function->call(fnScope);
 }
 
@@ -411,10 +417,12 @@ Ref<JSValue> JSObject::callMemberFn (Ref<JSValue> function,
                                      Ref<JSValue> p1,
                                      Ref<JSValue> p2)const
 {
-    auto    fnScope = FunctionScope::create(function);
-    fnScope->setThis(ref(const_cast<JSObject*>(this)));
-    fnScope->addParam(p1);
-    fnScope->addParam(p2);
+    auto    me = ref(const_cast<JSObject*>(this));
+    ValueVector params;
+    params.push_back(p1);
+    params.push_back(p2);
+    
+    auto    fnScope = FunctionScope::create(function, me, params);
     return function->call(fnScope);
 }
 

@@ -410,13 +410,8 @@ bool ActorRuntime::dispatchMessage()
         try
         {
             auto endPoint = msg.destination->getEndPoint();
-            auto scope = FunctionScope::create(endPoint);
+            auto scope = FunctionScope::create(endPoint, actor, msg.params);
 
-            scope->setThis(actor);
-            
-            for (size_t i = 0; i < msg.params->length(); ++i)
-                scope->addParam(msg.params->getAt(i));
-            
             if (endPoint->isNative())
                 endPoint->nativePtr()(scope.getPointer());
             else

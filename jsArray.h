@@ -12,6 +12,7 @@
 #define	JSARRAY_H
 
 #include "asObjects.h"
+#include "microVM.h"
 
 
 /**
@@ -23,6 +24,7 @@ public:
     static Ref<JSArray> create();
     static Ref<JSArray> create(size_t size);
     static Ref<JSArray> createStrArray(const StringVector& strList);
+    static Ref<JSArray> fromVector(const ValueVector& values);
 
     size_t push(Ref<JSValue> value);
 
@@ -32,6 +34,7 @@ public:
     }
 
     Ref<JSValue> getAt(size_t index)const;
+    Ref<JSValue> setAt(size_t index, Ref<JSValue> value);
 
     // JSValue
     /////////////////////////////////////////

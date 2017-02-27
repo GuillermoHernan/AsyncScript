@@ -65,6 +65,23 @@ Ref<JSArray> JSArray::createStrArray(const std::vector<std::string>& strList)
     return arr;
 }
 
+/**
+ * Generates a 'JSArray' from a vector of values.
+ * @param values
+ * @return 
+ */
+Ref<JSArray> JSArray::fromVector(const ValueVector& values)
+{
+    auto    newArr = JSArray::create(values.size());
+    size_t  i;
+    
+    for (i=0; i <values.size(); ++i)
+        newArr->setAt(i, values[i]);
+    
+    return newArr;
+}
+
+
 
 /**
  * Adds a value to the end of the array
@@ -91,6 +108,24 @@ Ref<JSValue> JSArray::getAt(size_t index)const
     else
         return m_content[index];
 }
+
+/**
+ * Changes an array element at a given position.
+ * @param index
+ * @param value
+ * @return 
+ */
+Ref<JSValue> JSArray::setAt(size_t index, Ref<JSValue> value)
+{
+    if (index >= m_content.size())
+        return jsNull();
+    else
+    {
+        m_content[index] = value;
+        return value;
+    }
+}
+
 
 
 /**

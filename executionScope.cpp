@@ -96,11 +96,50 @@ Ref<JSValue> BlockScope::newVar(const std::string& name, Ref<JSValue> value, boo
  * Constructor
  * @param targetFn
  */
-FunctionScope::FunctionScope(Ref<JSValue> targetFn) :
+FunctionScope::FunctionScope(Ref<JSValue> targetFn,
+                             Ref<JSValue> thisObj,
+                             Ref<JSArray> params) :
 m_function(targetFn),
-m_arguments(JSArray::create()),
-m_this(jsNull())
+m_arguments(params),
+m_this(thisObj)
 {
+}
+
+Ref<FunctionScope> FunctionScope::create(Ref<JSValue> targetFn, 
+                                 Ref<JSValue> thisObj, 
+                                 Ref<JSArray> params)
+{
+    return refFromNew(new FunctionScope(targetFn, thisObj, params));
+}
+
+Ref<FunctionScope> FunctionScope::create(Ref<JSValue> targetFn, 
+                                 Ref<JSValue> thisObj, 
+                                 const ValueVector& params)
+{
+    return refFromNew(new FunctionScope(targetFn, thisObj, JSArray::fromVector(params)));
+}
+
+
+/**
+ * Retrieves parameter index given its name
+ * @param name
+ * @return The parameter index or -1 if not found
+ */
+int FunctionScope::paramIndex (const std::string& name)const
+{
+    const StringVector& params = m_function->getParams();
+    size_t i;
+    
+    for (i=0; i<params.size(); ++i)
+        if (params[i] == name)
+            return (int)i;
+    
+    return -1;
+    
+//    ASSERT (m_function->isFunction());
+//    
+//    auto fn = m_function.staticCast<JSFunction>();
+//    return fn->paramIndex(name);
 }
 
 /**
@@ -108,23 +147,23 @@ m_this(jsNull())
  * @param value
  * @return Actual number of parameters
  */
-int FunctionScope::addParam(Ref<JSValue> value)
-{
-    const StringVector& paramsDef = m_function->getParams();
-    const size_t index = m_arguments->length();
-
-    if (index < paramsDef.size())
-    {
-        const std::string &name = paramsDef[index];
-
-        checkedVarWrite(m_params, name, value, false);
-        m_arguments->push(value);
-    }
-    else
-        m_arguments->push(value);
-
-    return m_arguments->length();
-}
+//int FunctionScope::addParam(Ref<JSValue> value)
+//{
+//    const StringVector& paramsDef = m_function->getParams();
+//    const size_t index = m_arguments->length();
+//
+//    if (index < paramsDef.size())
+//    {
+//        const std::string &name = paramsDef[index];
+//
+//        checkedVarWrite(m_params, name, value, false);
+//        m_arguments->push(value);
+//    }
+//    else
+//        m_arguments->push(value);
+//
+//    return m_arguments->length();
+//}
 
 /**
  * Gets a parameter by name.
@@ -136,13 +175,23 @@ int FunctionScope::addParam(Ref<JSValue> value)
  */
 Ref<JSValue> FunctionScope::getParam(const std::string& name)const
 {
-    auto it = m_params.find(name);
+    const int index = paramIndex(name);
     
-    if (it != m_params.end())
-        return it->second.value();
+    if (index >= 0)
+        return m_arguments->getAt(index);
     else
         return jsNull();            
 }
+
+/**
+ * Returns function call parameters
+ * @return 
+ */
+Ref<JSArray> FunctionScope::getParams()const
+{
+    return m_arguments;
+}
+
 
 /**
  * Checks if a symbols is defined
@@ -154,7 +203,7 @@ bool FunctionScope::isDefined(const std::string& name)const
     if (name == "this" || name == "arguments")
         return true;
     else
-        return (m_params.find(name) != m_params.end());
+        return paramIndex(name) >= 0;
 }
 
 /**
@@ -173,10 +222,10 @@ Ref<JSValue> FunctionScope::get(const std::string& name)const
         return m_arguments;
     else
     {
-        auto it = m_params.find(name);
+        const int index = paramIndex(name);
 
-        if (it != m_params.end())
-            return it->second.value();
+        if (index >= 0)
+            return m_arguments->getAt(index);
         else
             error ("'%s' is undefined", name.c_str());
     }
@@ -195,10 +244,15 @@ Ref<JSValue> FunctionScope::set(const std::string& name, Ref<JSValue> value)
 {
     if (name == "this" || name == "arguments")
         error("'%s' cannot be written", name.c_str());
-    else if (m_params.find(name) != m_params.end())
-        checkedVarWrite(m_params, name, value, false);
-    else 
-        error ("'%s' is undefined", name.c_str());
+    else
+    {
+        const int index = paramIndex(name);
+
+        if (index >= 0)
+            m_arguments->setAt(index, value);
+        else
+            error ("'%s' is undefined", name.c_str());
+    }
 
     return value;
 }
