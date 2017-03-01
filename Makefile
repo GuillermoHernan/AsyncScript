@@ -22,7 +22,8 @@ asActors.cpp \
 executionScope.cpp \
 asObjects.cpp \
 asString.cpp \
-jsArray.cpp
+jsArray.cpp \
+ScriptPosition.cpp
 
 OBJECTS=$(SOURCES:.cpp=.o)
 

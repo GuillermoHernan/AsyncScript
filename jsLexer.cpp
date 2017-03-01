@@ -87,14 +87,6 @@ string getTokenStr(int token)
     return msg.str();
 }
 
-std::string ScriptPosition::toString()const
-{
-    char buffer [128];
-
-    sprintf_s(buffer, "(line: %d, col: %d): ", this->line, this->column);
-    return string(buffer);
-}
-
 /**
  * The constructor doesn't make a copy of the input string, so it is important
  * not to delete input string while there are still live 'CSriptTokens' using it.

@@ -8,7 +8,7 @@
 
 #pragma once
 
-#include <string>
+#include "ScriptPosition.h"
 
 enum LEX_TYPES
 {
@@ -83,56 +83,6 @@ enum LEX_TYPES
 /// To get the string representation of a token type
 std::string getTokenStr(int token);
 
-/**
- * Indicates a position inside a script file
- */
-struct ScriptPosition
-{
-    int line;
-    int column;
-
-    ScriptPosition() :
-    line(-1), column(-1)
-    {
-    }
-
-    ScriptPosition(int l, int c) :
-    line(l), column(c)
-    {
-    }
-
-    std::string toString()const;
-    
-    bool operator < (const ScriptPosition& b)const
-    {
-        if (line < b.line)
-            return true;
-        else if (line == b.line)
-            return column < b.column;
-        else
-            return false;
-    }
-    
-    bool operator == (const ScriptPosition& b)const
-    {
-        return (line < b.line && column == b.column);
-    }
-    
-    bool operator > (const ScriptPosition& b)const
-    {
-        return !(*this <= b);
-    }
-    
-    bool operator <= (const ScriptPosition& b)const
-    {
-        return (*this < b || *this == b);
-    }
-    
-    bool operator >= (const ScriptPosition& b)const
-    {
-        return !(*this < b);
-    }
-};
 
 /**
  * Javascript token. Tokens are the fragments in which input source is divided
