@@ -8,7 +8,7 @@
  * Created on January 3, 2017, 11:16 AM
  */
 
-#include "OS_support.h"
+#include "ascript_pch.hpp"
 #include "asObjects.h"
 #include "executionScope.h"
 #include "scriptMain.h"

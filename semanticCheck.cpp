@@ -7,6 +7,7 @@
  * Created on December 17, 2016, 10:54 PM
  */
 
+#include "ascript_pch.hpp"
 #include "OS_support.h"
 #include "semanticCheck.h"
 #include "ScriptException.h"

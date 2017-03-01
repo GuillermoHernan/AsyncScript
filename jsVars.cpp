@@ -7,8 +7,8 @@
  * Created on November 21, 2016, 7:24 PM
  */
 
+#include "ascript_pch.hpp"
 #include "jsVars.h"
-#include "OS_support.h"
 #include "utils.h"
 #include "executionScope.h"
 #include "asString.h"

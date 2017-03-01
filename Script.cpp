@@ -30,6 +30,7 @@
  * This is a simple program showing how to use TinyJS
  */
 
+#include "ascript_pch.hpp"
 #include "utils.h"
 #include "scriptMain.h"
 #include "ScriptException.h"

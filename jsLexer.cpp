@@ -6,10 +6,9 @@
  *
  */
 
+#include "ascript_pch.hpp"
 #include "jsLexer.h"
 #include "utils.h"
-
-#include "OS_support.h"
 
 #include "ScriptException.h"
 

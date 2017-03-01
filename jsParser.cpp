@@ -5,7 +5,7 @@
  * Created on November 28, 2016, 10:36 PM
  */
 
-#include "OS_support.h"
+#include "ascript_pch.hpp"
 #include "jsParser.h"
 #include "utils.h"
 #include "jsVars.h"

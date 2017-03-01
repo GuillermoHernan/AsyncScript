@@ -8,7 +8,7 @@
  * Created on December 4, 2016, 10:31 PM
  */
 
-#include "OS_support.h"
+#include "ascript_pch.hpp"
 #include "scriptMain.h"
 #include "jsParser.h"
 #include "mvmCodegen.h"

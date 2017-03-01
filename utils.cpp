@@ -4,6 +4,7 @@
  * Miscellaneous functions implementation file.
  */
 
+#include "ascript_pch.hpp"
 #include "utils.h"
 #include "OS_support.h"
 #include "jsLexer.h"

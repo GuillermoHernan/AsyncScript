@@ -1,5 +1,5 @@
 CC=g++
-CFLAGS=-c -g -Wall -rdynamic -D_DEBUG -std=c++11
+CPPFLAGS=-c -g -Wall -rdynamic -D_DEBUG -std=c++11
 LDFLAGS=-g -rdynamic
 
 SOURCES=  \
@@ -36,8 +36,11 @@ run_tests: run_tests.o $(OBJECTS)
 Script: Script.o $(OBJECTS)
 	$(CC) $(LDFLAGS) Script.o $(OBJECTS) -o $@
 
-.cpp.o:
-	$(CC) $(CFLAGS) $< -o $@
+%.o: %.cpp ascript_pch.hpp.gch
+	$(CC) $(CPPFLAGS) $< -o $@
+	
+ascript_pch.hpp.gch: ascript_pch.hpp OS_support.h
+	$(CC) $(CPPFLAGS) ascript_pch.hpp -o $@
 
 clean:
-	rm -f run_tests Script run_tests.o Script.o $(OBJECTS)
+	rm -f *.gch run_tests Script run_tests.o Script.o $(OBJECTS)

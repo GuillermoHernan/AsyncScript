@@ -28,6 +28,7 @@
  * SOFTWARE.
  */
 
+#include "ascript_pch.hpp"
 #include "TinyJS_Functions.h"
 #include "scriptMain.h"
 #include "mvmFunctions.h"

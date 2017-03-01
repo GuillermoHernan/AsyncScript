@@ -30,7 +30,7 @@
  * This is a program to run all the tests in the tests folder...
  */
 
-#include "OS_support.h"
+#include "ascript_pch.hpp"
 #include "utils.h"
 #include "scriptMain.h"
 #include "mvmCodegen.h"
