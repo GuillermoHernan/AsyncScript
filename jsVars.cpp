@@ -13,6 +13,7 @@
 #include "executionScope.h"
 #include "asString.h"
 #include "microVM.h"
+#include "ScriptException.h"
 
 #include <cstdlib>
 #include <math.h>

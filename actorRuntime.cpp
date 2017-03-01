@@ -12,6 +12,7 @@
 #include "microVM.h"
 #include "scriptMain.h"
 #include "jsArray.h"
+#include "ScriptException.h"
 
 void execMessageLoop (Ref<ActorRuntime> runtime);
 

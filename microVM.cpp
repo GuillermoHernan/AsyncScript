@@ -13,6 +13,7 @@
 #include "microVM.h"
 #include "asActors.h"
 #include "executionScope.h"
+#include "ScriptException.h"
 
 #include <vector>
 

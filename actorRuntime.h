@@ -18,6 +18,7 @@
 
 struct MvmRoutine;
 class FunctionScope;
+class CScriptException;
 
 Ref<JSValue> asBlockingExec(Ref<MvmRoutine> code, Ref<GlobalScope> globals);
 

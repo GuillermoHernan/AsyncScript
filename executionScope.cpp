@@ -10,6 +10,7 @@
 #include "OS_support.h"
 #include "executionScope.h"
 #include "jsArray.h"
+#include "ScriptException.h"
 
 
 // BlockScope

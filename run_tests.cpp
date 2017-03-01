@@ -39,6 +39,7 @@
 #include "TinyJS_Functions.h"
 #include "actorRuntime.h"
 #include "jsArray.h"
+#include "ScriptException.h"
 
 #include <assert.h>
 #include <sys/stat.h>

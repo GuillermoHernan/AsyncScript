@@ -7,7 +7,6 @@
 #pragma once
 
 #include <string>
-#include <stdexcept>
 #include <sstream>
 #include <stdarg.h>
 
@@ -37,27 +36,6 @@ const char* skipHexadecimal(const char* input);
 std::string escapeString(const std::string &str, bool quote = true);
 
 std::string indentText(int indent);
-
-/**
- * Exceptions throw in script execution / parsing
- */
-class CScriptException : public std::logic_error
-{
-public:
-
-    CScriptException(const std::string &text) : logic_error(text)
-    {
-    }
-
-    CScriptException(const char *text) : logic_error(text)
-    {
-    }
-};
-
-//Exception helper functions
-void error(const char* msgFormat, ...);
-void errorAt(const ScriptPosition& position, const char* msgFormat, ...);
-void errorAt_v(const ScriptPosition& position, const char* msgFormat, va_list args);
 
 //Remove if compiling with c++ 2011 or later
 

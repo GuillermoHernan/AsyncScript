@@ -10,6 +10,7 @@
 #include "OS_support.h"
 #include "mvmCodegen.h"
 #include "asActors.h"
+#include "ScriptException.h"
 
 #include <set>
 #include <map>

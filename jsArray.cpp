@@ -13,6 +13,7 @@
 #include "executionScope.h"
 #include "scriptMain.h"
 #include "mvmFunctions.h"
+#include "ScriptException.h"
 
 #include <math.h>
 

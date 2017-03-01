@@ -9,6 +9,7 @@
 
 #include "OS_support.h"
 #include "semanticCheck.h"
+#include "ScriptException.h"
 
 #include <string>
 #include <set>

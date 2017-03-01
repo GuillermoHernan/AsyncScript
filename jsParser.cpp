@@ -9,6 +9,7 @@
 #include "jsParser.h"
 #include "utils.h"
 #include "jsVars.h"
+#include "ScriptException.h"
 
 using namespace std;
 

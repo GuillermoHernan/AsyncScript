@@ -11,6 +11,8 @@
 
 #include "OS_support.h"
 
+#include "ScriptException.h"
+
 #include <map>
 #include <string>
 #include <string.h>

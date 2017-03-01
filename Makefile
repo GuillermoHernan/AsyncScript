@@ -23,7 +23,8 @@ executionScope.cpp \
 asObjects.cpp \
 asString.cpp \
 jsArray.cpp \
-ScriptPosition.cpp
+ScriptPosition.cpp \
+ScriptException.cpp
 
 OBJECTS=$(SOURCES:.cpp=.o)
 

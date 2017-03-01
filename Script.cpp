@@ -32,6 +32,7 @@
 
 #include "utils.h"
 #include "scriptMain.h"
+#include "ScriptException.h"
 #include <assert.h>
 #include <stdio.h>
 

@@ -14,6 +14,7 @@
 #include "scriptMain.h"
 #include "microVM.h"
 #include "jsArray.h"
+#include "ScriptException.h"
 
 using namespace std;
 

@@ -8,6 +8,7 @@
 #include "OS_support.h"
 #include "parserResults.h"
 #include "utils.h"
+#include "ScriptException.h"
 
 #include <stdarg.h>
 
