@@ -20,7 +20,9 @@ struct MvmRoutine;
 class FunctionScope;
 class CScriptException;
 
-Ref<JSValue> asBlockingExec(Ref<MvmRoutine> code, Ref<GlobalScope> globals);
+std::pair<Ref<JSValue>, Ref<JSValue> > asBlockingExec(Ref<MvmRoutine> code, 
+                                                      Ref<GlobalScope> globals, 
+                                                      CodeMap* pMap);
 
 Ref<JSValue> actorChildStoppedDefaultHandler(FunctionScope* pScope);
 
@@ -66,10 +68,10 @@ public:
     
     void stopActor (Ref<AsActorRef> actorRef, Ref<JSValue> value, Ref<JSValue> error);
 
-    bool dispatchMessage();
+    bool dispatchMessage(CodeMap* pMap);
     
 protected:
-    void actorCrashed(Ref<AsActorRef> actor, const CScriptException& error);
+    void actorCrashed(Ref<AsActorRef> actor, const char* msg);
 
     virtual Ref<JSObject>   clone (bool _mutable);
 

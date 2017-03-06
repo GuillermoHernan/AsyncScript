@@ -14,7 +14,9 @@
 #include "jsArray.h"
 #include "ScriptException.h"
 
-void execMessageLoop (Ref<ActorRuntime> runtime);
+using namespace std;
+
+void execMessageLoop (Ref<ActorRuntime> runtime, CodeMap* pMap);
 
 Ref<JSValue>    connectOperator (FunctionScope* pScope);
 
@@ -82,9 +84,11 @@ private:
  * actors have been stopped.
  * @param code
  * @param globals
- * @return 
+ * @return pair of 'JSValue'. The first value is success, the second is error.
  */
-Ref<JSValue> asBlockingExec (Ref<MvmRoutine> code, Ref<GlobalScope> globals)
+pair<Ref<JSValue>, Ref<JSValue> > asBlockingExec(Ref<MvmRoutine> code, 
+                                                      Ref<GlobalScope> globals, 
+                                                      CodeMap* pMap)
 {
     auto    rootActor = RoutineActor::create (code, globals, Ref<AsActorRef>());
     auto    runtime = ActorRuntime::create(rootActor);
@@ -92,24 +96,24 @@ Ref<JSValue> asBlockingExec (Ref<MvmRoutine> code, Ref<GlobalScope> globals)
     globals->newVar("@actorRT", runtime, true);
     addNative1("@connect", "src", connectOperator, globals);
     
-    execMessageLoop (runtime);
+    execMessageLoop (runtime, pMap);
     
     auto errVal = rootActor->getError();
     
     if (!errVal->isNull())
-        throw CScriptException(errVal->toString());
-    
-    return rootActor->getResult();
+        return make_pair (jsNull(), errVal);
+    else   
+        return make_pair (rootActor->getResult(), jsNull());
 }
 
 /**
  * Executes the message loop, until there is no message left.
  * @param runtime
  */
-void execMessageLoop (Ref<ActorRuntime> runtime)
+void execMessageLoop (Ref<ActorRuntime> runtime, CodeMap* pMap)
 {
     //TODO: This function must become more complex when taking I/O into account.
-    while (runtime->dispatchMessage());
+    while (runtime->dispatchMessage(pMap));
 }
 
 /**
@@ -125,10 +129,10 @@ Ref<JSValue> connectOperator (FunctionScope* pScope)
     auto dst = pScope->getThis();
     
     if (src->getType() != VT_OUTPUT_EP_REF)
-        error ("Source is not an output message");
+        rtError ("Source is not an output message");
     
     if (dst->getType() != VT_INPUT_EP_REF)
-        error ("Destination is not an input message");
+        rtError ("Destination is not an input message");
     
 //    runtime.staticCast<ActorRuntime>()->connectMessages(
 //        dst.staticCast<AsMessageRef>(), src.staticCast<AsMessageRef>());
@@ -261,7 +265,7 @@ Ref<ActorRuntime> ActorRuntime::getRuntime(FunctionScope* fnScope)
     auto runtime = ::getGlobals()->get("@actorRT");
     
     if (!runtime->isObject())
-        error ("Missing actor runtime");
+        rtError ("Missing actor runtime");
 
     return runtime.staticCast<ActorRuntime>();
 }
@@ -351,7 +355,7 @@ void ActorRuntime::sendMessage (Ref<AsActorRef> dstActor,
     auto ep = dstActor->getEndPoint(epName);
     
     if (ep.isNull())
-        error ("End point '%s' does not exist", epName.c_str());
+        rtError ("End point '%s' does not exist", epName.c_str());
     else
         sendMessage (ep, params);
 }
@@ -364,7 +368,7 @@ void ActorRuntime::sendMessage (Ref<AsActorRef> dstActor,
 void ActorRuntime::sendMessage (Ref<AsEndPointRef> dstEndPoint, Ref<JSArray> params)
 {
     if (dstEndPoint->getType() != VT_INPUT_EP_REF)
-        error ("Destination is not an input end point");
+        rtError ("Destination is not an input end point");
     
     m_messageQueue.push_back(SMessage(dstEndPoint, params));
 }
@@ -392,7 +396,7 @@ void ActorRuntime::stopActor (Ref<AsActorRef> actorRef, Ref<JSValue> value, Ref<
  * @return true if a message has been processed, false if the message queue is 
  * empty.
  */
-bool ActorRuntime::dispatchMessage()
+bool ActorRuntime::dispatchMessage(CodeMap* pMap)
 {
     if (m_messageQueue.empty())
         return false;
@@ -410,20 +414,31 @@ bool ActorRuntime::dispatchMessage()
         
         try
         {
-            auto endPoint = msg.destination->getEndPoint();
-            auto scope = FunctionScope::create(endPoint, actor, msg.params);
-
-            if (endPoint->isNative())
-                endPoint->nativePtr()(scope.getPointer());
-            else
+            try
             {
-                auto routine = endPoint->getCodeMVM().staticCast<MvmRoutine>();
-                mvmExecute (routine, globals, scope);
+                auto endPoint = msg.destination->getEndPoint();
+                auto scope = FunctionScope::create(endPoint, actor, msg.params);
+
+                if (endPoint->isNative())
+                    endPoint->nativePtr()(scope.getPointer());
+                else
+                {
+                    auto routine = endPoint->getCodeMVM().staticCast<MvmRoutine>();
+                    mvmExecute (routine, globals, scope);
+                }
+            }
+            catch (RuntimeError& ex)
+            {
+                ScriptPosition scPos;
+
+                if (pMap != NULL)
+                    scPos = pMap->get(ex.Position);
+                errorAt(scPos, "%s", ex.what());
             }
         }
-        catch (CScriptException& ex)
+        catch (std::exception& ex)
         {
-            actorCrashed (actorRef, ex);
+            actorCrashed (actorRef, ex.what());
         }        
     }
     
@@ -435,17 +450,17 @@ bool ActorRuntime::dispatchMessage()
  * @param actorRef
  * @param ex
  */
-void ActorRuntime::actorCrashed(Ref<AsActorRef> actorRef, const CScriptException& ex)
+void ActorRuntime::actorCrashed(Ref<AsActorRef> actorRef, const char* msg)
 {
     auto actor = actorRef->getActor();
     
-    this->stopActor(actorRef, jsNull(), jsString(ex.what()));
+    this->stopActor(actorRef, jsNull(), jsString(msg));
 
     //TODO: Better error logging
     if (actor->getParent().notNull())
-        fprintf (stderr, "Actor crashed: %s\n", ex.what());
+        fprintf (stderr, "Actor crashed: %s\n", msg);
     else
-        fprintf (stderr, "Root actor crashed: %s\n", ex.what());
+        fprintf (stderr, "Root actor crashed: %s\n", msg);
 }
 
 Ref<JSObject> ActorRuntime::clone (bool _mutable)

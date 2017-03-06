@@ -228,7 +228,7 @@ Ref<JSValue> FunctionScope::get(const std::string& name)const
         if (index >= 0)
             return m_arguments->getAt(index);
         else
-            error ("'%s' is undefined", name.c_str());
+            rtError ("'%s' is undefined", name.c_str());
     }
     
     return jsNull();
@@ -244,7 +244,7 @@ Ref<JSValue> FunctionScope::get(const std::string& name)const
 Ref<JSValue> FunctionScope::set(const std::string& name, Ref<JSValue> value)
 {
     if (name == "this" || name == "arguments")
-        error("'%s' cannot be written", name.c_str());
+        rtError("'%s' cannot be written", name.c_str());
     else
     {
         const int index = paramIndex(name);
@@ -252,7 +252,7 @@ Ref<JSValue> FunctionScope::set(const std::string& name, Ref<JSValue> value)
         if (index >= 0)
             m_arguments->setAt(index, value);
         else
-            error ("'%s' is undefined", name.c_str());
+            rtError ("'%s' is undefined", name.c_str());
     }
 
     return value;
@@ -322,7 +322,7 @@ Ref<JSValue> GlobalScope::get(const std::string& name)const
             return it->second.value();
         else
         {
-            error ("'%s' is not defined", name.c_str());
+            rtError ("'%s' is not defined", name.c_str());
             return jsNull();
         }
     }

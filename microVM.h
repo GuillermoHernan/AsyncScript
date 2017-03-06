@@ -98,18 +98,16 @@ typedef std::vector<MvmBlock>  BlockVector;
 class MvmRoutine : public RefCountObj
 {
 public:
-    static Ref<MvmRoutine> create(const ScriptPosition& pos)
+    static Ref<MvmRoutine> create()
     {
-        return refFromNew(new MvmRoutine(pos));
+        return refFromNew(new MvmRoutine);
     }
 
-    const ScriptPosition position;    
-    
     ValueVector constants;
     BlockVector blocks;
     
 protected:
-    MvmRoutine(const ScriptPosition& pos):position (pos)    
+    MvmRoutine()   
     {
         blocks.push_back(MvmBlock());
     }

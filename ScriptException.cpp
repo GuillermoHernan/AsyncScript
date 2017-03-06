@@ -34,11 +34,11 @@ static string generateErrorMessage(const ScriptPosition* pPos, const char* msgFo
 
 
 /**
- * Generates an exception, with the error message
+ * Generates 'RuntimeError' exception
  * @param msgFormat 'printf-like' format string
  * @param ...       Optional message parameters
  */
-void error(const char* msgFormat, ...)
+void rtError(const char* msgFormat, ...)
 {
     va_list aptr;
 
@@ -46,7 +46,7 @@ void error(const char* msgFormat, ...)
     const std::string message = generateErrorMessage(NULL, msgFormat, aptr);
     va_end(aptr);
 
-    throw CScriptException(message);
+    throw RuntimeError(message, VmPosition());
 }
 
 /**
@@ -64,13 +64,13 @@ void errorAt(const ScriptPosition& position, const char* msgFormat, ...)
     const std::string message = generateErrorMessage(&position, msgFormat, aptr);
     va_end(aptr);
 
-    throw CScriptException(message);
+    throw CScriptException(message, position);
 }
 
 void errorAt_v(const ScriptPosition& position, const char* msgFormat, va_list args)
 {
     const std::string message = generateErrorMessage(&position, msgFormat, args);
 
-    throw CScriptException(message);
+    throw CScriptException(message, position);
 }
 

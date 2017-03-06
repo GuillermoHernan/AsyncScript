@@ -15,7 +15,9 @@
 #include "ast.h"
 #include <vector>
 
-Ref<MvmRoutine> scriptCodegen ( Ref<AstNode> script);
+//class CodeMap;
+
+Ref<MvmRoutine> scriptCodegen ( Ref<AstNode> script, CodeMap* pMap);
 
 
 

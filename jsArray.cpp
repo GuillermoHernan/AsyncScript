@@ -340,7 +340,7 @@ Ref<JSValue> JSArray::unFreeze(bool forceClone)
 void JSArray::setLength(Ref<JSValue> value)
 {
     if (!isUint(value))
-        error ("Invalid array index: %s", value->toString().c_str());
+        rtError ("Invalid array index: %s", value->toString().c_str());
     
     const size_t length = toSizeT(value);
     

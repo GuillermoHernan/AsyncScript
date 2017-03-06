@@ -22,7 +22,7 @@ using namespace std;
 
 Ref<JSValue> JSValue::call (Ref<FunctionScope> scope)
 {
-    error ("Not a callable object: %s", toString().c_str());
+    rtError ("Not a callable object: %s", toString().c_str());
     return jsNull();
 }
 
@@ -261,7 +261,7 @@ Ref<JSValue> JSValue::deepFreeze()
 
 /**
  * Writes to a variable in a variable map. If the variable already exist, and
- * is a constant, it throw an exception.
+ * is a constant, it throws a runtime exception.
  * @param map
  * @param name
  * @param value
@@ -272,7 +272,7 @@ void checkedVarWrite(VarMap& map, const std::string& name, Ref<JSValue> value, b
     auto it = map.find(name);
 
     if (it != map.end() && it->second.isConst())
-        error("Trying to write to constant '%s'", name.c_str());
+        rtError("Trying to write to constant '%s'", name.c_str());
 
     map[name] = VarProperties(value, isConst);
 }
@@ -290,9 +290,9 @@ Ref<JSValue> checkedVarDelete(VarMap& map, const std::string& name)
     Ref<JSValue> value;
 
     if (it == map.end())
-        error("'%s' is not defined", name.c_str());
+        rtError("'%s' is not defined", name.c_str());
     else if (it->second.isConst())
-        error("Trying to delete constant '%s'", name.c_str());
+        rtError("Trying to delete constant '%s'", name.c_str());
     else
     {
         value = it->second.value();

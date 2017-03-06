@@ -15,8 +15,6 @@
 #include "RefCountObj.h"
 #include <string>
 
-class MvmRoutine;
-
 /**
  * Indicates a position inside a script file
  */
@@ -73,29 +71,38 @@ struct ScriptPosition
  */
 struct VmPosition
 {
-    Ref<MvmRoutine>     routine;
-    int                 block;
-    int                 instruction;
+    Ref<RefCountObj>  Routine;
+    int               Block;
+    int               Instruction;
+    
+    VmPosition () : Block(-1), Instruction(-1)
+    {
+    }
+    
+    VmPosition (Ref<RefCountObj> _routine, int _block, int _instruction) :
+    Routine(_routine), Block(_block), Instruction(_instruction)
+    {
+    }
     
     bool operator < (const VmPosition& b)const
     {
-        if (routine == b.routine)
+        if (Routine == b.Routine)
         {
-            if (block == b.block)
-                return instruction < b.instruction;
+            if (Block == b.Block)
+                return Instruction < b.Instruction;
             else
-                return block < b.block;
+                return Block < b.Block;
         }
         else
-            return routine < b.routine;
+            return Routine < b.Routine;
     }
 
     
     bool operator == (const VmPosition& b)const
     {
-        return (routine < b.routine &&
-            block == b.block &&
-            instruction == b.instruction);
+        return (Routine < b.Routine &&
+            Block == b.Block &&
+            Instruction == b.Instruction);
     }
     
     bool operator > (const VmPosition& b)const
@@ -113,6 +120,24 @@ struct VmPosition
         return !(*this < b);
     }
 };//struct VmPosition
+
+/**
+ * Maps 'VmPositions' to 'ScriptPositions'. Used to give the source location
+ * of run time errors.
+ */
+class CodeMap
+{
+public:
+    const ScriptPosition& get(const VmPosition& vmPos);
+    bool add (const VmPosition& vmPos, const ScriptPosition& scPos);
+    
+private:
+    typedef std::map<VmPosition, ScriptPosition>    VM2SCmap;
+    typedef std::map<ScriptPosition, VmPosition>    SC2VMmap;
+    
+    VM2SCmap    m_vm2sc;
+    SC2VMmap    m_sc2vm;
+};
 
 #endif	/* SCRIPTPOSITION_H */
 

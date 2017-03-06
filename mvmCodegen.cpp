@@ -68,6 +68,8 @@ struct CodegenState
     VarMap                      members;
     ConstantsMap                constants;
     map<string, Ref<JSValue> >  symbols;
+    ScriptPosition              curPos;
+    CodeMap*                    pCodeMap = NULL;
     
     void declare (const std::string& name)
     {
@@ -158,36 +160,38 @@ void pushConstant (int value, CodegenState* pState);
 void pushConstant (bool value, CodegenState* pState);
 void pushNull (CodegenState* pState);
 
-void callCodegen (const std::string& fnName, int nParams, CodegenState* pState);
-void callInstruction (int nParams, CodegenState* pState);
+void callCodegen (const std::string& fnName, int nParams, CodegenState* pState, const ScriptPosition& pos);
+void callInstruction (int nParams, CodegenState* pState, const ScriptPosition& pos);
 
 void instruction8 (int opCode, CodegenState* pState);
 void instruction16 (int opCode, CodegenState* pState);
 int  getLastInstruction (CodegenState* pState);
 int  removeLastInstruction (CodegenState* pState);
-void binaryOperatorCode (int tokenCode, CodegenState* pState);
+void binaryOperatorCode (int tokenCode, CodegenState* pState, const ScriptPosition& pos);
 
 void endBlock (int trueJump, int falseJump, CodegenState* pState);
 void setTrueJump (int blockId, int destinationId, CodegenState* pState);
 void setFalseJump (int blockId, int destinationId, CodegenState* pState);
 int  curBlockId (CodegenState* pState);
 
-CodegenState initFunctionState (Ref<AstNode> node, const StringVector& params);
-CodegenState initFunctionState (Ref<AstNode> node);
+CodegenState initFunctionState (Ref<AstNode> node, const StringVector& params, CodeMap* pMap);
+CodegenState initFunctionState (Ref<AstNode> node, CodeMap* pMap);
 
 /**
  * Generates MVM code for a script.
  * @param statements    The script is received as a sequence (vector) of compiled statements.
  * @return 
  */
-Ref<MvmRoutine> scriptCodegen (Ref<AstNode> script)
+Ref<MvmRoutine> scriptCodegen (Ref<AstNode> script, CodeMap* pMap)
 {
     CodegenState    state;
     
     ASSERT (script->getType() == AST_SCRIPT);
     
-    state.curRoutine = MvmRoutine::create(ScriptPosition(1,1));
+    state.curRoutine = MvmRoutine::create();
     state.pushScope(script, false);
+    state.pCodeMap = pMap;
+    state.curPos = script->position();
     
     auto statements = script->children();
     
@@ -237,7 +241,12 @@ void codegen (Ref<AstNode> statement, CodegenState* pState)
         types [AST_CLASS] = classCodegen;
     }
     
+    auto oldPos = pState->curPos;
+    pState->curPos = statement->position();
+    
     types[statement->getType()](statement, pState);
+    
+    pState->curPos = oldPos;
 }
 
 /**
@@ -460,15 +469,17 @@ void forCodegen (Ref<AstNode> statement, CodegenState* pState)
  */
 void forEachCodegen (Ref<AstNode> node, CodegenState* pState)
 {
+    const ScriptPosition    pos = node->position();
+    
     //Loop initialization
     childCodegen (node, 1, pState);             //[sequence]
     
     //Generate code for condition
     const int conditionBlock = curBlockId(pState)+1;
     endBlock (conditionBlock, conditionBlock, pState);
-    instruction8(OC_CP, pState);                //[sequence, sequence]
-    pushNull(pState);                           //[sequence, sequence, null]
-    callCodegen("@notTypeEqual", 2, pState);    //[sequence, bool]
+    instruction8(OC_CP, pState);                    //[sequence, sequence]
+    pushNull(pState);                               //[sequence, sequence, null]
+    callCodegen("@notTypeEqual", 2, pState, pos);   //[sequence, bool]
     endBlock (conditionBlock+1, -1, pState);
     
     //Generate code for body
@@ -479,10 +490,10 @@ void forEachCodegen (Ref<AstNode> node, CodegenState* pState)
     pState->declare(itemVarName);
     pushConstant(itemVarName, pState);          //[sequence, itemVarName]
     instruction8(OC_CP+1, pState);              //[sequence, itemVarName, sequence]
-    callCodegen("@head", 1, pState);            //[sequence, itemVarName, head]
+    callCodegen("@head", 1, pState, pos);       //[sequence, itemVarName, head]
     instruction8(OC_NEW_VAR, pState);           //[sequence]
 
-    callCodegen("@tail", 1, pState);            //[sequence+1]
+    callCodegen("@tail", 1, pState, pos);       //[sequence+1]
     childCodegen(node, 2, pState);              //[sequence+1, body_result]
     instruction8(OC_POP, pState);               //[sequence+1]
 
@@ -553,7 +564,7 @@ Ref<JSFunction> createFunction (Ref<AstNode> node, CodegenState* pState)
     Ref<AstFunction>    fnNode = node.staticCast<AstFunction>();
     const AstFunction::Params& params = fnNode->getParams();
     
-    CodegenState    fnState = initFunctionState(node);
+    CodegenState    fnState = initFunctionState(node, pState->pCodeMap);
 
     auto    function = JSFunction::createJS(fnNode->getName(), params, fnState.curRoutine);
 
@@ -608,7 +619,7 @@ void assignmentCodegen (Ref<AstNode> statement, CodegenState* pState)
         childCodegen(statement, 1, pState);
         
         //execute operation
-        binaryOperatorCode (op - LEX_ASSIGN_BASE, pState);
+        binaryOperatorCode (op - LEX_ASSIGN_BASE, pState, statement->position());
         instruction8 (OC_CP_AUX, pState);
 
         //Execute write.
@@ -645,7 +656,7 @@ void fncallCodegen (Ref<AstNode> statement, CodegenState* pState)
         //Evaluate function reference expression
         childCodegen(statement, 0, pState);
 
-        callInstruction (nChilds, pState);
+        callInstruction (nChilds, pState, statement->position());
     }
 }
 
@@ -674,7 +685,7 @@ void thisCallCodegen (Ref<AstNode> statement, CodegenState* pState)
     }
     
     //Write call instruction
-    callInstruction (nChilds, pState);
+    callInstruction (nChilds, pState, statement->position());
 }
 
 /**
@@ -717,7 +728,7 @@ void arrayCodegen (Ref<AstNode> statement, CodegenState* pState)
     const AstNodeList children = statement->children();
     
     pushConstant((int)children.size(), pState);
-    callCodegen("@newArray", 1, pState);
+    callCodegen("@newArray", 1, pState, statement->position());
     
     for (int i=0; i < (int)children.size(); ++i)
     {
@@ -740,7 +751,7 @@ void objectCodegen (Ref<AstNode> statement, CodegenState* pState)
     Ref<AstObject>                  obj = statement.staticCast<AstObject>();
     const AstObject::PropertyList   properties= obj->getProperties();
     
-    callCodegen("Object", 0, pState);
+    callCodegen("Object", 0, pState, statement->position());
 
     //TODO: Properties are not evaluated in definition order, but in 
     //alphabetical order, as they are defined in a map.
@@ -813,7 +824,7 @@ void binaryOpCodegen (Ref<AstNode> statement, CodegenState* pState)
     else
     {
         childrenCodegen(statement, pState);
-        binaryOperatorCode(opCode, pState);
+        binaryOperatorCode(opCode, pState, statement->position());
     }    
 }
 
@@ -853,7 +864,7 @@ void prefixOpCodegen(Ref<AstNode> statement, CodegenState* pState)
         }
         
         //Call function
-        callCodegen(function, 1, pState);
+        callCodegen(function, 1, pState, statement->position());
     }
 }
 
@@ -880,7 +891,8 @@ void postfixOpCodegen (Ref<AstNode> statement, CodegenState* pState)
     
     instruction8(rdInst, pState);
     instruction8(OC_CP, pState);        //Save previous
-    callCodegen(op->code == LEX_PLUSPLUS ? "@inc": "@dec", 1, pState);
+    callCodegen(op->code == LEX_PLUSPLUS ? "@inc": "@dec", 1, pState,
+        statement->position());
     
     //Move previous value to aux
     instruction8(OC_SWAP, pState);
@@ -933,7 +945,7 @@ void logicalOpCodegen (const int opCode, Ref<AstNode> statement, CodegenState* p
 void actorCodegen (Ref<AstNode> node, CodegenState* pState)
 {
     auto  params = node->getParams();
-    CodegenState            actorState = initFunctionState(node);
+    CodegenState            actorState = initFunctionState(node, pState->pCodeMap);
     
     auto constructor = AsEndPoint::createInput("@start",
                                                params,
@@ -965,7 +977,7 @@ void connectCodegen (Ref<AstNode> node, CodegenState* pState)
     pushConstant(node->children().front()->getName(), pState);
     instruction8(OC_RD_FIELD, pState);
     childCodegen(node, 1, pState);
-    callCodegen("@connect", 2, pState);
+    callCodegen("@connect", 2, pState, node->position());
 }
 
 /**
@@ -982,9 +994,9 @@ void messageCodegen (Ref<AstNode> node, CodegenState* pState)
     if (node->getType() == AST_INPUT)
     {
         //TODO: This code is very simular in function, actor, and message code generation
-        Ref<MvmRoutine>         code = MvmRoutine::create(node->position());
+        Ref<MvmRoutine>         code = MvmRoutine::create();
 
-        CodegenState    fnState = initFunctionState(node);
+        CodegenState    fnState = initFunctionState(node, pState->pCodeMap);
         msg->setCodeMVM (code);
         fnState.curRoutine = code;
 
@@ -1038,7 +1050,7 @@ void classCodegen (Ref<AstNode> node, CodegenState* pState)
 Ref<JSFunction> classConstructorCodegen (Ref<AstNode> node, CodegenState* pState)
 {
     auto            params = classConstructorParams(node, pState);
-    CodegenState    fnState = initFunctionState(node, params);
+    CodegenState    fnState = initFunctionState(node, params, pState->pCodeMap);
 
     auto            function = JSFunction::createJS("@constructor", params, fnState.curRoutine);
     auto            children = node->children();
@@ -1131,7 +1143,7 @@ void baseConstructorCallCodegen (Ref<AstNode> node, CodegenState* pState)
         }
     }
 
-    callCodegen(parentClass->getName(), nParams+1, pState);
+    callCodegen(parentClass->getName(), nParams+1, pState, node->position());
 }
 
 
@@ -1219,7 +1231,7 @@ void pushConstant (Ref<JSValue> value, CodegenState* pState)
 
         //TODO: 32 bit instructions, to have more constants.
         if (id16 >= OC16_PUSHC)
-            errorAt (pState->curRoutine->position,  "Too much constants. Maximum is 8256 per function");
+            errorAt (pState->curPos,  "Too much constants. Maximum is 8256 per function");
         else
             instruction16(id16 + OC16_PUSHC, pState);
     }
@@ -1279,16 +1291,25 @@ void pushNull (CodegenState* pState)
  * @param fnName
  * @param nParams
  * @param pState
+ * @param pos       Source code position
  */
-void callCodegen (const std::string& fnName, int nParams, CodegenState* pState)
+void callCodegen (const std::string& fnName, 
+                  int nParams, 
+                  CodegenState* pState, 
+                  const ScriptPosition& pos)
 {
+    const auto oldPos = pState->curPos;
+    pState->curPos = pos;
+    
     pushConstant(fnName, pState);
     
     if (pState->isDeclared(fnName))
         instruction8(OC_RD_LOCAL, pState);
     else
         instruction8(OC_RD_GLOBAL, pState);
-    callInstruction(nParams, pState);    
+    callInstruction(nParams, pState, pos);
+    
+    pState->curPos = oldPos;
 }
 
 
@@ -1297,20 +1318,25 @@ void callCodegen (const std::string& fnName, int nParams, CodegenState* pState)
  * create the 8 bit or 16 version.
  * @param nParams Number of parameters, including this pointer (which is the first one)
  * @param pState
+ * @param pos       Source code position
  */
-void callInstruction (int nParams, CodegenState* pState)
+void callInstruction (int nParams, CodegenState* pState, const ScriptPosition& pos)
 {
+    const auto oldPos = pState->curPos;
+    pState->curPos = pos;
+
     if (nParams <= OC_CALL_MAX)
         instruction8(OC_CALL + nParams, pState);
     else {
         //I think that 1031 arguments are enough.
         if (nParams > (OC_CALL_MAX + OC16_CALL_MAX + 1))
-            error("Too much arguments in function call: %d", nParams);
+            errorAt(pos, "Too much arguments in function call: %d", nParams);
         
         //TODO: Provide location for the error.
         
         instruction16(OC16_CALL + nParams - (OC_CALL_MAX+1), pState);
     }
+    pState->curPos = oldPos;
 }
 
 /**
@@ -1322,7 +1348,16 @@ void instruction8 (int opCode, CodegenState* pState)
 {
     ASSERT (opCode < 128 && opCode >=0);
     
-    pState->curRoutine->blocks.rbegin()->instructions.push_back(opCode);
+    const auto routine = pState->curRoutine;
+    
+    routine->blocks.rbegin()->instructions.push_back(opCode);
+    
+    if (pState->pCodeMap != NULL)
+    {
+        const int blockIdx = (int)routine->blocks.size()-1;
+        VmPosition  pos (routine, blockIdx, (int)routine->blocks[blockIdx].instructions.size()-1);
+        pState->pCodeMap->add(pos, pState->curPos);
+    }
 }
 
 /**
@@ -1340,6 +1375,14 @@ void instruction16 (int opCode, CodegenState* pState)
     
     block.push_back((unsigned char)(opCode >> 8));
     block.push_back((unsigned char)(opCode & 0xff));
+    
+    if (pState->pCodeMap != NULL)
+    {
+        const auto routine = pState->curRoutine;
+        const int blockIdx = (int)routine->blocks.size()-1;
+        VmPosition  pos (routine, blockIdx, (int)block.size()-2);
+        pState->pCodeMap->add(pos, pState->curPos);
+    }
 }
 
 /**
@@ -1396,8 +1439,9 @@ int removeLastInstruction (CodegenState* pState)
  * Generates the instruction or call for a binary operator
  * @param tokenCode
  * @param pState
+ * @param pos
  */
-void binaryOperatorCode (int tokenCode, CodegenState* pState)
+void binaryOperatorCode (int tokenCode, CodegenState* pState, const ScriptPosition& pos)
 {
     typedef map <int, string> OpMap;
     static OpMap operators;
@@ -1429,7 +1473,7 @@ void binaryOperatorCode (int tokenCode, CodegenState* pState)
     OpMap::const_iterator it = operators.find(tokenCode);
     
     ASSERT (it != operators.end());
-    callCodegen(it->second, 2, pState);
+    callCodegen(it->second, 2, pState, pos);
 }
 
 /**
@@ -1484,9 +1528,9 @@ int curBlockId (CodegenState* pState)
  * @param node
  * @return 
  */
-CodegenState initFunctionState (Ref<AstNode> node)
+CodegenState initFunctionState (Ref<AstNode> node, CodeMap* pMap)
 {
-    return initFunctionState(node, node->getParams());
+    return initFunctionState(node, node->getParams(), pMap);
 }
 
 /**
@@ -1495,11 +1539,13 @@ CodegenState initFunctionState (Ref<AstNode> node)
  * @param params
  * @return 
  */
-CodegenState initFunctionState (Ref<AstNode> node, const StringVector& params)
+CodegenState initFunctionState (Ref<AstNode> node, const StringVector& params, CodeMap* pMap)
 {
-    Ref<MvmRoutine>         code = MvmRoutine::create(node->position());
+    Ref<MvmRoutine>         code = MvmRoutine::create();
     CodegenState            fnState;
     
+    fnState.curPos = node->position();
+    fnState.pCodeMap = pMap;
     fnState.curRoutine = code;
     fnState.pushScope(node, false);
 

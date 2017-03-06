@@ -108,7 +108,7 @@ Ref<JSValue> assertFunction(FunctionScope* pScope)
     {
         auto    text =  pScope->getParam("text")->toString();
         
-        error("Assertion failed: %s", text.c_str());
+        rtError("Assertion failed: %s", text.c_str());
     }
     
     return jsNull();
@@ -134,7 +134,7 @@ Ref<JSValue> expectError(FunctionScope* pScope)
         return jsTrue();
     }
     
-    error ("No exception thrown: %s", code.c_str());
+    rtError ("No exception thrown: %s", code.c_str());
     
     return jsFalse();
 }
@@ -244,7 +244,8 @@ bool run_test(const std::string& szFile, const string &testDir, const string& re
         semanticCheck(ast);
 
         //Code generation.
-        const Ref<MvmRoutine>    code = scriptCodegen(ast);
+        CodeMap                 cMap;
+        const Ref<MvmRoutine>   code = scriptCodegen(ast, &cMap);
 
         //Write disassembly
         writeTextFile(testResultsDir + testName + ".asm.json", mvmDisassembly(code));
@@ -256,7 +257,7 @@ bool run_test(const std::string& szFile, const string &testDir, const string& re
 
         //Execution
         //mvmExecute(code, globals);
-        asBlockingExec(code, globals);
+        asBlockingExec(code, globals, &cMap);
 
         auto result = globals->get("result");
         if (result->toString() != "exception")

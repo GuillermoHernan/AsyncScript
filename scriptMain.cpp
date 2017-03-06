@@ -17,6 +17,7 @@
 #include "mvmFunctions.h"
 #include "semanticCheck.h"
 #include "asObjects.h"
+#include "ScriptException.h"
 
 using namespace std;
 
@@ -44,10 +45,20 @@ Ref<JSValue> evaluate (const char* script, Ref<IScope> globals)
     semanticCheck(ast);
     
     //Code generation.
-    const Ref<MvmRoutine>    code = scriptCodegen(ast);
+    CodeMap                 cMap;
+    const Ref<MvmRoutine>   code = scriptCodegen(ast, &cMap);
     
     //Execution
-    return mvmExecute(code, globals, Ref<IScope>());
+    try
+    {
+        return mvmExecute(code, globals, Ref<IScope>());
+    }
+    catch (const RuntimeError& e)
+    {
+        ScriptPosition pos = cMap.get (e.Position);
+        errorAt(pos, "%s", e.what());
+        return jsNull();        //Not executed
+    }
 }
 
 /**

@@ -54,7 +54,7 @@ struct ExecutionContext
     bool checkStackNotEmpty()
     {
         if (stack.empty())
-            error ("Stack underflow!");
+            rtError ("Stack underflow!");
         
         return !stack.empty();
     }
@@ -179,7 +179,20 @@ Ref<JSValue> mvmExecRoutine (Ref<MvmRoutine> code, ExecutionContext* ec)
     
     while (nextBlock >= 0)
     {
-        nextBlock = execBlock (code->blocks[nextBlock], ec);
+        try
+        {
+            nextBlock = execBlock (code->blocks[nextBlock], ec);
+        }
+        catch (const RuntimeError& e)
+        {
+            if (e.Position.Block < 0)
+            {
+                VmPosition pos (code, nextBlock, e.Position.Instruction);
+                throw RuntimeError (e.what(), pos);
+            }
+            else
+                throw e;
+        }
     }
     
     //Scope stack unwind.
@@ -208,15 +221,30 @@ int execBlock (const MvmBlock& block, ExecutionContext* ec)
 {
     for (size_t i = 0; i < block.instructions.size();)
     {
-        int opCode = block.instructions[i++];
+        const int instructionIndex = i;
         
-        if (opCode & OC_EXT_FLAG)
+        try
         {
-            opCode = (opCode << 8) | block.instructions[i++];
-            execInstruction16 (opCode, ec);
+            int opCode = block.instructions[i++];
+
+            if (opCode & OC_EXT_FLAG)
+            {
+                opCode = (opCode << 8) | block.instructions[i++];
+                execInstruction16 (opCode, ec);
+            }
+            else
+                execInstruction8 (opCode, ec);
         }
-        else
-            execInstruction8 (opCode, ec);
+        catch (const RuntimeError& e)
+        {
+            if (e.Position.Instruction < 0)
+            {
+                VmPosition  pos (Ref<RefCountObj>(), -1, instructionIndex);
+                throw RuntimeError(e.what(), pos);
+            }
+            else 
+                throw e;
+        }
     }
     
     if (block.nextBlocks[0] == block.nextBlocks[1])
@@ -245,7 +273,7 @@ void execInstruction16 (const int opCode, ExecutionContext* ec)
     else if (decoded <= OC16_CALL_MAX)
         execCall16(decoded, ec);
     else
-        error ("Invalid 16 bit opCode: %04X", opCode);
+        rtError ("Invalid 16 bit opCode: %04X", opCode);
 }
 
 /**
@@ -322,12 +350,12 @@ void execCall16 (const int opCode, ExecutionContext* ec)
 void execCall (const int nArgs, ExecutionContext* ec)
 {
     if (nArgs + 1 > (int)ec->stack.size())
-        error ("Stack underflow executing function call");
+        rtError ("Stack underflow executing function call");
     
     const Ref<JSValue>  fnVal = ec->pop();
     
 //    if (!fnVal->isFunction())
-//        error ("Trying to call a non-function value");
+//        rtError ("Trying to call a non-function value");
     
 //    const Ref<JSFunction>   function = fnVal.staticCast<JSFunction>();
 
@@ -503,7 +531,7 @@ void execCp8 (const int opCode, ExecutionContext* ec)
     const int offset = opCode - OC_CP;
     
     if (offset > int(ec->stack.size())-1)
-        error ("Stack underflow in CP operation");
+        rtError ("Stack underflow in copy(CP) operation");
     
     ec->push (*(ec->stack.rbegin() + offset));
 }
@@ -540,7 +568,7 @@ void execPop (const int opCode, ExecutionContext* ec)
 void execPushScope (const int opCode, ExecutionContext* ec)
 {
     if (ec->scopes.empty())
-        error("Empty scope stack executing 'PUSH SCOPE");
+        rtError("Empty scope stack executing 'PUSH SCOPE");
     
     auto scope = BlockScope::create(ec->scopes.back());
     ec->scopes.push_back(scope);
@@ -554,10 +582,10 @@ void execPushScope (const int opCode, ExecutionContext* ec)
 void execPopScope (const int opCode, ExecutionContext* ec)
 {
     if (ec->scopes.empty())
-        error("Empty scope stack executing 'POP SCOPE");
+        rtError("Empty scope stack executing 'POP SCOPE");
     
     if (!ec->scopes.back()->isBlockScope())
-        error("'POP SCOPE' trying to remove a non-block scope");
+        rtError("'POP SCOPE' trying to remove a non-block scope");
     
     ec->scopes.pop_back();
 }
@@ -682,7 +710,7 @@ void execWrIndex (const int opCode, ExecutionContext* ec)
 void execNewVar (const int opCode, ExecutionContext* ec)
 {
     if (ec->scopes.empty())
-        error("Empty scope stack executing 'NEW_VAR'");
+        rtError("Empty scope stack executing 'NEW_VAR'");
 
     const auto  val = ec->pop();
     const auto  name = ec->pop();
@@ -698,7 +726,7 @@ void execNewVar (const int opCode, ExecutionContext* ec)
 void execNewConst (const int opCode, ExecutionContext* ec)
 {
     if (ec->scopes.empty())
-        error("Empty scope stack executing 'NEW_CONST'");
+        rtError("Empty scope stack executing 'NEW_CONST'");
 
     const auto  val = ec->pop();
     const auto  name = ec->pop();
@@ -741,7 +769,7 @@ void execNop (const int opCode, ExecutionContext* ec)
 void execCpAux (const int opCode, ExecutionContext* ec)
 {
     if (ec->stack.empty())
-        error ("Empty stack executing OC_CP_AUX");
+        rtError ("Empty stack executing OC_CP_AUX");
     
     ec->auxRegister = ec->stack.back();
 }
@@ -764,5 +792,5 @@ void execPushAux (const int opCode, ExecutionContext* ec)
 
 void invalidOp (const int opCode, ExecutionContext* ec)
 {
-    error ("Invalid operation code: %04X", opCode);
+    rtError ("Invalid operation code: %04X", opCode);
 }

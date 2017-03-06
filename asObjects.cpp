@@ -109,7 +109,7 @@ Ref<JSValue> JSClass::call (Ref<FunctionScope> scope)
     auto result = m_constructor->call(scope);
     
     if (result.isNull() || !result->isObject())
-        error ("Constructor must return an object");
+        rtError ("Constructor must return an object");
     
     auto newObj = result.staticCast<JSObject>();
     

@@ -25,17 +25,31 @@ class CScriptException : public std::logic_error
 {
 public:
 
-    CScriptException(const std::string &text) : logic_error(text)
+    CScriptException(const std::string &text, const ScriptPosition& pos) : 
+    logic_error(text), Position(pos)
     {
     }
 
-    CScriptException(const char *text) : logic_error(text)
+    const ScriptPosition    Position;
+};
+
+/**
+ * Class for exceptions which may occur executing the script.
+ */
+class RuntimeError : public std::logic_error
+{
+public:
+    RuntimeError (const std::string& text, const VmPosition& pos) 
+    : logic_error(text), Position(pos)
     {
     }
+    
+    const VmPosition    Position;
 };
 
 //Exception helper functions
-void error(const char* msgFormat, ...);
+void rtError(const char* msgFormat, ...);
+
 void errorAt(const ScriptPosition& position, const char* msgFormat, ...);
 void errorAt_v(const ScriptPosition& position, const char* msgFormat, va_list args);
 
