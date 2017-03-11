@@ -72,6 +72,9 @@ ExprResult parseClassExpr (CScriptToken token);
 ExprResult parseExtends (CScriptToken token);
 ExprResult parseClassMember (CScriptToken token);
 
+ExprResult parseExport (CScriptToken token);
+ExprResult parseImport (CScriptToken token);
+
     
 bool isAssignment(CScriptToken token)
 {
@@ -163,6 +166,8 @@ ParseResult parseStatement (CScriptToken token)
     case LEX_R_FUNCTION:return parseFunctionExpr (token).toParseResult();
     case LEX_R_ACTOR:   return parseActorExpr (token).toParseResult();
     case LEX_R_CLASS:   return parseClassExpr (token).toParseResult();
+    case LEX_R_EXPORT:  return parseExport (token).toParseResult();
+    case LEX_R_IMPORT:  return parseExport (token).toParseResult();
     
     default:
         return parseSimpleStatement(token);
@@ -1491,4 +1496,60 @@ ExprResult parseClassMember (CScriptToken token)
     default:
         return parseFunctionExpr(token);
     }
+}
+
+/**
+ * Parses an 'export' keyword.
+ * @param token
+ * @return 
+ */
+ExprResult parseExport (CScriptToken token)
+{
+    ExprResult  r(token);
+
+    r = r.require(LEX_R_EXPORT);
+    if (r.error())
+        return r.final();
+    
+    switch ((int)r.token.type())
+    {
+    case LEX_R_VAR:
+    case LEX_R_CONST:
+        r = r.then (parseVar); break;
+
+    case LEX_R_FUNCTION:    r = r.then (parseFunctionExpr); break;
+    case LEX_R_ACTOR:       r = r.then (parseActorExpr); break;
+    case LEX_R_CLASS:       r = r.then (parseClassExpr); break;
+    
+    default:
+        r = r.getError("Unexpected token after 'export': '%s'", token.text().c_str());;
+        break;
+    }//switch
+    
+    if (r.ok())
+        r.result = astCreateExport(token.getPosition(), r.result);
+    
+    return r.final();    
+}
+
+/**
+ * Parses an import statement
+ * @param token
+ * @return 
+ */
+ExprResult parseImport (CScriptToken token)
+{
+    ExprResult  r(token);
+
+    r = r.require(LEX_R_IMPORT);
+    if (r.error())
+        return r.final();
+    
+    auto paramToken = r.token;
+    r = r.require(LEX_STR);
+    
+    if (r.ok())
+        r.result = astCreateImport (token.getPosition(), AstLiteral::create(paramToken));
+    
+    return r.final();
 }

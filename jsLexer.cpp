@@ -80,6 +80,9 @@ string getTokenStr(int token)
     case LEX_R_SOCKET:  return "socket";
 
     case LEX_R_CLASS:  return "class";
+    
+    case LEX_R_EXPORT:  return "export";
+    case LEX_R_IMPORT:  return "import";
 
     }
 
@@ -310,6 +313,9 @@ CScriptToken CScriptToken::parseId(const char * code)const
         keywords["socket"] = LEX_R_SOCKET;
 
         keywords["class"] = LEX_R_CLASS;
+
+        keywords["export"] = LEX_R_EXPORT;
+        keywords["import"] = LEX_R_IMPORT;
     }
 
     const char* end = code + 1;

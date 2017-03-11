@@ -51,6 +51,8 @@ enum AstNodeTypes
     ,AST_OUTPUT
     ,AST_CLASS
     ,AST_EXTENDS
+    ,AST_EXPORT
+    ,AST_IMPORT
     ,AST_TYPES_COUNT
 };
 
@@ -119,6 +121,8 @@ Ref<AstNode> astCreateSend (ScriptPosition pos,
 
 Ref<AstNode> astCreateExtends (ScriptPosition pos,
                                 const std::string& parentName);
+Ref<AstNode> astCreateExport (ScriptPosition pos, Ref<AstNode> child);
+Ref<AstNode> astCreateImport (ScriptPosition pos, Ref<AstNode> param);
 
 Ref<AstNode> astGetExtends(Ref<AstNode> node);
 

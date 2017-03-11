@@ -153,6 +153,9 @@ void baseConstructorCallCodegen (Ref<AstNode> node, CodegenState* pState);
 StringVector classConstructorParams(Ref<AstNode> node, CodegenState* pState);
 Ref<JSClass> getParentClass (Ref<AstNode> node, CodegenState* pState);
 
+void exportCodegen (Ref<AstNode> node, CodegenState* pState);
+void importCodegen (Ref<AstNode> node, CodegenState* pState);
+
 void pushConstant (Ref<JSValue> value, CodegenState* pState);
 void pushConstant (const char* str, CodegenState* pState);
 void pushConstant (const std::string& str, CodegenState* pState);
@@ -239,6 +242,8 @@ void codegen (Ref<AstNode> statement, CodegenState* pState)
         types [AST_INPUT] = messageCodegen;
         types [AST_OUTPUT] = messageCodegen;
         types [AST_CLASS] = classCodegen;
+        types [AST_EXPORT] = exportCodegen;
+        types [AST_IMPORT] = importCodegen;
     }
     
     auto oldPos = pState->curPos;
@@ -1200,6 +1205,16 @@ Ref<JSClass> getParentClass (Ref<AstNode> node, CodegenState* pState)
         errorAt(node->position(), "'%s' is not a class", parentName.c_str());
     
     return parentClass.staticCast<JSClass>();
+}
+
+void exportCodegen (Ref<AstNode> node, CodegenState* pState)
+{
+    errorAt (node->position(), "'export' is not yet implemented");
+}
+
+void importCodegen (Ref<AstNode> node, CodegenState* pState)
+{
+    errorAt (node->position(), "'import' is not yet implemented");
 }
 
 

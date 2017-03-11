@@ -256,6 +256,22 @@ Ref<AstNode> astCreateExtends (ScriptPosition pos,
     return refFromNew (new AstNamedBranch(AST_EXTENDS, pos, parentName));
 }
 
+Ref<AstNode> astCreateExport (ScriptPosition pos, Ref<AstNode> child)
+{
+    auto result = refFromNew(new AstBranchNode(AST_EXPORT, pos));
+    
+    result->addChild(child);
+    return result;
+}
+
+Ref<AstNode> astCreateImport (ScriptPosition pos, Ref<AstNode> param)
+{
+    auto result = refFromNew(new AstBranchNode(AST_IMPORT, pos));
+    
+    result->addChild(param);
+    return result;
+}
+
 /**
  * Gets the 'extends' node of a class node.
  * @param node
@@ -509,6 +525,8 @@ std::string astTypeToString(AstNodeTypes type)
         types[AST_OUTPUT] = "AST_OUTPUT";
         types[AST_CLASS] = "AST_CLASS";
         types[AST_EXTENDS] = "AST_EXTENDS";
+        types[AST_EXPORT] = "AST_EXPORT";
+        types[AST_IMPORT] = "AST_IMPORT";
         //types[AST_TYPES_COUNT] = "AST_TYPES_COUNT";
     }
     

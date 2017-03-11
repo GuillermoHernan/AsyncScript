@@ -14,6 +14,7 @@
 
 #include <string>
 #include <set>
+#include <vector>
 
 using namespace std;
 
@@ -22,7 +23,8 @@ using namespace std;
  */
 struct SemCheckState
 {    
-    StringSet   definedClasses;
+    StringSet               definedClasses;
+    vector<Ref<AstNode> >   nodeStack;
     
     bool isClassDefined (const std::string& name)const
     {
@@ -43,9 +45,15 @@ void postfixOpSemCheck (Ref<AstNode> node, SemCheckState* pState);
 void prefixOpSemCheck (Ref<AstNode> node, SemCheckState* pState);
 void objectSemCheck (Ref<AstNode> node, SemCheckState* pState);
 void classSemCheck (Ref<AstNode> node, SemCheckState* pState);
+void exportSemCheck (Ref<AstNode> node, SemCheckState* pState);
+void importSemCheck (Ref<AstNode> node, SemCheckState* pState);
 
 void checkReservedNames (const std::string& name, ScriptPosition pos, const char* errorMsg);
 void checkReservedNames (Ref<AstNode> node, const char* errorMsg);
+
+Ref<AstNode> getPrevSibling(Ref<AstNode> node, SemCheckState* pState);
+Ref<AstNode> getParent(SemCheckState* pState);
+AstNodeTypes getParentType(SemCheckState* pState);
 
 
 /**
@@ -110,9 +118,15 @@ void semCheck (Ref<AstNode> node, SemCheckState* pState)
         types [AST_OUTPUT] = childrenSemCheck;
         types [AST_CLASS] = classSemCheck;
         types [AST_EXTENDS] = childrenSemCheck;
+        types [AST_EXPORT] = exportSemCheck;
+        types [AST_IMPORT] = importSemCheck;
     }
 
+    pState->nodeStack.push_back(node);
     types[node->getType()](node, pState);
+    
+    ASSERT(!pState->nodeStack.empty());
+    pState->nodeStack.pop_back();
 }
 
 /**
@@ -252,6 +266,30 @@ void classSemCheck (Ref<AstNode> node, SemCheckState* pState)
 }
 
 /**
+ * Semantic check for 'export' modifiers.
+ * @param node
+ * @param pState
+ */
+void exportSemCheck (Ref<AstNode> node, SemCheckState* pState)
+{
+    if (getParentType(pState) != AST_SCRIPT)
+        errorAt(node->position(), "Exported symbols must be globals");
+}
+
+/**
+ * Semantic check for 'import' statements.
+ * @param node
+ * @param pState
+ */
+void importSemCheck (Ref<AstNode> node, SemCheckState* pState)
+{
+    auto prev = getPrevSibling(node, pState);
+    
+    if (prev.notNull() && prev->getType() != AST_IMPORT)
+        errorAt(node->position(), "Import statements must come before any other statements");
+}
+
+/**
  * Checks that the name is not among the reserved names
  * @param name
  * @param pos
@@ -281,4 +319,61 @@ void checkReservedNames (const std::string& name, ScriptPosition pos, const char
 void checkReservedNames (Ref<AstNode> node, const char* errorMsg)
 {
     checkReservedNames(node->getName(), node->position(), errorMsg);
+}
+
+/**
+ * Gets the previous sibling, if any.
+ *
+ * @param pState
+ * @return If there is no previous sibling, it will return null.
+ */
+Ref<AstNode> getPrevSibling(Ref<AstNode> node, SemCheckState* pState)
+{
+    auto parent = getParent(pState);
+    
+    if (parent.notNull())
+    {
+        const auto &children = parent->children();
+        
+        for (size_t i = 0; i < children.size(); ++i)
+        {
+            if (node == children[i])
+            {
+                if (i > 0)
+                    return children[i-1];
+                else
+                    break;
+            }
+        }
+    }
+    
+    return Ref<AstNode>();
+}
+
+/**
+ * Gets the parent node of the current node.
+ * @param pState
+ * @return 
+ */
+Ref<AstNode> getParent(SemCheckState* pState)
+{
+    if (pState->nodeStack.size() > 1)
+        return *(pState->nodeStack.rbegin()+1);
+    else
+        return Ref<AstNode>();
+}
+
+/**
+ * Gets the type of the parent node.
+ * @param pState
+ * @return If the current node has no parent, it returns AST_TYPES_COUNT.
+ */
+AstNodeTypes getParentType(SemCheckState* pState)
+{
+    auto parent = getParent(pState);
+    
+    if (parent.notNull())
+        return parent->getType();
+    else
+        return AST_TYPES_COUNT;
 }

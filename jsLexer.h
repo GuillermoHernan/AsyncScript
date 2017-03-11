@@ -76,6 +76,10 @@ enum LEX_TYPES
     
     //Classes and objects keywords.
     LEX_R_CLASS,
+    
+    //Modules keywords
+    LEX_R_EXPORT,
+    LEX_R_IMPORT,
 
     LEX_R_LIST_END /* always the last entry */
 };
