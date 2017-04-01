@@ -17,7 +17,10 @@
 #include "asObjects.h"
 #include <string>
 
+class MvmRoutine;
+
 Ref<JSValue>    evaluate (const char* script, Ref<JSObject> globals);
+Ref<JSValue>    evaluate (Ref<MvmRoutine> code, const CodeMap* codeMap, Ref<JSObject> globals);
 
 Ref<JSObject> createDefaultGlobals();
 

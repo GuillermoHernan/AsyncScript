@@ -257,10 +257,7 @@ bool run_test(const std::string& szFile, const string &testDir, const string& re
         s_curFunctionLogger = &callLogger;
 
         //Execution
-        ExecutionContext    ec;
-        ec.stack.push_back(globals);
-        mvmExecRoutine(code, &ec, 1);
-        //asBlockingExec(code, globals, &cMap);
+        evaluate (code, &cMap, globals);
 
         auto result = globals->readField("result");
         if (result->toString() != "exception")

@@ -128,7 +128,7 @@ struct VmPosition
 class CodeMap
 {
 public:
-    const ScriptPosition& get(const VmPosition& vmPos);
+    const ScriptPosition& get(const VmPosition& vmPos)const;
     bool add (const VmPosition& vmPos, const ScriptPosition& scPos);
     
 private:

@@ -49,6 +49,18 @@ Ref<JSValue> evaluate (const char* script, Ref<JSObject> globals)
     const Ref<MvmRoutine>   code = scriptCodegen(ast, &cMap);
     
     //Execution
+    return evaluate (code, &cMap, globals);
+}
+
+/**
+ * Evaluates a compiled script.
+ * @param code
+ * @param codeMap
+ * @param globals
+ * @return 
+ */
+Ref<JSValue> evaluate (Ref<MvmRoutine> code, const CodeMap* codeMap, Ref<JSObject> globals)
+{
     try
     {
         ExecutionContext    ec;
@@ -59,11 +71,15 @@ Ref<JSValue> evaluate (const char* script, Ref<JSObject> globals)
     }
     catch (const RuntimeError& e)
     {
-        ScriptPosition pos = cMap.get (e.Position);
+        ScriptPosition pos;
+        
+        if (codeMap != NULL)
+            pos = codeMap->get(e.Position);
         errorAt(pos, "%s", e.what());
         return jsNull();        //Not executed
     }
 }
+
 
 /**
  * Creates the default global scope

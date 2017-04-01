@@ -29,7 +29,7 @@ string ScriptPosition::toString()const
  * @param vmPos
  * @return 
  */
-const ScriptPosition& CodeMap::get(const VmPosition& vmPos)
+const ScriptPosition& CodeMap::get(const VmPosition& vmPos)const
 {
     const static ScriptPosition nullPosition;
     
