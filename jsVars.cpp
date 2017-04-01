@@ -20,11 +20,11 @@
 
 using namespace std;
 
-Ref<JSValue> JSValue::call (Ref<FunctionScope> scope)
-{
-    rtError ("Not a callable object: %s", toString().c_str());
-    return jsNull();
-}
+//Ref<JSValue> JSValue::call (Ref<FunctionScope> scope)
+//{
+//    rtError ("Not a callable object: %s", toString().c_str());
+//    return jsNull();
+//}
 
 /**
  * Gives an string representation of the type name
@@ -49,6 +49,7 @@ std::string getTypeName(JSValueTypes vType)
         types[VT_ARRAY] = "Array";
         types[VT_ACTOR] = "Actor";
         types[VT_FUNCTION] = "Function";
+        types[VT_CLOSURE] = "Closure";
         types[VT_ACTOR_CLASS] = "Actor class";
         types[VT_INPUT_EP] = "Input EP";
         types[VT_OUTPUT_EP] = "Output EP";
@@ -426,17 +427,17 @@ JSFunction::~JSFunction()
  * @param ec
  * @return 
  */
-Ref<JSValue> JSFunction::call (Ref<FunctionScope> scope)
-{
-    if (isNative())
-        return nativePtr()(scope.getPointer());
-    else
-    {
-        auto    code = getCodeMVM().staticCast<MvmRoutine>();
-        
-        return mvmExecute(code, getGlobals(), scope);
-    }
-}
+//Ref<JSValue> JSFunction::call (Ref<FunctionScope> scope)
+//{
+//    if (isNative())
+//        return nativePtr()(scope.getPointer());
+//    else
+//    {
+//        auto    code = getCodeMVM().staticCast<MvmRoutine>();
+//        
+//        return mvmExecute(code, getGlobals(), scope);
+//    }
+//}
 
 /**
  * String representation of the function.

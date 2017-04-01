@@ -32,7 +32,7 @@ StringVector parseArgumentList(CScriptToken token);
  * @param globals   Global symbols
  * @return 
  */
-Ref<JSValue> evaluate (const char* script, Ref<IScope> globals)
+Ref<JSValue> evaluate (const char* script, Ref<JSObject> globals)
 {
     CScriptToken    token (script);
     
@@ -51,7 +51,11 @@ Ref<JSValue> evaluate (const char* script, Ref<IScope> globals)
     //Execution
     try
     {
-        return mvmExecute(code, globals, Ref<IScope>());
+        ExecutionContext    ec;
+        
+        ec.stack.push_back(globals);
+        return mvmExecRoutine(code, &ec, 1);
+        //return mvmExecute(code, globals, Ref<IScope>());
     }
     catch (const RuntimeError& e)
     {
@@ -65,9 +69,9 @@ Ref<JSValue> evaluate (const char* script, Ref<IScope> globals)
  * Creates the default global scope
  * @return 
  */
-Ref<GlobalScope> createDefaultGlobals()
+Ref<JSObject> createDefaultGlobals()
 {
-    auto    globals = GlobalScope::create();
+    auto    globals = JSObject::create();
     
     registerMvmFunctions(globals);
     registerFunctions(globals);
@@ -89,7 +93,7 @@ Ref<GlobalScope> createDefaultGlobals()
  */
 Ref<JSFunction> addNative (const std::string& szFunctionHeader, 
                            JSNativeFn pFn, 
-                           Ref<IScope> scope,
+                           Ref<JSObject> container,
                            bool isConst)
 {
     CScriptToken token(szFunctionHeader.c_str());
@@ -99,42 +103,17 @@ Ref<JSFunction> addNative (const std::string& szFunctionHeader,
     string funcName = token.text();
     token = token.match(LEX_ID);
     
-    Ref<JSObject>   container;
-
-    // Check for dots, we might want to do something like function String.substring ...
-    if (token.type() == '.')        //First dot, read at global scope
-    {
-        token = token.match('.');
-        Ref<JSValue> child = jsNull();
-        
-        if (scope->isDefined(funcName))
-            child = scope->get(funcName);
-            
-        // if it doesn't exist or it is not an object, make an object class
-        if (!child->isObject())
-        {
-            child = JSObject::create();
-            scope->newVar(funcName, child, isConst);
-        }
-        container = child.staticCast<JSObject>();
-
-        funcName = token.text();
-        token = token.match(LEX_ID);
-    }
-    
     //Next dots, read in previous objects
     while (token.type() == '.')
     {
         token = token.match('.');
-        Ref<JSValue> child = jsNull();
+        Ref<JSValue> child = container->readField(funcName);
         
-        child = container->readField(funcName);
-            
         // if it doesn't exist or it is not an object, make an object class
         if (!child->isObject())
         {
             child = JSObject::create();
-            scope->set(funcName, child);
+            container->writeField(funcName, child, isConst);
         }
         container = child.staticCast<JSObject>();
 
@@ -146,10 +125,7 @@ Ref<JSFunction> addNative (const std::string& szFunctionHeader,
                                                         parseArgumentList(token),
                                                         pFn);
 
-    if (container.notNull())
-        container->writeField(funcName, function, false);
-    else
-        scope->newVar(funcName, function, isConst);
+    container->writeField(funcName, function, isConst);
     
     return function;
 }
@@ -223,11 +199,11 @@ StringVector parseArgumentList(CScriptToken token)
  */
 Ref<JSFunction> addNative0 (const std::string& szName, 
                            JSNativeFn pFn, 
-                           Ref<IScope> scope)
+                           Ref<JSObject> container)
 {
     Ref<JSFunction> function = JSFunction::createNative(szName, StringVector(), pFn);
 
-    scope->newVar(szName, function, true);
+    container->writeField(szName, function, true);
     
     return function;
     
@@ -244,14 +220,14 @@ Ref<JSFunction> addNative0 (const std::string& szName,
 Ref<JSFunction> addNative1 (const std::string& szName, 
                             const std::string& p1, 
                            JSNativeFn pFn, 
-                           Ref<IScope> scope)
+                           Ref<JSObject> container)
 {
     StringVector    arguments;
     
     arguments.push_back(p1);
     Ref<JSFunction> function = JSFunction::createNative(szName, arguments, pFn);
 
-    scope->newVar(szName, function, true);
+    container->writeField(szName, function, true);
     
     return function;
 }
@@ -270,7 +246,7 @@ Ref<JSFunction> addNative2 (const std::string& szName,
                             const std::string& p1, 
                             const std::string& p2, 
                            JSNativeFn pFn, 
-                           Ref<IScope> scope)
+                           Ref<JSObject> container)
 {
     StringVector    arguments;
     
@@ -278,7 +254,7 @@ Ref<JSFunction> addNative2 (const std::string& szName,
     arguments.push_back(p2);
     Ref<JSFunction> function = JSFunction::createNative(szName, arguments, pFn);
 
-    scope->newVar(szName, function, true);
+    container->writeField(szName, function, true);
     
     return function;
 }

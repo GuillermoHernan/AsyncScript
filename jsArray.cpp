@@ -371,22 +371,22 @@ Ref<JSValue> JSArrayIterator::tail()
     return create (m_array, m_index+1);
 }
 
-Ref<JSValue> scArrayPush(FunctionScope* pScope)
+Ref<JSValue> scArrayPush(ExecutionContext* ec)
 {
-    auto    arr =  pScope->getThis().staticCast<JSArray>();
-    auto    val =  pScope->getParam("x");
+    auto    arr =  ec->getLastParam().staticCast<JSArray>();
+    auto    val =  ec->getParam(0);
     
     arr->push(val);
     
     return arr;
 }
 
-Ref<JSValue> scArrayIndexOf(FunctionScope* pScope)
+Ref<JSValue> scArrayIndexOf(ExecutionContext* ec)
 {
-    auto    arrVal =  pScope->getThis();
+    auto    arrVal =  ec->getLastParam();
     auto    arr =  arrVal.staticCast<JSArray>();
-    auto    searchElement =  pScope->getParam("searchElement");
-    auto    fromIndex =  pScope->getParam("fromIndex");
+    auto    searchElement =  ec->getParam(0);
+    auto    fromIndex =  ec->getParam(1);
 
     if (arrVal->isNull()) 
         return jsInt(-1);
@@ -432,10 +432,10 @@ std::string JSArray::join(Ref<JSArray> arr, Ref<JSValue> sep)
     return output.str();
 }
 
-Ref<JSValue>scArrayJoin(FunctionScope* pScope)
+Ref<JSValue>scArrayJoin(ExecutionContext* ec)
 {
-    auto    arr = pScope->getThis().staticCast<JSArray>();
-    auto    sep = pScope->getParam("separator");
+    auto    arr = ec->getLastParam().staticCast<JSArray>();
+    auto    sep = ec->getParam(0);
 
     return jsString( JSArray::join(arr, sep) );
 }
@@ -446,11 +446,11 @@ Ref<JSValue>scArrayJoin(FunctionScope* pScope)
  * @param pScope
  * @return 
  */
-Ref<JSValue>scArraySlice(FunctionScope* pScope)
+Ref<JSValue>scArraySlice(ExecutionContext* ec)
 {
-    Ref<JSArray>    arr = pScope->getThis().staticCast<JSArray>();
-    auto            begin = pScope->getParam("begin");
-    auto            end = pScope->getParam("end");
+    Ref<JSArray>    arr = ec->getLastParam().staticCast<JSArray>();
+    auto            begin = ec->getParam(0);
+    auto            end = ec->getParam(1);
     const size_t    iBegin = toSizeT( begin );
     size_t          iEnd = arr->length();
     
@@ -467,7 +467,7 @@ Ref<JSValue>scArraySlice(FunctionScope* pScope)
     return result;
 }
 
-Ref<JSValue> scArrayConstructor(FunctionScope* pScope)
+Ref<JSValue> scArrayConstructor(ExecutionContext* ec)
 {
     return JSArray::create();
 }

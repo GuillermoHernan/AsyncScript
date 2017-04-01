@@ -13,18 +13,18 @@ ast.cpp \
 parserResults.cpp \
 microVM.cpp \
 mvmDisassembly.cpp \
-mvmCodegen.cpp \
 scriptMain.cpp \
 mvmFunctions.cpp \
 semanticCheck.cpp \
-actorRuntime.cpp \
-asActors.cpp \
 executionScope.cpp \
 asObjects.cpp \
 asString.cpp \
 jsArray.cpp \
 ScriptPosition.cpp \
-ScriptException.cpp
+ScriptException.cpp \
+mvmCodegen.cpp 
+#actorRuntime.cpp \
+#asActors.cpp \
 
 OBJECTS=$(SOURCES:.cpp=.o)
 
@@ -38,7 +38,7 @@ Script: Script.o $(OBJECTS)
 
 %.o: %.cpp ascript_pch.hpp.gch
 	$(CC) $(CPPFLAGS) $< -o $@
-	
+
 ascript_pch.hpp.gch: ascript_pch.hpp OS_support.h
 	$(CC) $(CPPFLAGS) ascript_pch.hpp -o $@
 

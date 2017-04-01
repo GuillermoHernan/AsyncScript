@@ -42,40 +42,40 @@
 using namespace std;
 // ----------------------------------------------- Actual Functions
 
-Ref<JSValue> scMathRand(FunctionScope* pScope)
+Ref<JSValue> scMathRand(ExecutionContext* ec)
 {
     return jsDouble(double(rand()) / RAND_MAX);
 }
 
-Ref<JSValue> scMathRandInt(FunctionScope* pScope)
+Ref<JSValue> scMathRandInt(ExecutionContext* ec)
 {
-    const int min = toInt32(pScope->getParam("min"));
-    const int max = toInt32(pScope->getParam("max"));
+    const int min = toInt32(ec->getParam(0));
+    const int max = toInt32(ec->getParam(1));
     const int val = min + (int) (rand() % (1 + max - min));
     return jsInt(val);
 }
 
-Ref<JSValue> scCharToInt(FunctionScope* pScope)
+Ref<JSValue> scCharToInt(ExecutionContext* ec)
 {
-    string str = pScope->getParam("ch")->toString();
+    string str = ec->getParam(0)->toString();
     int val = 0;
     if (str.length() > 0)
         val = (int) str.c_str()[0];
     return jsInt(val);
 }
 
-Ref<JSValue> scIntegerParseInt(FunctionScope* pScope)
+Ref<JSValue> scIntegerParseInt(ExecutionContext* ec)
 {
     //TODO: Make it more standard compliant (octal support, return NaN if fails...)
     //We can reuse the code which parses numeric constants.
-    string str = pScope->getParam("str")->toString();
+    string str = ec->getParam(0)->toString();
     int val = strtol(str.c_str(), 0, 0);
     return jsInt(val);
 }
 
-Ref<JSValue> scIntegerValueOf(FunctionScope* pScope)
+Ref<JSValue> scIntegerValueOf(ExecutionContext* ec)
 {
-    string str = pScope->getParam("str")->toString();
+    string str = ec->getParam(0)->toString();
 
     int val = 0;
     if (str.length() == 1)
@@ -83,25 +83,25 @@ Ref<JSValue> scIntegerValueOf(FunctionScope* pScope)
     return jsInt(val);
 }
 
-Ref<JSValue> scJSONStringify(FunctionScope* pScope)
+Ref<JSValue> scJSONStringify(ExecutionContext* ec)
 {
     std::string result;
-    result = pScope->getParam("obj")->getJSON(0);
+    result = ec->getParam(0)->getJSON(0);
     return jsString(result);
 }
 
-Ref<JSValue> scEval(FunctionScope* pScope)
+Ref<JSValue> scEval(ExecutionContext* ec)
 {
-    std::string str = pScope->getParam("jsCode")->toString();
+    std::string str = ec->getParam(0)->toString();
 
     return evaluate (str.c_str(), createDefaultGlobals());
 }
 
-void registerDefaultClasses(Ref<IScope> scope)
+void registerDefaultClasses(Ref<JSObject> scope)
 {
-    scope->newVar("Object", JSObject::DefaultClass, true);
-    scope->newVar("String", JSString::StringClass, true);
-    scope->newVar("Array", JSArray::ArrayClass, true);
+    scope->writeField("Object", JSObject::DefaultClass, true);
+    scope->writeField("String", JSString::StringClass, true);
+    scope->writeField("Array", JSArray::ArrayClass, true);
 }
 
 // ----------------------------------------------- Register Functions
@@ -109,7 +109,7 @@ void registerDefaultClasses(Ref<IScope> scope)
  * Register default functions into the given scope.
  * @param scope
  */
-void registerFunctions(Ref<IScope> scope)
+void registerFunctions(Ref<JSObject> scope)
 {
     registerDefaultClasses(scope);
     

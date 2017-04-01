@@ -104,19 +104,19 @@ Ref<JSValue> JSClass::readField(const std::string& key)const
  * @param scope
  * @return 
  */
-Ref<JSValue> JSClass::call (Ref<FunctionScope> scope)
-{
-    auto result = m_constructor->call(scope);
-    
-    if (result.isNull() || !result->isObject())
-        rtError ("Constructor must return an object");
-    
-    auto newObj = result.staticCast<JSObject>();
-    
-    newObj->setClass (ref(this));
-    
-    return result;
-}
+//Ref<JSValue> JSClass::call (Ref<FunctionScope> scope)
+//{
+//    auto result = m_constructor->call(scope);
+//    
+//    if (result.isNull() || !result->isObject())
+//        rtError ("Constructor must return an object");
+//    
+//    auto newObj = result.staticCast<JSObject>();
+//    
+//    newObj->setClass (ref(this));
+//    
+//    return result;
+//}
 
 // JSObject
 //
@@ -259,11 +259,11 @@ StringSet JSObject::getFields(bool inherited)const
  */
 Ref<JSValue> JSObject::indexedRead(Ref<JSValue> index)
 {
-    auto fn = readField("indexedRead");
+    /*auto fn = readField("indexedRead");
     
     if (!fn->isNull())
         return callMemberFn(fn, index);
-    else
+    else */
         return readField(index->toString());
 }
 
@@ -274,11 +274,11 @@ Ref<JSValue> JSObject::indexedRead(Ref<JSValue> index)
  */
 Ref<JSValue> JSObject::indexedWrite(Ref<JSValue> index, Ref<JSValue> value)
 {
-    auto fn = readField("indexedWrite");
+    /*auto fn = readField("indexedWrite");
     
     if (!fn->isNull())
         return callMemberFn(fn, index, value);
-    else
+    else */
         return writeField(index->toString(), value, false);
 }
 
@@ -289,11 +289,11 @@ Ref<JSValue> JSObject::indexedWrite(Ref<JSValue> index, Ref<JSValue> value)
  */
 Ref<JSValue> JSObject::head()
 {
-    auto fn = readField("head");
+    /*auto fn = readField("head");
     
     if (!fn->isNull())
         return callMemberFn(fn);
-    else
+    else*/
         return ref(this);
 }
 
@@ -303,11 +303,11 @@ Ref<JSValue> JSObject::head()
  */
 Ref<JSValue> JSObject::tail()
 {
-    auto fn = readField("tail");
+    /*auto fn = readField("tail");
     
     if (!fn->isNull())
         return callMemberFn(fn);
-    else
+    else*/
         return jsNull();
 }
 
@@ -317,20 +317,20 @@ Ref<JSValue> JSObject::tail()
  * @param scope
  * @return 
  */
-Ref<JSValue> JSObject::call (Ref<FunctionScope> scope)
-{
-    auto fn = readField("call");
-    
-    if (!fn->isNull())
-    {
-        //Create a new scope, to map argument names to the new function.
-        auto newScope = FunctionScope::create(fn, ref(this), scope->getParams());
-        
-        return fn->call(newScope);
-    }
-    else
-        return jsNull();
-}
+//Ref<JSValue> JSObject::call (Ref<FunctionScope> scope)
+//{
+//    auto fn = readField("call");
+//    
+//    if (!fn->isNull())
+//    {
+//        //Create a new scope, to map argument names to the new function.
+//        auto newScope = FunctionScope::create(fn, ref(this), scope->getParams());
+//        
+//        return fn->call(newScope);
+//    }
+//    else
+//        return jsNull();
+//}
 
 /**
  * Copy constructor.
@@ -385,12 +385,12 @@ JSMutability JSObject::selectMutability(const JSObject& src, bool _mutable)
  * @param function
  * @return 
  */
-Ref<JSValue> JSObject::callMemberFn (Ref<JSValue> function)const
-{
-    auto    me = ref(const_cast<JSObject*>(this));
-    auto    fnScope = FunctionScope::create(function, me, ValueVector());
-    return function->call(fnScope);
-}
+//Ref<JSValue> JSObject::callMemberFn (Ref<JSValue> function)const
+//{
+//    auto    me = ref(const_cast<JSObject*>(this));
+//    auto    fnScope = FunctionScope::create(function, me, ValueVector());
+//    return function->call(fnScope);
+//}
 
 /**
  * Calls a member function defined in the script code.
@@ -398,15 +398,15 @@ Ref<JSValue> JSObject::callMemberFn (Ref<JSValue> function)const
  * @param function
  * @return 
  */
-Ref<JSValue> JSObject::callMemberFn (Ref<JSValue> function, Ref<JSValue> p1)const
-{
-    auto    me = ref(const_cast<JSObject*>(this));
-    ValueVector params;
-    params.push_back(p1);
-    
-    auto    fnScope = FunctionScope::create(function, me, params);
-    return function->call(fnScope);
-}
+//Ref<JSValue> JSObject::callMemberFn (Ref<JSValue> function, Ref<JSValue> p1)const
+//{
+//    auto    me = ref(const_cast<JSObject*>(this));
+//    ValueVector params;
+//    params.push_back(p1);
+//    
+//    auto    fnScope = FunctionScope::create(function, me, params);
+//    return function->call(fnScope);
+//}
 
 /**
  * Calls a member function defined in the script code.
@@ -414,18 +414,18 @@ Ref<JSValue> JSObject::callMemberFn (Ref<JSValue> function, Ref<JSValue> p1)cons
  * @param function
  * @return 
  */
-Ref<JSValue> JSObject::callMemberFn (Ref<JSValue> function, 
-                                     Ref<JSValue> p1,
-                                     Ref<JSValue> p2)const
-{
-    auto    me = ref(const_cast<JSObject*>(this));
-    ValueVector params;
-    params.push_back(p1);
-    params.push_back(p2);
-    
-    auto    fnScope = FunctionScope::create(function, me, params);
-    return function->call(fnScope);
-}
+//Ref<JSValue> JSObject::callMemberFn (Ref<JSValue> function, 
+//                                     Ref<JSValue> p1,
+//                                     Ref<JSValue> p2)const
+//{
+//    auto    me = ref(const_cast<JSObject*>(this));
+//    ValueVector params;
+//    params.push_back(p1);
+//    params.push_back(p2);
+//    
+//    auto    fnScope = FunctionScope::create(function, me, params);
+//    return function->call(fnScope);
+//}
 
 
 bool JSObject::isWritable(const std::string& key)const
@@ -447,11 +447,11 @@ bool JSObject::isWritable(const std::string& key)const
  */
 std::string JSObject::toString()const
 {
-    auto fn = readField ("toString");
+    /*auto fn = readField ("toString");
     
     if (!fn->isNull())
         return callMemberFn(fn)->toString();
-    else        
+    else*/        
         return std::string("[Object of ") + m_cls->toString() + "]";
 }
 
@@ -461,11 +461,11 @@ std::string JSObject::toString()const
  */
 bool JSObject::toBoolean()const
 {
-    auto fn = readField ("toBoolean");
+    /*auto fn = readField ("toBoolean");
     
     if (!fn->isNull())
         return callMemberFn(fn)->toBoolean();
-    else        
+    else  */      
         return true;
 }
 
@@ -475,14 +475,18 @@ bool JSObject::toBoolean()const
  */
 double JSObject::toDouble()const
 {
-    auto fn = readField ("toNumber");
+    /*auto fn = readField ("toNumber");
     
     if (!fn->isNull())
         return callMemberFn(fn)->toDouble();
-    else        
+    else */       
         return getNaN();
 }
 
+Ref<JSValue> JSObject::toFunction()
+{
+    return jsNull();
+}
 
 /**
  * Reads a field of the object. If it does not exist, it returns 'null'
@@ -576,43 +580,43 @@ std::string JSObject::getJSON(int indent)
     return output.str();
 }
 
-Ref<JSValue> scObjectFreeze(FunctionScope* pScope)
+Ref<JSValue> scObjectFreeze(ExecutionContext* ec)
 {
-    auto obj = pScope->getThis();
+    auto obj = ec->getLastParam();
     
     return obj->freeze();
 }
 
-Ref<JSValue> scObjectDeepFreeze(FunctionScope* pScope)
+Ref<JSValue> scObjectDeepFreeze(ExecutionContext* ec)
 {
-    auto obj = pScope->getThis();
+    auto obj = ec->getLastParam();
     
     return obj->deepFreeze();
 }
 
-Ref<JSValue> scObjectUnfreeze(FunctionScope* pScope)
+Ref<JSValue> scObjectUnfreeze(ExecutionContext* ec)
 {
-    auto obj = pScope->getThis();
-    auto forceClone = pScope->getParam("forceClone");
+    auto obj = ec->getLastParam();
+    auto forceClone = ec->getParam(0);
     
     return obj->unFreeze(forceClone->toBoolean());
 }
 
-Ref<JSValue> scObjectIsFrozen(FunctionScope* pScope)
+Ref<JSValue> scObjectIsFrozen(ExecutionContext* ec)
 {
-    auto obj = pScope->getThis();
+    auto obj = ec->getLastParam();
     
     return jsBool (!obj->isMutable());
 }
 
-Ref<JSValue> scObjectIsDeepFrozen(FunctionScope* pScope)
+Ref<JSValue> scObjectIsDeepFrozen(ExecutionContext* ec)
 {
-    auto obj = pScope->getThis();
+    auto obj = ec->getLastParam();
     
     return jsBool (obj->getMutability() == MT_DEEPFROZEN);
 }
 
-Ref<JSValue> scObjectConstructor(FunctionScope* pScope)
+Ref<JSValue> scObjectConstructor(ExecutionContext* ec)
 {
     return JSObject::create();
 }

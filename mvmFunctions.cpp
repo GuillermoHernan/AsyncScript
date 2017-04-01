@@ -22,9 +22,9 @@ using namespace std;
  * @param pScope
  * @return 
  */
-Ref<JSValue> mvmNewArray (FunctionScope* pScope)
+Ref<JSValue> mvmNewArray (ExecutionContext* ec)
 {
-    const size_t size = toSizeT( pScope->getThis() );
+    const size_t size = toSizeT( ec->getParam(0) );
     
     return JSArray::create(size);
 }
@@ -34,9 +34,9 @@ Ref<JSValue> mvmNewArray (FunctionScope* pScope)
  * @param pScope
  * @return 
  */
-Ref<JSValue> mvmInc (FunctionScope* pScope)
+Ref<JSValue> mvmInc (ExecutionContext* ec)
 {
-    return jsDouble(pScope->getThis()->toDouble() + 1);
+    return jsDouble(ec->getParam(0)->toDouble() + 1);
 }
 
 /**
@@ -44,9 +44,9 @@ Ref<JSValue> mvmInc (FunctionScope* pScope)
  * @param pScope
  * @return 
  */
-Ref<JSValue> mvmDec (FunctionScope* pScope)
+Ref<JSValue> mvmDec (ExecutionContext* ec)
 {
-    return jsDouble(pScope->getThis()->toDouble() - 1);
+    return jsDouble(ec->getParam(0)->toDouble() - 1);
 }
 
 /**
@@ -54,9 +54,9 @@ Ref<JSValue> mvmDec (FunctionScope* pScope)
  * @param pScope
  * @return 
  */
-Ref<JSValue> mvmNegate (FunctionScope* pScope)
+Ref<JSValue> mvmNegate (ExecutionContext* ec)
 {
-    return jsDouble(- pScope->getThis()->toDouble());
+    return jsDouble(- ec->getParam(0)->toDouble());
 }
 
 /**
@@ -64,10 +64,10 @@ Ref<JSValue> mvmNegate (FunctionScope* pScope)
  * @param pScope
  * @return 
  */
-Ref<JSValue> mvmAdd (FunctionScope* pScope)
+Ref<JSValue> mvmAdd (ExecutionContext* ec)
 {
-    Ref<JSValue> opA = pScope->getThis();
-    Ref<JSValue> opB = pScope->getParam("b");
+    Ref<JSValue> opA = ec->getParam(0);
+    Ref<JSValue> opB = ec->getParam(1);
     
     const JSValueTypes typeA = opA->getType();
     const JSValueTypes typeB = opB->getType();
@@ -83,10 +83,10 @@ Ref<JSValue> mvmAdd (FunctionScope* pScope)
  * @param pScope
  * @return 
  */
-Ref<JSValue> mvmSub (FunctionScope* pScope)
+Ref<JSValue> mvmSub (ExecutionContext* ec)
 {
-    const double valA = pScope->getThis()->toDouble();
-    const double valB = pScope->getParam("b")->toDouble();
+    const double valA = ec->getParam(0)->toDouble();
+    const double valB = ec->getParam(1)->toDouble();
     
     return jsDouble( valA - valB );
 }
@@ -96,10 +96,10 @@ Ref<JSValue> mvmSub (FunctionScope* pScope)
  * @param pScope
  * @return 
  */
-Ref<JSValue> mvmMultiply (FunctionScope* pScope)
+Ref<JSValue> mvmMultiply (ExecutionContext* ec)
 {
-    const double valA = pScope->getThis()->toDouble();
-    const double valB = pScope->getParam("b")->toDouble();
+    const double valA = ec->getParam(0)->toDouble();
+    const double valB = ec->getParam(1)->toDouble();
     
     return jsDouble( valA * valB );
 }
@@ -109,10 +109,10 @@ Ref<JSValue> mvmMultiply (FunctionScope* pScope)
  * @param pScope
  * @return 
  */
-Ref<JSValue> mvmDivide (FunctionScope* pScope)
+Ref<JSValue> mvmDivide (ExecutionContext* ec)
 {
-    const double valA = pScope->getThis()->toDouble();
-    const double valB = pScope->getParam("b")->toDouble();
+    const double valA = ec->getParam(0)->toDouble();
+    const double valB = ec->getParam(1)->toDouble();
     
     return jsDouble( valA / valB );
 }
@@ -122,10 +122,10 @@ Ref<JSValue> mvmDivide (FunctionScope* pScope)
  * @param pScope
  * @return 
  */
-Ref<JSValue> mvmModulus (FunctionScope* pScope)
+Ref<JSValue> mvmModulus (ExecutionContext* ec)
 {
-    const double valA = pScope->getThis()->toDouble();
-    const double valB = pScope->getParam("b")->toDouble();
+    const double valA = ec->getParam(0)->toDouble();
+    const double valB = ec->getParam(1)->toDouble();
     
     return jsDouble( fmod(valA, valB) );
 }
@@ -135,10 +135,10 @@ Ref<JSValue> mvmModulus (FunctionScope* pScope)
  * @param pScope
  * @return 
  */
-Ref<JSValue> mvmPower (FunctionScope* pScope)
+Ref<JSValue> mvmPower (ExecutionContext* ec)
 {
-    const double valA = pScope->getThis()->toDouble();
-    const double valB = pScope->getParam("b")->toDouble();
+    const double valA = ec->getParam(0)->toDouble();
+    const double valB = ec->getParam(1)->toDouble();
     
     return jsDouble( pow(valA, valB) );
 }
@@ -148,9 +148,9 @@ Ref<JSValue> mvmPower (FunctionScope* pScope)
  * @param pScope
  * @return 
  */
-Ref<JSValue> mvmBinNot (FunctionScope* pScope)
+Ref<JSValue> mvmBinNot (ExecutionContext* ec)
 {
-    const int valA = toInt32( pScope->getThis() );
+    const int valA = toInt32( ec->getParam(0) );
     
     return jsInt(~valA);
 }
@@ -160,10 +160,10 @@ Ref<JSValue> mvmBinNot (FunctionScope* pScope)
  * @param pScope
  * @return 
  */
-Ref<JSValue> mvmBinAnd (FunctionScope* pScope)
+Ref<JSValue> mvmBinAnd (ExecutionContext* ec)
 {
-    const int valA = toInt32( pScope->getThis() );
-    const int valB = toInt32( pScope->getParam("b") );
+    const int valA = toInt32( ec->getParam(0) );
+    const int valB = toInt32( ec->getParam(1) );
     
     return jsInt (valA & valB);
 }
@@ -173,10 +173,10 @@ Ref<JSValue> mvmBinAnd (FunctionScope* pScope)
  * @param pScope
  * @return 
  */
-Ref<JSValue> mvmBinOr (FunctionScope* pScope)
+Ref<JSValue> mvmBinOr (ExecutionContext* ec)
 {
-    const int valA = toInt32( pScope->getThis() );
-    const int valB = toInt32( pScope->getParam("b") );
+    const int valA = toInt32( ec->getParam(0) );
+    const int valB = toInt32( ec->getParam(1) );
     
     return jsInt (valA | valB);
 }
@@ -186,10 +186,10 @@ Ref<JSValue> mvmBinOr (FunctionScope* pScope)
  * @param pScope
  * @return 
  */
-Ref<JSValue> mvmBinXor (FunctionScope* pScope)
+Ref<JSValue> mvmBinXor (ExecutionContext* ec)
 {
-    const int valA = toInt32( pScope->getThis() );
-    const int valB = toInt32( pScope->getParam("b") );
+    const int valA = toInt32( ec->getParam(0) );
+    const int valB = toInt32( ec->getParam(1) );
     
     return jsInt (valA ^ valB);
 }
@@ -199,9 +199,9 @@ Ref<JSValue> mvmBinXor (FunctionScope* pScope)
  * @param pScope
  * @return 
  */
-Ref<JSValue> mvmLogicNot (FunctionScope* pScope)
+Ref<JSValue> mvmLogicNot (ExecutionContext* ec)
 {
-    const bool valA = pScope->getThis()->toBoolean();
+    const bool valA = ec->getParam(0)->toBoolean();
     
     return jsBool (!valA);
 }
@@ -211,10 +211,10 @@ Ref<JSValue> mvmLogicNot (FunctionScope* pScope)
  * @param pScope
  * @return 
  */
-Ref<JSValue> mvmLshift (FunctionScope* pScope)
+Ref<JSValue> mvmLshift (ExecutionContext* ec)
 {
-    const int valA = toInt32( pScope->getThis() );
-    const unsigned valB = unsigned(toInt32( pScope->getParam("b")));
+    const int valA = toInt32( ec->getParam(0) );
+    const unsigned valB = unsigned(toInt32( ec->getParam(1)));
     
     return jsInt (valA << valB);
 }
@@ -224,10 +224,10 @@ Ref<JSValue> mvmLshift (FunctionScope* pScope)
  * @param pScope
  * @return 
  */
-Ref<JSValue> mvmRshift (FunctionScope* pScope)
+Ref<JSValue> mvmRshift (ExecutionContext* ec)
 {
-    const int valA = toInt32( pScope->getThis() );
-    const unsigned valB = unsigned(toInt32 (pScope->getParam("b")));
+    const int valA = toInt32( ec->getParam(0) );
+    const unsigned valB = unsigned(toInt32 (ec->getParam(1)));
     
     return jsInt (valA >> valB);
 }
@@ -237,10 +237,10 @@ Ref<JSValue> mvmRshift (FunctionScope* pScope)
  * @param pScope
  * @return 
  */
-Ref<JSValue> mvmRshiftu (FunctionScope* pScope)
+Ref<JSValue> mvmRshiftu (ExecutionContext* ec)
 {
-    const unsigned valA = unsigned(toInt32( pScope->getThis() ));
-    const unsigned valB = unsigned(toInt32( pScope->getParam("b")));
+    const unsigned valA = unsigned(toInt32( ec->getParam(0) ));
+    const unsigned valB = unsigned(toInt32( ec->getParam(1)));
     
     return jsDouble (double(valA >> valB));
 }
@@ -250,9 +250,9 @@ Ref<JSValue> mvmRshiftu (FunctionScope* pScope)
  * @param pScope
  * @return 
  */
-Ref<JSValue> mvmHead (FunctionScope* pScope)
+Ref<JSValue> mvmHead (ExecutionContext* ec)
 {    
-    return pScope->getThis()->head();
+    return ec->getParam(0)->head();
 }
 
 /**
@@ -260,9 +260,9 @@ Ref<JSValue> mvmHead (FunctionScope* pScope)
  * @param pScope
  * @return 
  */
-Ref<JSValue> mvmTail (FunctionScope* pScope)
+Ref<JSValue> mvmTail (ExecutionContext* ec)
 {    
-    return pScope->getThis()->tail();
+    return ec->getParam(0)->tail();
 }
 
 /**
@@ -289,10 +289,10 @@ double jsCompare(Ref<JSValue> opA, Ref<JSValue> opB)
  * @param pScope
  * @return 
  */
-Ref<JSValue> mvmLess (FunctionScope* pScope)
+Ref<JSValue> mvmLess (ExecutionContext* ec)
 {
-    Ref<JSValue> opA = pScope->getThis();
-    Ref<JSValue> opB = pScope->getParam("b");
+    Ref<JSValue> opA = ec->getParam(0);
+    Ref<JSValue> opB = ec->getParam(1);
     
     if (opA->isNull() || opB->isNull())
         return jsFalse();
@@ -305,10 +305,10 @@ Ref<JSValue> mvmLess (FunctionScope* pScope)
  * @param pScope
  * @return 
  */
-Ref<JSValue> mvmGreater (FunctionScope* pScope)
+Ref<JSValue> mvmGreater (ExecutionContext* ec)
 {
-    Ref<JSValue> opA = pScope->getThis();
-    Ref<JSValue> opB = pScope->getParam("b");
+    Ref<JSValue> opA = ec->getParam(0);
+    Ref<JSValue> opB = ec->getParam(1);
     
     if (opA->isNull() || opB->isNull())
         return jsFalse();
@@ -321,10 +321,10 @@ Ref<JSValue> mvmGreater (FunctionScope* pScope)
  * @param pScope
  * @return 
  */
-Ref<JSValue> mvmLequal (FunctionScope* pScope)
+Ref<JSValue> mvmLequal (ExecutionContext* ec)
 {
-    Ref<JSValue> opA = pScope->getThis();
-    Ref<JSValue> opB = pScope->getParam("b");
+    Ref<JSValue> opA = ec->getParam(0);
+    Ref<JSValue> opB = ec->getParam(1);
     
     if (opA->isNull() || opB->isNull())
         return jsFalse();
@@ -337,10 +337,10 @@ Ref<JSValue> mvmLequal (FunctionScope* pScope)
  * @param pScope
  * @return 
  */
-Ref<JSValue> mvmGequal (FunctionScope* pScope)
+Ref<JSValue> mvmGequal (ExecutionContext* ec)
 {
-    Ref<JSValue> opA = pScope->getThis();
-    Ref<JSValue> opB = pScope->getParam("b");
+    Ref<JSValue> opA = ec->getParam(0);
+    Ref<JSValue> opB = ec->getParam(1);
     
     if (opA->isNull() || opB->isNull())
         return jsFalse();
@@ -360,10 +360,10 @@ bool mvmAreEqual (Ref<JSValue> opA, Ref<JSValue> opB)
     else
         return jsCompare(opA, opB) == 0;
 }
-Ref<JSValue> mvmAreEqual (FunctionScope* pScope)
+Ref<JSValue> mvmAreEqual (ExecutionContext* ec)
 {
-    Ref<JSValue> opA = pScope->getThis();
-    Ref<JSValue> opB = pScope->getParam("b");
+    Ref<JSValue> opA = ec->getParam(0);
+    Ref<JSValue> opB = ec->getParam(1);
  
     return jsBool (mvmAreEqual(opA, opB));
 }
@@ -382,10 +382,10 @@ bool mvmAreTypeEqual (Ref<JSValue> opA, Ref<JSValue> opB)
     else
         return jsCompare(opA, opB) == 0;
 }
-Ref<JSValue> mvmAreTypeEqual (FunctionScope* pScope)
+Ref<JSValue> mvmAreTypeEqual (ExecutionContext* ec)
 {
-    Ref<JSValue> opA = pScope->getThis();
-    Ref<JSValue> opB = pScope->getParam("b");
+    Ref<JSValue> opA = ec->getParam(0);
+    Ref<JSValue> opB = ec->getParam(1);
 
     return jsBool (mvmAreTypeEqual(opA, opB));
 }
@@ -395,10 +395,10 @@ Ref<JSValue> mvmAreTypeEqual (FunctionScope* pScope)
  * @param pScope
  * @return 
  */
-Ref<JSValue> mvmNotEqual (FunctionScope* pScope)
+Ref<JSValue> mvmNotEqual (ExecutionContext* ec)
 {
-    Ref<JSValue> opA = pScope->getThis();
-    Ref<JSValue> opB = pScope->getParam("b");
+    Ref<JSValue> opA = ec->getParam(0);
+    Ref<JSValue> opB = ec->getParam(1);
     
     if (opA->isNull() || opB->isNull())
         return jsBool( !(opA->isNull() && opB->isNull()) );
@@ -411,10 +411,10 @@ Ref<JSValue> mvmNotEqual (FunctionScope* pScope)
  * @param pScope
  * @return 
  */
-Ref<JSValue> mvmNotTypeEqual (FunctionScope* pScope)
+Ref<JSValue> mvmNotTypeEqual (ExecutionContext* ec)
 {
-    Ref<JSValue> opA = pScope->getThis();
-    Ref<JSValue> opB = pScope->getParam("b");
+    Ref<JSValue> opA = ec->getParam(0);
+    Ref<JSValue> opB = ec->getParam(1);
     
     if (opA->getType() != opB->getType() )
         return jsTrue();
@@ -424,44 +424,44 @@ Ref<JSValue> mvmNotTypeEqual (FunctionScope* pScope)
         return jsBool (jsCompare(opA, opB) != 0);
 }
 
-Ref<JSValue> mvmToString (FunctionScope* pScope)
+Ref<JSValue> mvmToString (ExecutionContext* ec)
 {
-    return jsString(pScope->getThis()->toString());
+    return jsString(ec->getParam(0)->toString());
 }
 
-Ref<JSValue> mvmToBoolean (FunctionScope* pScope)
+Ref<JSValue> mvmToBoolean (ExecutionContext* ec)
 {
-    return jsBool(pScope->getThis()->toBoolean());
+    return jsBool(ec->getParam(0)->toBoolean());
 }
 
-Ref<JSValue> mvmToNumber (FunctionScope* pScope)
+Ref<JSValue> mvmToNumber (ExecutionContext* ec)
 {
-    return jsDouble(pScope->getThis()->toDouble());
+    return jsDouble(ec->getParam(0)->toDouble());
 }
 
-Ref<JSValue> mvmIndexedRead (FunctionScope* pScope)
+Ref<JSValue> mvmIndexedRead (ExecutionContext* ec)
 {
-    auto index = pScope->getParam("index");
-    return pScope->getThis()->indexedRead(index);
+    auto index = ec->getParam(1);
+    return ec->getParam(0)->indexedRead(index);
 }
 
-Ref<JSValue> mvmIndexedWrite (FunctionScope* pScope)
+Ref<JSValue> mvmIndexedWrite (ExecutionContext* ec)
 {
-    auto index = pScope->getParam("index");
-    auto value = pScope->getParam("value");
-    return pScope->getThis()->indexedWrite(index, value);
+    auto index = ec->getParam(1);
+    auto value = ec->getParam(2);
+    return ec->getParam(0)->indexedWrite(index, value);
 }
 
-Ref<JSValue> mvmCall (FunctionScope* pScope)
-{
-    return pScope->getThis()->call(pScope);
-}
+//Ref<JSValue> mvmCall (ExecutionContext* ec)
+//{
+//    return ec->getThis()->call(pScope);
+//}
 
 /**
  * Registers MVM primitive operations to the given scope.
  * @param scope
  */
-void registerMvmFunctions(Ref<IScope> scope)
+void registerMvmFunctions(Ref<JSObject> scope)
 {
     //addNative0("@newObj", mvmNewObj, scope);
     addNative0("@newArray", mvmNewArray, scope);
@@ -505,5 +505,5 @@ void registerMvmFunctions(Ref<IScope> scope)
     addNative0("@toNumber", mvmToNumber, scope);
     addNative1("@indexedRead", "index", mvmIndexedRead, scope);
     addNative2("@indexedWrite", "index", "value", mvmIndexedWrite, scope);
-    addNative0("@call", mvmCall, scope);
+    //addNative0("@call", mvmCall, scope);
 }

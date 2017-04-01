@@ -34,8 +34,10 @@
 #include "jsVars.h"
 #include <string>
 
+class JSObject;
+
 /// Register useful functions with the TinyJS interpreter
-void registerFunctions(Ref<IScope> scope);
+void registerFunctions(Ref<JSObject> scope);
 
 
 #endif

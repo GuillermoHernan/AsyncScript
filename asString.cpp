@@ -101,20 +101,20 @@ Ref<JSValue> JSString::indexedRead(Ref<JSValue> index)
 }
 
 
-Ref<JSValue> scStringIndexOf(FunctionScope* pScope)
+Ref<JSValue> scStringIndexOf(ExecutionContext* ec)
 {
-    string str = pScope->getThis()->toString();
-    string search = pScope->getParam("search")->toString();
+    string str = ec->getLastParam()->toString();
+    string search = ec->getParam(0)->toString();
     size_t p = str.find(search);
     int val = (p == string::npos) ? -1 : p;
     return jsInt(val);
 }
 
-Ref<JSValue> scStringSubstring(FunctionScope* pScope)
+Ref<JSValue> scStringSubstring(ExecutionContext* ec)
 {
-    string str = pScope->getThis()->toString();
-    const size_t lo = toSizeT(pScope->getParam("lo"));
-    const size_t hi = toSizeT(pScope->getParam("hi"));
+    string str = ec->getLastParam()->toString();
+    const size_t lo = toSizeT(ec->getParam(0));
+    const size_t hi = toSizeT(ec->getParam(1));
 
     size_t l = hi - lo;
     if (l > 0 && lo >= 0 && lo + l <= str.length())
@@ -123,26 +123,26 @@ Ref<JSValue> scStringSubstring(FunctionScope* pScope)
         return jsString("");
 }
 
-Ref<JSValue> scStringCharAt(FunctionScope* pScope)
+Ref<JSValue> scStringCharAt(ExecutionContext* ec)
 {
-    Ref<JSString> str = pScope->getThis().staticCast<JSString>();
+    Ref<JSString> str = ec->getLastParam().staticCast<JSString>();
     
-    return str->indexedRead( pScope->getParam("pos") );
+    return str->indexedRead( ec->getParam(0) );
 }
 
-Ref<JSValue> scStringCharCodeAt(FunctionScope* pScope)
+Ref<JSValue> scStringCharCodeAt(ExecutionContext* ec)
 {
-    string str = scStringCharAt(pScope)->toString();
+    string str = scStringCharAt(ec)->toString();
     if (!str.empty())
         return jsInt(str[0]);
     else
         return jsInt(0);
 }
 
-Ref<JSValue> scStringSplit(FunctionScope* pScope)
+Ref<JSValue> scStringSplit(ExecutionContext* ec)
 {
-    string str = pScope->getThis()->toString();
-    string sep = pScope->getParam("separator")->toString();
+    string str = ec->getLastParam()->toString();
+    string sep = ec->getParam(0)->toString();
     Ref<JSArray> result = JSArray::create();
 
     size_t pos = str.find(sep);
@@ -159,15 +159,15 @@ Ref<JSValue> scStringSplit(FunctionScope* pScope)
     return result;
 }
 
-Ref<JSValue> scStringFromCharCode(FunctionScope* pScope)
+Ref<JSValue> scStringFromCharCode(ExecutionContext* ec)
 {
     char str[2];
-    str[0] = (char)toInt32( pScope->getParam("char"));
+    str[0] = (char)toInt32( ec->getParam(0));
     str[1] = 0;
     return jsString(str);
 }
 
-Ref<JSValue> scStringConstructor(FunctionScope* pScope)
+Ref<JSValue> scStringConstructor(ExecutionContext* ec)
 {
     return jsString("");
 }

@@ -3,8 +3,9 @@
 #pragma once
 
 #include "jsVars.h"
+#include "asObjects.h"
 
 /// Register useful math. functions with the TinyJS interpreter
-extern void registerMathFunctions(Ref<IScope> scope);
+extern void registerMathFunctions(Ref<JSObject> scope);
 
 #endif

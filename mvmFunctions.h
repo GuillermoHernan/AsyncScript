@@ -13,8 +13,9 @@
 #pragma once
 
 #include "jsVars.h"
+#include "asObjects.h"
 
-void registerMvmFunctions(Ref<IScope> scope);
+void registerMvmFunctions(Ref<JSObject> scope);
 
 bool mvmAreEqual (Ref<JSValue> opA, Ref<JSValue> opB);
 bool mvmAreTypeEqual (Ref<JSValue> opA, Ref<JSValue> opB);

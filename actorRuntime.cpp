@@ -18,7 +18,7 @@ using namespace std;
 
 void execMessageLoop (Ref<ActorRuntime> runtime, CodeMap* pMap);
 
-Ref<JSValue>    connectOperator (FunctionScope* pScope);
+Ref<JSValue>    connectOperator (ExecutionContext* ec);
 
 
 /**
@@ -58,7 +58,7 @@ public:
      * @param pScope
      * @return 
      */
-    static Ref<JSValue> routineActorExec (FunctionScope* pScope)
+    static Ref<JSValue> routineActorExec (ExecutionContext* ec)
     {
         auto actor = pScope->getThis().staticCast<RoutineActor>();
         auto actorRef = AsActorRef::create(actor);
@@ -122,10 +122,10 @@ void execMessageLoop (Ref<ActorRuntime> runtime, CodeMap* pMap)
  * @param pScope
  * @return 
  */
-Ref<JSValue> connectOperator (FunctionScope* pScope)
+Ref<JSValue> connectOperator (ExecutionContext* ec)
 {
     auto runtime = ActorRuntime::getRuntime(pScope);
-    auto src = pScope->getParam("src");
+    auto src = ec->getParam("src");
     auto dst = pScope->getThis();
     
     if (src->getType() != VT_OUTPUT_EP_REF)
@@ -225,14 +225,14 @@ Ref<JSValue> actorConstructor(Ref<AsActorClass> actorClass, Ref<FunctionScope> s
  * @param pScope
  * @return 
  */
-Ref<JSValue> actorChildStoppedDefaultHandler(FunctionScope* pScope)
+Ref<JSValue> actorChildStoppedDefaultHandler(ExecutionContext* ec)
 {
     auto actor = pScope->getThis().staticCast<AsActor>();
     auto actorRef = AsActorRef::create(actor);
     auto runtime = ActorRuntime::getRuntime(pScope);
     
-    auto result = pScope->getParam("result");
-    auto errVal = pScope->getParam("error");
+    auto result = ec->getParam("result");
+    auto errVal = ec->getParam("error");
     
     runtime->stopActor(actorRef, result, errVal);
 

@@ -112,23 +112,34 @@ string disassembly8bitInst (int opCode, const ValueVector& constants)
         case OC_CP+1:       return "CP(1)";
         case OC_CP+2:       return "CP(2)";
         case OC_CP+3:       return "CP(3)";
+        case OC_CP+4:       return "CP(4)";
+        case OC_CP+5:       return "CP(5)";
+        case OC_CP+6:       return "CP(6)";
+        case OC_CP+7:       return "CP(7)";
+        case OC_WR+1:       return "WR(1)";
+        case OC_WR+2:       return "WR(2)";
+        case OC_WR+3:       return "WR(3)";
+        case OC_WR+4:       return "WR(4)";
+        case OC_WR+5:       return "WR(5)";
+        case OC_WR+6:       return "WR(6)";
+        case OC_WR+7:       return "WR(7)";
         case OC_SWAP:       return "SWAP";
         case OC_POP:        return "POP";
-        case OC_PUSH_SCOPE: return "PUSH_SCOPE";
-        case OC_POP_SCOPE:  return "POP_SCOPE";
-        case OC_RD_LOCAL:   return "RD_LOCAL";
-        case OC_WR_LOCAL:   return "WR_LOCAL";
-        case OC_RD_GLOBAL:      return "RD_GLOBAL";
-        case OC_WR_GLOBAL:      return "WR_GLOBAL";
+//        case OC_PUSH_SCOPE: return "PUSH_SCOPE";
+//        case OC_POP_SCOPE:  return "POP_SCOPE";
+//        case OC_RD_LOCAL:   return "RD_LOCAL";
+//        case OC_WR_LOCAL:   return "WR_LOCAL";
+//        case OC_RD_GLOBAL:      return "RD_GLOBAL";
+//        case OC_WR_GLOBAL:      return "WR_GLOBAL";
         case OC_RD_FIELD:       return "RD_FIELD";
         case OC_WR_FIELD:       return "WR_FIELD";
         case OC_RD_INDEX:       return "RD_INDEX";
         case OC_WR_INDEX:       return "WR_INDEX";
-        case OC_NEW_VAR:        return "NEW_VAR";
-        case OC_NEW_CONST:      return "NEW_CONST";
+//        case OC_NEW_VAR:        return "NEW_VAR";
+//        case OC_NEW_CONST:      return "NEW_CONST";
         case OC_NEW_CONST_FIELD:return "NEW_CONST_FIELD";
-        case OC_CP_AUX:         return "CP_AUX";
-        case OC_PUSH_AUX:       return "PUSH_AUX";
+//        case OC_CP_AUX:         return "CP_AUX";
+//        case OC_PUSH_AUX:       return "PUSH_AUX";
         case OC_NOP:            return "NOP";
         default:
             return "BAD_OP_CODE_8";
@@ -152,6 +163,20 @@ string disassembly16bitInst (int opCode, const ValueVector& constants)
         ostringstream   output;
         
         output << "CALL(" << (opCode + OC_CALL_MAX + 1) << ")";
+        return output.str();
+    }
+    else if (opCode <= OC16_CP_MAX)
+    {
+        ostringstream   output;
+        
+        output << "CP(" << ((opCode-OC16_CP) + OC_CP_MAX + 1) << ")";
+        return output.str();
+    }
+    else if (opCode <= OC16_WR_MAX)
+    {
+        ostringstream   output;
+        
+        output << "WR(" << ((opCode-OC16_WR) + OC_WR_MAX + 1) << ")";
         return output.str();
     }
     else

@@ -22,6 +22,7 @@
 class CScriptToken;
 struct IScope;
 class FunctionScope;
+class ExecutionContext;
 
 /**
  * Enumeration of basic Javascript value types.
@@ -40,6 +41,7 @@ enum JSValueTypes
     VT_ARRAY,
     VT_ACTOR,
     VT_FUNCTION,
+    VT_CLOSURE,
     VT_ACTOR_CLASS,
     VT_INPUT_EP,
     VT_OUTPUT_EP,
@@ -85,6 +87,8 @@ public:
     virtual bool toBoolean()const = 0;
     virtual double toDouble()const = 0;
 
+    virtual Ref<JSValue> toFunction() = 0;
+
     virtual Ref<JSValue> readField(const std::string& key)const;
     virtual Ref<JSValue> writeField(const std::string& key, Ref<JSValue> value, bool isConst) = 0;
     virtual Ref<JSValue> deleteField(const std::string& key) = 0;
@@ -96,7 +100,7 @@ public:
     virtual Ref<JSValue> head() = 0;
     virtual Ref<JSValue> tail() = 0;    
     
-    virtual Ref<JSValue> call (Ref<FunctionScope> scope);
+    //virtual Ref<JSValue> call (Ref<FunctionScope> scope);
 
     virtual std::string getJSON(int indent) = 0;
     
@@ -213,6 +217,11 @@ public:
     virtual double toDouble()const
     {
         return getNaN();
+    }
+    
+    virtual Ref<JSValue> toFunction()override
+    {
+        return jsNull();
     }
 
     virtual Ref<JSValue> writeField(const std::string& key, Ref<JSValue> value, bool isConst)
@@ -405,7 +414,7 @@ class FunctionScope;
 
 /// Pointer to native function type. 
 /// Native functions must have this signature
-typedef Ref<JSValue> (*JSNativeFn)(FunctionScope* var);
+typedef Ref<JSValue> (*JSNativeFn)(ExecutionContext* var);
 
 /**
  * Javascript function class.
@@ -454,6 +463,12 @@ public:
     // JSValue
     /////////////////////////////////////////
     virtual std::string toString()const;
+    
+    virtual Ref<JSValue> toFunction()override
+    {
+        return ref(this);
+    }
+
 
     //TODO: adding functions to the JSON yields invalid JSON. But it is a valuable
     //debug information. Add some kind of flag to enable / disable it.
@@ -467,7 +482,7 @@ public:
         return VT_FUNCTION;
     }
     
-    virtual Ref<JSValue> call (Ref<FunctionScope> scope);
+    //virtual Ref<JSValue> call (Ref<FunctionScope> scope);
     
     /////////////////////////////////////////
 
@@ -482,4 +497,35 @@ private:
     StringVector m_params;
     Ref<RefCountObj> m_codeMVM;
     JSNativeFn m_pNative;
+};
+
+/**
+ * A closure contains a function, and a reference to environment on
+ * which it has been created.
+ */
+class JSClosure : public JSValueBase<VT_CLOSURE>
+{
+public:
+    static Ref<JSClosure> create (Ref<JSFunction> fn, Ref<JSValue> env);
+    
+    Ref<JSFunction> getFunction()const 
+    {
+        return m_fn;
+    }
+    
+    Ref<JSValue> getEnv()const
+    {
+        return m_env;
+    }
+    
+    virtual Ref<JSValue> toFunction()override
+    {
+        return ref(this);
+    }
+    
+private:
+    JSClosure (Ref<JSFunction> fn, Ref<JSValue> env);
+
+    Ref<JSFunction> m_fn;
+    Ref<JSValue> m_env;
 };

@@ -14,11 +14,12 @@
 
 #include "jsVars.h"
 #include "executionScope.h"
+#include "asObjects.h"
 #include <string>
 
-Ref<JSValue>    evaluate (const char* script, Ref<IScope> globals);
+Ref<JSValue>    evaluate (const char* script, Ref<JSObject> globals);
 
-Ref<GlobalScope> createDefaultGlobals();
+Ref<JSObject> createDefaultGlobals();
 
 Ref<JSFunction> addNative (const std::string& szFunctionHeader, 
                            JSNativeFn pFn,
@@ -26,23 +27,23 @@ Ref<JSFunction> addNative (const std::string& szFunctionHeader,
 
 Ref<JSFunction> addNative (const std::string& szFunctionHeader, 
                            JSNativeFn pFn, 
-                           Ref<IScope> scope,
+                           Ref<JSObject> obj,
                            bool isConst=true);
 
 Ref<JSFunction> addNative0 (const std::string& szName, 
                            JSNativeFn pFn, 
-                           Ref<IScope> scope);
+                           Ref<JSObject> container);
 
 Ref<JSFunction> addNative1 (const std::string& szName, 
                             const std::string& p1, 
                            JSNativeFn pFn, 
-                           Ref<IScope> scope);
+                           Ref<JSObject> container);
 
 Ref<JSFunction> addNative2 (const std::string& szName, 
                             const std::string& p1, 
                             const std::string& p2, 
                            JSNativeFn pFn, 
-                           Ref<IScope> scope);
+                           Ref<JSObject> container);
 
 
 #endif	/* SCRIPTMAIN_H */

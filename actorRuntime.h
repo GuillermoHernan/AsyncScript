@@ -24,7 +24,7 @@ std::pair<Ref<JSValue>, Ref<JSValue> > asBlockingExec(Ref<MvmRoutine> code,
                                                       Ref<GlobalScope> globals, 
                                                       CodeMap* pMap);
 
-Ref<JSValue> actorChildStoppedDefaultHandler(FunctionScope* pScope);
+Ref<JSValue> actorChildStoppedDefaultHandler(ExecutionContext* ec);
 
 Ref<JSValue>    inputEpCall(Ref<AsEndPointRef> endPoint, Ref<FunctionScope> scope);
 Ref<JSValue>    outputEpCall(Ref<AsEndPointRef> endPoint, Ref<FunctionScope> scope);

@@ -100,13 +100,13 @@ JsonLogger*  s_curFunctionLogger = NULL;
  * @param pScope
  * @return 
  */
-Ref<JSValue> assertFunction(FunctionScope* pScope)
+Ref<JSValue> assertFunction(ExecutionContext* ec)
 {
-    auto    value =  pScope->getParam("value");
+    auto    value =  ec->getParam(0);
     
     if (!value->toBoolean())
     {
-        auto    text =  pScope->getParam("text")->toString();
+        auto    text =  ec->getParam(1)->toString();
         
         rtError("Assertion failed: %s", text.c_str());
     }
@@ -121,9 +121,9 @@ Ref<JSValue> assertFunction(FunctionScope* pScope)
  * @param pScope
  * @return 
  */
-Ref<JSValue> expectError(FunctionScope* pScope)
+Ref<JSValue> expectError(ExecutionContext* ec)
 {
-    string  code =  pScope->getParam("code")->toString();
+    string  code =  ec->getParam(0)->toString();
     
     try
     {
@@ -145,25 +145,26 @@ Ref<JSValue> expectError(FunctionScope* pScope)
  * @param pScope
  * @return 
  */
-Ref<JSValue> printLn(FunctionScope* pScope)
+Ref<JSValue> printLn(ExecutionContext* ec)
 {
-    auto    text =  pScope->getParam("text");
+    auto    text =  ec->getParam(0);
     
     printf ("%s\n", text->toString().c_str());
     
     return jsNull();
 }
 
-Ref<JSValue> enableCallLog(FunctionScope* pScope)
+Ref<JSValue> enableCallLog(ExecutionContext* ec)
 {
-    auto logFn = [](FunctionScope* pScope) -> Ref<JSValue>
-    {
-        auto entry = pScope->getParam("x");
-
-        s_curFunctionLogger->log(entry->getJSON(0));
-        return jsNull();
-    };
-    addNative("function callLogger(x)", logFn, getGlobals(), false);
+    //TODO: Enable again
+//    auto logFn = [](ExecutionContext* ec) -> Ref<JSValue>
+//    {
+//        auto entry = ec->getParam(0);
+//
+//        s_curFunctionLogger->log(entry->getJSON(0));
+//        return jsNull();
+//    };
+//    addNative("function callLogger(x)", logFn, getGlobals(), false);
     
     return jsNull();
 }
@@ -176,9 +177,9 @@ Ref<JSValue> enableCallLog(FunctionScope* pScope)
  * @param pScope
  * @return 
  */
-Ref<JSValue> asParse(FunctionScope* pScope)
+Ref<JSValue> asParse(ExecutionContext* ec)
 {
-    string          code =  pScope->getParam("code")->toString();
+    string          code =  ec->getParam(0)->toString();
     CScriptToken    token (code.c_str());
     auto            result = JSArray::create();
 
@@ -220,7 +221,7 @@ bool run_test(const std::string& szFile, const string &testDir, const string& re
 
     auto globals = createDefaultGlobals();
     
-    globals->newVar("result", jsInt(0), false);
+    globals->writeField("result", jsInt(0), false);
     addNative("function assert(value, text)", assertFunction, globals);
     addNative("function printLn(text)", printLn, globals);
     addNative("function expectError(code)", expectError, globals);
@@ -256,10 +257,12 @@ bool run_test(const std::string& szFile, const string &testDir, const string& re
         s_curFunctionLogger = &callLogger;
 
         //Execution
-        //mvmExecute(code, globals);
-        asBlockingExec(code, globals, &cMap);
+        ExecutionContext    ec;
+        ec.stack.push_back(globals);
+        mvmExecRoutine(code, &ec, 1);
+        //asBlockingExec(code, globals, &cMap);
 
-        auto result = globals->get("result");
+        auto result = globals->readField("result");
         if (result->toString() != "exception")
             pass = result->toBoolean();
         else
@@ -267,14 +270,14 @@ bool run_test(const std::string& szFile, const string &testDir, const string& re
     }
     catch (const CScriptException &e)
     {
-        if (globals->get("result")->toString() == "exception")
+        if (globals->readField("result")->toString() == "exception")
             pass = true;
         else
             printf("ERROR: %s\n", e.what());
     }
 
     //Write globals
-    writeTextFile(testResultsDir + testName + ".globals.json", globals->toObject()->getJSON(0));
+    writeTextFile(testResultsDir + testName + ".globals.json", globals->getJSON(0));
 
     if (pass)
         printf("PASS\n");

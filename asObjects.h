@@ -113,6 +113,8 @@ public:
     virtual std::string toString()const;
     virtual bool        toBoolean()const;
     virtual double      toDouble()const;
+    
+    virtual Ref<JSValue> toFunction()override;
 
     virtual Ref<JSValue> readField(const std::string& key)const;
     virtual Ref<JSValue> writeField(const std::string& key, Ref<JSValue> value, bool isConst);
@@ -125,7 +127,7 @@ public:
     virtual Ref<JSValue> head();
     virtual Ref<JSValue> tail();
     
-    virtual Ref<JSValue> call (Ref<FunctionScope> scope);
+    //virtual Ref<JSValue> call (Ref<FunctionScope> scope);
     
     virtual std::string getJSON(int indent);
 
