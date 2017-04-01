@@ -205,16 +205,22 @@ int execBlock (const MvmBlock& block, ExecutionContext* ec)
         }
     }
     
+    auto result = ec->pop();
+    int next = -1;
+    
     if (block.nextBlocks[0] == block.nextBlocks[1])
-        return block.nextBlocks[0];
+        next = block.nextBlocks[0];
     else
     {
-        ec->checkStackNotEmpty();
+        const bool r = result->toBoolean();
         
-        const bool r = ec->pop()->toBoolean();
-        
-        return block.nextBlocks[r?1:0];
+        next = block.nextBlocks[r?1:0];
     }
+    
+    if (next < 0)
+        ec->push(result);
+    
+    return next;
 }
 
 /**

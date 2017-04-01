@@ -425,6 +425,7 @@ void ifCodegen (Ref<AstNode> statement, CodegenState* pState)
     const bool conditional = statement->getType() == AST_CONDITIONAL;
     
     //Generate code for condition
+    pushNull(pState);
     endBlock (conditionBlock, conditionBlock, pState);
     childCodegen(statement, 0, pState);
     
@@ -433,19 +434,21 @@ void ifCodegen (Ref<AstNode> statement, CodegenState* pState)
     
     //Generate code for 'then' block
     childCodegen(statement, 1, pState);
-    if (!conditional)
-        instruction8(OC_POP, pState);
-    const int thenFinalBlock = curBlockId(pState);    
-    endBlock (thenFinalBlock+1, thenFinalBlock+1, pState);
+    if (conditional)
+        copyInstruction(0, pState);
+    const int thenFinalBlock = curBlockId(pState);
+    int nextBlock = thenFinalBlock + 1;
+    const int elseBlock = nextBlock;
+    endBlock (nextBlock, nextBlock, pState);
     
     //Try to generate 'else'
     if (childCodegen(statement, 2, pState))
     {
-        if (!conditional)
-            instruction8(OC_POP, pState);
+        if (conditional)
+            copyInstruction(0, pState);
         
-        //'else' block index
-        const int nextBlock = curBlockId(pState)+1;
+        //Recalculate 'next' block
+        nextBlock = curBlockId(pState)+1;
         endBlock (nextBlock, nextBlock, pState);
         
         //Fix 'then' jump destination
@@ -454,9 +457,10 @@ void ifCodegen (Ref<AstNode> statement, CodegenState* pState)
     }
 
     //Fix else jump
-    setFalseJump (thenInitialBlock-1, thenFinalBlock+1, pState);
+    setFalseJump (thenInitialBlock-1, elseBlock, pState);
     
     //Non-expression statements leave a 'null' on the stack.
+    //TODO: make if expressions?
     if (!conditional)
         pushNull(pState);
 }
@@ -474,8 +478,8 @@ void forCodegen (Ref<AstNode> statement, CodegenState* pState)
     const int initialStack = pState->stackSize;
     
     //Loop initialization
-    if (childCodegen (statement, 0, pState))
-        instruction8(OC_POP, pState);
+    if (!childCodegen (statement, 0, pState))
+        pushNull(pState);
     
     const int conditionBlock = curBlockId(pState)+1;
     //Generate code for condition
@@ -492,8 +496,8 @@ void forCodegen (Ref<AstNode> statement, CodegenState* pState)
     if (childCodegen (statement, 3, pState))
         instruction8(OC_POP, pState);
 
-    if (childCodegen (statement, 2, pState))
-        instruction8(OC_POP, pState);
+    if (!childCodegen (statement, 2, pState))
+        pushNull(pState);
     
     const int nextBlock = curBlockId(pState)+1;
     endBlock(conditionBlock, conditionBlock, pState);
@@ -1100,12 +1104,13 @@ void postfixOpCodegen (Ref<AstNode> node, CodegenState* pState)
 void logicalOpCodegen (const int opCode, Ref<AstNode> statement, CodegenState* pState)
 {
     childCodegen(statement, 0, pState);
-    instruction8(OC_CP, pState);
+    copyInstruction (0, pState);
     const int firstBlock = curBlockId(pState);
     
     endBlock(-1, -1, pState);
     instruction8(OC_POP, pState);
     childCodegen(statement, 1, pState);
+    copyInstruction (0, pState);
     const int secondBlock = curBlockId(pState);
     
     endBlock (secondBlock+1, secondBlock+1, pState);
@@ -1752,6 +1757,8 @@ void endBlock (int trueJump, int falseJump, CodegenState* pState)
     
     curBlock.nextBlocks[1] = trueJump;
     curBlock.nextBlocks[0] = falseJump;
+    
+    --pState->stackSize;
 
     pState->curRoutine->blocks.push_back(MvmBlock());
 }
