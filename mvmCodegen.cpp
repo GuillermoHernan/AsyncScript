@@ -892,7 +892,7 @@ void arrayWriteCodegen (Ref<AstNode> node, CodegenState* pState)
     {
         copyInstruction(1, pState);                         //[array, index, array]
         copyInstruction(1, pState);                         //[array, index, array, index]
-        instruction8(OC_RD_FIELD, pState);                  //[array, index, lvalue];
+        instruction8(OC_RD_INDEX, pState);                  //[array, index, lvalue];
         childCodegen(node, 1, pState);                      //[array, index, lvalue, rvalue];
         binaryOperatorCode (op, pState, node->position());  //[array, index, result];
     }
