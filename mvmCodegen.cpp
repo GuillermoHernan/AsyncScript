@@ -620,7 +620,7 @@ void returnCodegen (Ref<AstNode> node, CodegenState* pState)
         writeInstruction(pState->stackSize-2, pState);
         
         //shrink the stack
-        for (int i=1; i < pState->stackSize; ++i)
+        while (pState->stackSize > 1)
             instruction8(OC_POP, pState);
     }
     
