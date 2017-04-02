@@ -775,7 +775,8 @@ void execWrIndex (const int opCode, ExecutionContext* ec)
     const Ref<JSValue>  key = ec->pop();
     const Ref<JSValue>  container = ec->pop();
     
-    container->indexedWrite(key, val);    
+    container->indexedWrite(key, val); 
+    ec->push(val);
 }
 
 /**
