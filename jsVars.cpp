@@ -464,3 +464,13 @@ std::string JSFunction::toString()const
     output << ")";
     return output.str();
 }
+
+Ref<JSClosure> JSClosure::create (Ref<JSFunction> fn, Ref<JSValue> env)
+{
+    return refFromNew (new JSClosure(fn, env));
+}
+
+JSClosure::JSClosure (Ref<JSFunction> fn, Ref<JSValue> env)
+    : m_fn(fn), m_env(env)
+{
+}

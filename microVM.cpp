@@ -54,6 +54,8 @@ void execWrIndex (const int opCode, ExecutionContext* ec);
 void execNewVar (const int opCode, ExecutionContext* ec);
 void execNewConst (const int opCode, ExecutionContext* ec);
 void execNewConstField (const int opCode, ExecutionContext* ec);
+void execRdParam (const int opCode, ExecutionContext* ec);
+void execNumParams (const int opCode, ExecutionContext* ec);
 void execNop (const int opCode, ExecutionContext* ec);
 void execCpAux (const int opCode, ExecutionContext* ec);
 void execPushAux (const int opCode, ExecutionContext* ec);
@@ -81,7 +83,7 @@ static const OpFunction s_instructions[64] =
     execRdIndex,    execWrIndex,    execNewConstField, invalidOp,
     
     //32
-    invalidOp,      invalidOp,      invalidOp,      invalidOp,
+    execRdParam,    execNumParams,  invalidOp,      invalidOp,
     invalidOp,      invalidOp,      invalidOp,      invalidOp,
     
     //40
@@ -136,7 +138,7 @@ Ref<JSValue> mvmExecRoutine (Ref<MvmRoutine> code, ExecutionContext* ec, int nPa
     
     //Create stack frame
     const size_t stackSize = ec->frames.size();
-    CallFrame   frame (&code->constants, ec->stack.size(), nParams);
+    CallFrame   frame (&code->constants, ec->stack.size()-nParams, nParams);
     ec->frames.push_back(frame);
     
     while (nextBlock >= 0)
@@ -321,7 +323,7 @@ void execCall (int nArgs, ExecutionContext* ec)
     
     //Find function value.
     fnVal = fnVal->toFunction ();
-    const size_t            initialStack = ec->stack.size();
+    const size_t            initialStack = ec->stack.size() - nArgs;
     
     if (!fnVal->isNull())
     {
@@ -354,8 +356,8 @@ void execCall (int nArgs, ExecutionContext* ec)
     }
     
     //Remove function parameters from the stack
-    ASSERT (initialStack == ec->stack.size());
     ec->stack.resize(ec->stack.size() - nArgs);
+    ASSERT (initialStack == ec->stack.size());
 
     //Push result on the stack
     ec->push(result);
@@ -776,6 +778,45 @@ void execNewConstField (const int opCode, ExecutionContext* ec)
     
     objVal->writeField (name->toString(), val, true);
     ec->push(val);
+}
+
+/**
+ * Reads a function call parameter.
+ * Pops the parameter index from the top of the stack, and pushes the
+ * parameter value.
+ * If the index is out of range or not an integer, it pushes a 'null' value
+ * on the top of the stack.
+ * @param opCode
+ * @param ec
+ */
+void execRdParam (const int opCode, ExecutionContext* ec)
+{
+    const auto indexVal = ec->pop();
+    Ref<JSValue>    result = jsNull();
+    
+    if (isInteger(indexVal) )
+    {
+        const int           index = toInt32(indexVal);
+        const CallFrame&    curFrame = ec->frames.back();
+        
+        if (index >= 0 && index < (int)curFrame.numParams)
+            result = ec->stack[curFrame.paramsIndex + index];
+    }
+    
+    ec->push(result);
+}
+
+/**
+ * Places on the top of the stack the number of parameters passed to the 
+ * actual function being executed
+ * @param opCode
+ * @param ec
+ */
+void execNumParams (const int opCode, ExecutionContext* ec)
+{
+    const CallFrame&    curFrame = ec->frames.back();
+
+    ec->push(jsSizeT(curFrame.numParams));
 }
 
 /**

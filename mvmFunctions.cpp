@@ -11,6 +11,7 @@
 #include "mvmFunctions.h"
 #include "jsArray.h"
 #include "scriptMain.h"
+#include "ScriptException.h"
 
 #include <math.h>
 #include <string>
@@ -452,6 +453,18 @@ Ref<JSValue> mvmIndexedWrite (ExecutionContext* ec)
     return ec->getParam(0)->indexedWrite(index, value);
 }
 
+Ref<JSValue> mvmMakeClosure (ExecutionContext* ec)
+{
+    auto env = ec->getParam(0);
+    auto fn = ec->getParam(1);
+    
+    if (!fn->isFunction())
+        rtError ("'fn' parameter is not a function");
+    
+    return JSClosure::create(fn.staticCast<JSFunction>(), env);
+}
+
+
 //Ref<JSValue> mvmCall (ExecutionContext* ec)
 //{
 //    return ec->getThis()->call(pScope);
@@ -506,4 +519,6 @@ void registerMvmFunctions(Ref<JSObject> scope)
     addNative1("@indexedRead", "index", mvmIndexedRead, scope);
     addNative2("@indexedWrite", "index", "value", mvmIndexedWrite, scope);
     //addNative0("@call", mvmCall, scope);
+    
+    addNative2("@makeClosure", "env", "fn", mvmMakeClosure, scope);
 }

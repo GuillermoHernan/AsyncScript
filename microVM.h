@@ -57,6 +57,8 @@ enum OpCodes8
     OC_NEW_CONST_FIELD = 30,
     //OC_CP_AUX = 32,
     //OC_PUSH_AUX = 33,
+    OC_RD_PARAM = 32,
+    OC_NUM_PARAMS = 33,
     OC_NOP = 63,
     OC_PUSHC = 64,
     OC_EXT_FLAG = 128

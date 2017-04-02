@@ -42,9 +42,10 @@ public:
     
     const Ref<AstNode>          ownerNode;
     const bool                  isBlock;
+    const bool                  isParameters;
     
-    CodegenScope (const Ref<AstNode> _ownerNode, bool block) 
-    : ownerNode (_ownerNode), isBlock(block)
+    CodegenScope (const Ref<AstNode> _ownerNode, bool block, bool params) 
+    : ownerNode (_ownerNode), isBlock(block), isParameters(params)
     {
     }
     
@@ -99,6 +100,19 @@ struct CodegenState
         return false;
     }
     
+    bool isParam (const std::string& name)const
+    {
+        auto it = m_scopes.rbegin();
+        
+        for (; it != m_scopes.rend(); ++it)
+        {
+            if (it->isDeclared(name))
+                return it->isParameters;
+        }
+        
+        return false;
+    }
+    
     int getLocalVarOffset(const string& name)const
     {
         for (auto it = m_scopes.rbegin(); it != m_scopes.rend(); ++it)
@@ -115,9 +129,26 @@ struct CodegenState
         return -1;
     }
     
-    void pushScope (const Ref<AstNode> _ownerNode, bool block)
+    int getParamIndex(const string& name)const
     {
-        m_scopes.push_back(CodegenScope(_ownerNode, block));
+        for (auto it = m_scopes.rbegin(); it != m_scopes.rend(); ++it)
+        {
+            if (it->isDeclared(name))
+            {
+                if (!it->isParameters)
+                    break;
+                
+                return it->symbolPosition(name);
+            }
+        }
+        
+        ASSERT (!"Parameter not found!");
+        return -1;
+    }
+    
+    void pushScope (const Ref<AstNode> _ownerNode, bool block, bool params)
+    {
+        m_scopes.push_back(CodegenScope(_ownerNode, block, params));
     }
    
     void popScope()
@@ -136,7 +167,8 @@ private:
 
 //Forward declarations
 
-typedef void (*CodegenFN)(Ref<AstNode> statement, CodegenState* pState);
+//typedef void (*CodegenFN)(CodegenState* pState);
+typedef void (*NodeCodegenFN)(Ref<AstNode> node, CodegenState* pState);
 
 void codegen (Ref<AstNode> statement, CodegenState* pState);
 int  childrenCodegen (Ref<AstNode> statement, CodegenState* pState);
@@ -145,11 +177,13 @@ bool childCodegen (Ref<AstNode> statement, int index, CodegenState* pState);
 void invalidNodeCodegen (Ref<AstNode> node, CodegenState* pState);
 void blockCodegen (Ref<AstNode> statement, CodegenState* pState);
 void varCodegen (Ref<AstNode> statement, CodegenState* pState);
+void varCodegen (const string& name, Ref<AstNode> valueNode, bool isConst, CodegenState* pState);
 void ifCodegen (Ref<AstNode> statement, CodegenState* pState);
 void forCodegen (Ref<AstNode> statement, CodegenState* pState);
 void forEachCodegen (Ref<AstNode> statement, CodegenState* pState);
 void returnCodegen (Ref<AstNode> statement, CodegenState* pState);
 void functionCodegen (Ref<AstNode> statement, CodegenState* pState);
+void closureCodegen (Ref<JSFunction> fn, CodegenState* pState);
 Ref<JSFunction> createFunction (Ref<AstNode> node, CodegenState* pState);
 void assignmentCodegen (Ref<AstNode> statement, CodegenState* pState);
 void varWriteCodegen (Ref<AstNode> node, CodegenState* pState);
@@ -231,7 +265,7 @@ Ref<MvmRoutine> scriptCodegen (Ref<AstNode> script, CodeMap* pMap)
     ASSERT (script->getType() == AST_SCRIPT);
     
     state.curRoutine = MvmRoutine::create();
-    state.pushScope(script, false);
+    state.pushScope(script, false, false);
     state.pCodeMap = pMap;
     state.curPos = script->position();
     
@@ -251,7 +285,7 @@ Ref<MvmRoutine> scriptCodegen (Ref<AstNode> script, CodeMap* pMap)
 
 void codegen (Ref<AstNode> statement, CodegenState* pState)
 {
-    static CodegenFN types[AST_TYPES_COUNT] = {NULL, NULL};
+    static NodeCodegenFN types[AST_TYPES_COUNT] = {NULL, NULL};
     
     if (types [0] == NULL)
     {
@@ -357,7 +391,7 @@ void blockCodegen (Ref<AstNode> statement, CodegenState* pState)
 {
     const AstNodeList&  children = statement->children();
     
-    pState->pushScope(statement, true);
+    pState->pushScope(statement, true, false);
     const int stackSize = pState->stackSize;
     
     for (size_t i=0; i < children.size(); ++i)
@@ -571,17 +605,15 @@ void forEachCodegen (Ref<AstNode> node, CodegenState* pState)
  */
 void returnCodegen (Ref<AstNode> node, CodegenState* pState)
 {
-    errorAt (node->position(), "Function code generation temporarily disabled");
     //It just pushes return expression value on the stack, and sets next block 
     //indexes to (-1), which means that the current function shall end.
-//    if (!childCodegen(statement, 0, pState))
-//    {
-//        //If it is an empty return statement, push a 'null' value on the stack
-//        pushNull(pState);
-//    }
-//    
-//    //instruction8(OC_RETURN, pState);
-//    endBlock(-1, -1, pState);
+    if (!childCodegen(node, 0, pState))
+    {
+        //If it is an empty return statement, push a 'null' value on the stack
+        pushNull(pState);
+    }
+    
+    endBlock(-1, -1, pState);
 }
 
 /**
@@ -591,21 +623,51 @@ void returnCodegen (Ref<AstNode> node, CodegenState* pState)
  */
 void functionCodegen (Ref<AstNode> node, CodegenState* pState)
 {
-    errorAt (node->position(), "Function code generation temporarily disabled");
-//    auto    function = createFunction(node, pState);
-//    
-//    //Push constant to return it.
-//    pushConstant(function, pState);
-//    if (!node->getName().empty())
-//    {
-//        //If it is a named function, create a constant at current scope.
-//        pushConstant(node->getName(), pState);
-//        
-//        //Copy function reference.
-//        instruction8(OC_CP+1, pState);
-//        instruction8(OC_NEW_CONST, pState);
-//    }
+    //TODO: Closure code generation. Necessary to access globals
+    auto    function = createFunction(node, pState);
+    
+    if (node->getName().empty())
+        closureCodegen(function, pState);   //Unnamed function
+    else
+    {
+        const string name = node->getName();
+        const bool isLocal = pState->curScope()->isBlock;
+
+        if (isLocal)
+        {
+            pState->declare(name);
+
+            //Functions are expressions, even names ones
+            closureCodegen(function, pState);
+            copyInstruction (0, pState);
+            
+            //[function, function] (local variable and result)
+        }
+        else
+        {
+            getEnvCodegen(pState);              //[env]
+            pushConstant(name, pState);         //[env, name]
+            closureCodegen(function, pState);   //[env, name, function]
+                                                
+            instruction8(OC_NEW_CONST_FIELD, pState);  //[function]
+        }
+    }
 }
+
+/**
+ * Generates code for a closure
+ * A closure is a function + environment.
+ * @param fn
+ * @param pState
+ */
+void closureCodegen (Ref<JSFunction> fn, CodegenState* pState)
+{
+    //TODO: This first version just passes the current environment.
+    getEnvCodegen(pState);                                  //[env]
+    pushConstant(fn, pState);                               //[env, function]
+    callCodegen("@makeClosure", 2, pState, pState->curPos); //[closure]
+}
+
 
 /**
  * Compiles and creates a function.
@@ -832,28 +894,24 @@ void arrayWriteCodegen (Ref<AstNode> node, CodegenState* pState)
  */
 void fncallCodegen (Ref<AstNode> node, CodegenState* pState)
 {
-    errorAt (node->position(), "Function code generation temporarily disabled");
-//    const AstNodeTypes fnExprType = statement->children()[0]->getType();
-//
-//    //If the expression to get the function reference is an object member access,
-//    //then use generate a 'this' call.
-//    if (fnExprType == AST_MEMBER_ACCESS || fnExprType == AST_ARRAY_ACCESS)
-//        thisCallCodegen (statement, pState);
-//    else
-//    {
-//        //Regular function call (no this pointer)
-//        pushNull(pState);      //No 'this' pointer.
-//
-//        //Parameters evaluation
-//        const int nChilds = (int)statement->children().size();
-//        for (int i = 1; i < nChilds; ++i)
-//            childCodegen(statement, i, pState);
-//
-//        //Evaluate function reference expression
-//        childCodegen(statement, 0, pState);
-//
-//        callInstruction (nChilds, pState, statement->position());
-//    }
+    const AstNodeTypes fnExprType = node->children()[0]->getType();
+
+    //If the expression to get the function reference is an object member access,
+    //then use generate a 'this' call.
+    if (fnExprType == AST_MEMBER_ACCESS)
+        thisCallCodegen (node, pState);
+    else
+    {
+        //Parameters evaluation
+        const int nChilds = (int)node->children().size();
+        for (int i = 1; i < nChilds; ++i)
+            childCodegen(node, i, pState);
+
+        //Evaluate function reference expression
+        childCodegen(node, 0, pState);
+
+        callInstruction (nChilds-1, pState, node->position());
+    }
 }
 
 /**
@@ -863,36 +921,32 @@ void fncallCodegen (Ref<AstNode> node, CodegenState* pState)
  */
 void thisCallCodegen (Ref<AstNode> node, CodegenState* pState)
 {
-    errorAt (node->position(), "Function code generation temporarily disabled");
-//    childCodegen(statement, 0, pState);
-//    
-//    const int rdInstruction = removeLastInstruction(pState);
-//    instruction8(OC_CP+1, pState);
-//    instruction8(OC_SWAP, pState);
-//    instruction8(rdInstruction, pState);
-//    
-//    //Stack state at this point: [this, function]
-//    
-//    //Parameters evaluation
-//    const int nChilds = (int)statement->children().size();
-//    for (int i = 1; i < nChilds; ++i)
-//    {
-//        childCodegen(statement, i, pState);     //Parameter evaluation
-//        instruction8(OC_SWAP, pState);          //Put function back on top        
-//    }
-//    
-//    //Write call instruction
-//    callInstruction (nChilds, pState, statement->position());
+    auto fnExpr = node->children().front();
+    
+    //Parameters evaluation
+    const int nChilds = (int)node->children().size();
+    for (int i = 1; i < nChilds; ++i)
+        childCodegen(node, i, pState);
+
+                                            //[[params]]
+    childCodegen(fnExpr, 0, pState);        //[[params], this]
+    copyInstruction(0, pState);             //[[params], this, this]
+    
+    const string  fnName = fnExpr->children()[1]->getName();
+    pushConstant(fnName, pState);           //[[params], this, this, fnName]
+    instruction8(OC_RD_FIELD, pState);      //[[params], this, function]
+    
+    callInstruction (nChilds-1, pState, node->position());
 }
 
 /**
  * Generates code for a literal expression.
- * @param statement
+ * @param node
  * @param pState
  */
-void literalCodegen (Ref<AstNode> statement, CodegenState* pState)
+void literalCodegen (Ref<AstNode> node, CodegenState* pState)
 {
-    pushConstant(statement->getValue(), pState);
+    pushConstant(node->getValue(), pState);
 }
 
 /**
@@ -918,14 +972,23 @@ void varReadCodegen (const string& name, CodegenState* pState)
     
     if (pState->isDeclared(name))
     {
-        const int offset = pState->getLocalVarOffset(name);
-        copyInstruction (offset-1, pState);
+        if (!pState->isParam(name))
+        {
+            const int offset = pState->getLocalVarOffset(name);
+            copyInstruction (offset-1, pState);             //[varValue]
+        }
+        else
+        {
+            const int index = pState->getParamIndex(name);
+            pushConstant(jsInt(index), pState);             //[index]
+            instruction8 (OC_RD_PARAM, pState);             //[paramValue]
+        }
     }
     else
     {
         getEnvCodegen(pState);                  //[env]
         pushConstant(name, pState);             //[env, name]
-        instruction8(OC_RD_FIELD, pState);      //[result]
+        instruction8(OC_RD_FIELD, pState);      //[varValue]
     }
 }
 
@@ -1107,7 +1170,7 @@ void logicalOpCodegen (const int opCode, Ref<AstNode> statement, CodegenState* p
     copyInstruction (0, pState);
     const int firstBlock = curBlockId(pState);
     
-    endBlock(-1, -1, pState);
+    endBlock(firstBlock+1, firstBlock+1, pState);
     instruction8(OC_POP, pState);
     childCodegen(statement, 1, pState);
     copyInstruction (0, pState);
@@ -1758,7 +1821,8 @@ void endBlock (int trueJump, int falseJump, CodegenState* pState)
     curBlock.nextBlocks[1] = trueJump;
     curBlock.nextBlocks[0] = falseJump;
     
-    --pState->stackSize;
+    if (trueJump >= 0)
+        --pState->stackSize;
 
     pState->curRoutine->blocks.push_back(MvmBlock());
 }
@@ -1833,8 +1897,9 @@ int calcStackOffset8(int opCode)
         case OC_RD_FIELD:   return -1;    
         case OC_RD_INDEX:   return -1;    
         case OC_WR_FIELD:   return -2;    
-        case OC_WR_INDEX:   return -2;    
+        case OC_WR_INDEX:   return -2;  
         case OC_NEW_CONST_FIELD:   return -2;    
+        case OC_NUM_PARAMS: return 1;
         default:            return 0;
         }
     }
@@ -1886,14 +1951,18 @@ CodegenState initFunctionState (Ref<AstNode> node, const StringVector& params, C
     fnState.curPos = node->position();
     fnState.pCodeMap = pMap;
     fnState.curRoutine = code;
-    fnState.pushScope(node, false);
+    fnState.pushScope(node, false, true);
 
     //Declare function reserved symbols.
-    fnState.declare("this");
-    fnState.declare("arguments");
+//    fnState.declare("this");
+//    fnState.declare("arguments");
 
     for (size_t i = 0; i < params.size(); ++i)
+    {
         fnState.declare(params[i]);
+        ++fnState.stackSize;
+    }
+    fnState.stackSize = 0;
 
     return fnState;
 }
