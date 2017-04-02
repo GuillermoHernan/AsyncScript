@@ -15,4 +15,7 @@ function bar(myvalue) {
 foo(b);
 bar(a);
 
-result = a==42 && b[0]==44;
+assert (a==42, "'a' value: " + a);
+assert (b[0]==42, "'b[0]' value: " + b[0]);
+
+result = 1;
