@@ -949,7 +949,7 @@ void thisCallCodegen (Ref<AstNode> node, CodegenState* pState)
     pushConstant(fnName, pState);           //[[params], this, this, fnName]
     instruction8(OC_RD_FIELD, pState);      //[[params], this, function]
     
-    callInstruction (nChilds-1, pState, node->position());
+    callInstruction (nChilds, pState, node->position());
 }
 
 /**
