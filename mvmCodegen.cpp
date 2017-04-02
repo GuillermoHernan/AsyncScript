@@ -613,6 +613,19 @@ void returnCodegen (Ref<AstNode> node, CodegenState* pState)
         pushNull(pState);
     }
     
+    //remove locals from the stack
+    if (pState->stackSize > 1)
+    {
+        //Write the result at the new stack top.
+        writeInstruction(pState->stackSize-2, pState);
+        
+        //shrink the stack
+        for (int i=1; i < pState->stackSize; ++i)
+            instruction8(OC_POP, pState);
+    }
+    
+    ASSERT (pState->stackSize == 1);
+    
     endBlock(-1, -1, pState);
 }
 
