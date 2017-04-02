@@ -1,4 +1,11 @@
 // functions in variables using JSON-style initialisation
-var bob = { add : function(x,y) { return x+y; } };
+var bob = { 
+    add : function(x,y) { 
+        return x+y; 
+    } 
+};
 
-result = bob.add(3,6)==9;
+const r = bob.add(3,6);
+assert (r==9, "'r' value: " + r);
+        
+result = r ==9;
