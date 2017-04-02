@@ -39,6 +39,8 @@ void callLog (Ref<FunctionScope> fnScope, ExecutionContext* ec);
 void returnLog (Ref<FunctionScope> fnScope, Ref<JSValue> result, ExecutionContext* ec);
 void execCp8 (const int opCode, ExecutionContext* ec);
 void execWr8 (const int opCode, ExecutionContext* ec);
+void execCp16 (const int opCode, ExecutionContext* ec);
+void execWr16 (const int opCode, ExecutionContext* ec);
 void execSwap (const int opCode, ExecutionContext* ec);
 void execPop (const int opCode, ExecutionContext* ec);
 void execPushScope (const int opCode, ExecutionContext* ec);
@@ -238,6 +240,10 @@ void execInstruction16 (const int opCode, ExecutionContext* ec)
         execPushC16 (decoded, ec);
     else if (decoded <= OC16_CALL_MAX)
         execCall16(decoded, ec);
+    else if (decoded <= OC16_CP_MAX)
+        execCp16(decoded, ec);
+    else if (decoded <= OC16_WR_MAX)
+        execWr16(decoded, ec);
     else
         rtError ("Invalid 16 bit opCode: %04X", opCode);
 }
@@ -496,8 +502,6 @@ void returnLog (Ref<FunctionScope> fnScope, Ref<JSValue> result, ExecutionContex
 }
 
 
-
-
 /**
  * Copies an element in the stack to the top of the stack
  * @param opCode
@@ -508,7 +512,10 @@ void execCp8 (const int opCode, ExecutionContext* ec)
     const size_t offset = opCode - OC_CP;
     
     if (offset+1 > ec->stack.size() )
-        rtError ("Stack underflow in copy(CP) operation");
+    {
+        rtError ("Stack underflow in copy(CP) operation. Offset: %d Stack: %d", 
+                 (int)offset, (int)ec->stack.size());
+    }
     
     ec->push (*(ec->stack.rbegin() + offset));
 }
@@ -526,7 +533,49 @@ void execWr8 (const int opCode, ExecutionContext* ec)
     const size_t offset = (opCode - OC_WR)+1;
     
     if (offset + 1 > ec->stack.size() )
-        rtError ("Stack underflow in write(WR) operation");
+    {
+        rtError ("Stack underflow in write(WR) operation. Offset: %d Stack: %d", 
+                 (int)offset, (int)ec->stack.size());
+    }
+    
+    *(ec->stack.rbegin() + offset) = ec->stack.back();
+}
+
+/**
+ * Copies an element in the stack to the top of the stack
+ * @param opCode
+ * @param ec
+ */
+void execCp16 (const int opCode, ExecutionContext* ec)
+{
+    const size_t offset = (opCode - OC16_CP) + (OC_CP_MAX - OC_CP) + 1;
+    
+    if (offset+1 > ec->stack.size() )
+    {
+        rtError ("Stack underflow in copy(CP) operation. Offset: %d Stack: %d", 
+                 (int)offset, (int)ec->stack.size());
+    }
+    
+    ec->push (*(ec->stack.rbegin() + offset));
+}
+
+/**
+ * Writes the current top element of the stack into a position 
+ * deeper on the stack, overwriting that value.
+ * Offset 0 is the element just under the top element.
+ * The top element is not removed, remains at the top of the stack
+ * @param opCode
+ * @param ec
+ */
+void execWr16 (const int opCode, ExecutionContext* ec)
+{
+    const size_t offset = (opCode - OC16_WR) + (OC_WR_MAX - OC_WR) + 2;
+    
+    if (offset + 1 > ec->stack.size() )
+    {
+        rtError ("Stack underflow in write(WR) operation. Offset: %d Stack: %d", 
+                 (int)offset, (int)ec->stack.size());
+    }
     
     *(ec->stack.rbegin() + offset) = ec->stack.back();
 }
