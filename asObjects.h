@@ -43,6 +43,12 @@ public:
         return true;
     }
     
+    virtual Ref<JSValue> toFunction()override
+    {
+        return m_constructor;
+    }
+    
+    
     virtual StringSet getFields(bool inherited = true)const;
 
     virtual Ref<JSValue> readField(const std::string& key)const;
