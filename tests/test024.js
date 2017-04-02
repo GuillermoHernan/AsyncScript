@@ -27,10 +27,10 @@ for (var y=0;y<PY;y++) {
         line += "*";
     else
         line += " ";    
-   }
-   lines[y] = line;
   }
-
+  lines[y] = line;
+}
+  
 result =   
 lines[0] == "********************************" &&
 lines[1] == "***********           **********" &&
