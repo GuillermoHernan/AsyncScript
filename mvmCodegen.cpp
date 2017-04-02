@@ -1045,12 +1045,13 @@ void objectCodegen (Ref<AstNode> statement, CodegenState* pState)
     AstObject::PropertyList::const_iterator     it;
     for (it = properties.begin(); it != properties.end(); ++it)
     {
-        instruction8(OC_CP, pState);        //Copy object reference
+        copyInstruction (0, pState);        //Copy object reference
         pushConstant(it->name, pState);    //Property name
         codegen(it->expr, pState);        //Value expression
         
         const int opCode = it->isConst ? OC_NEW_CONST_FIELD : OC_WR_FIELD;
         instruction8(opCode, pState);
+        instruction8(OC_POP, pState);
     }
     
     //After the loop, the object reference is on the top of the stack
