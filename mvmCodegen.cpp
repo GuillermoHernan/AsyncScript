@@ -121,7 +121,7 @@ struct CodegenState
             {
                 int pos = it->symbolPosition(name);
                 ASSERT (pos < stackSize);
-                return stackSize - pos;
+                return stackSize - (pos+1);
             }
         }
         
@@ -988,7 +988,7 @@ void varReadCodegen (const string& name, CodegenState* pState)
         if (!pState->isParam(name))
         {
             const int offset = pState->getLocalVarOffset(name);
-            copyInstruction (offset-1, pState);             //[varValue]
+            copyInstruction (offset, pState);               //[varValue]
         }
         else
         {
