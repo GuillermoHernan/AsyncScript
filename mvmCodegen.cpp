@@ -1657,6 +1657,7 @@ void copyInstruction (int offset, CodegenState* pState)
  */
 void writeInstruction (int offset, CodegenState* pState)
 {
+    ASSERT (offset >= 0);
     if (offset <= OC_WR_MAX - OC_WR)
         instruction8 (OC_WR + offset, pState);
     else
