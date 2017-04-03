@@ -171,14 +171,14 @@ string disassembly16bitInst (int opCode, const ValueVector& constants)
     {
         ostringstream   output;
         
-        output << "CP(" << ((opCode-OC16_CP) + OC_CP_MAX + 1) << ")";
+        output << "CP(" << ((opCode-OC16_CP) + (OC_CP_MAX - OC_CP) + 1) << ")";
         return output.str();
     }
     else if (opCode <= OC16_WR_MAX)
     {
         ostringstream   output;
         
-        output << "WR(" << ((opCode-OC16_WR) + OC_WR_MAX + 1) << ")";
+        output << "WR(" << ((opCode-OC16_WR) + (OC_WR_MAX - OC_WR) + 1) << ")";
         return output.str();
     }
     else
