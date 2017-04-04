@@ -57,6 +57,7 @@ void execNewVar (const int opCode, ExecutionContext* ec);
 void execNewConst (const int opCode, ExecutionContext* ec);
 void execNewConstField (const int opCode, ExecutionContext* ec);
 void execRdParam (const int opCode, ExecutionContext* ec);
+void execWrParam (const int opCode, ExecutionContext* ec);
 void execNumParams (const int opCode, ExecutionContext* ec);
 void execNop (const int opCode, ExecutionContext* ec);
 void execCpAux (const int opCode, ExecutionContext* ec);
@@ -85,7 +86,7 @@ static const OpFunction s_instructions[64] =
     execRdIndex,    execWrIndex,    execNewConstField, invalidOp,
     
     //32
-    execRdParam,    execNumParams,  invalidOp,      invalidOp,
+    execRdParam,    execWrParam,    execNumParams,  invalidOp,
     invalidOp,      invalidOp,      invalidOp,      invalidOp,
     
     //40
@@ -854,6 +855,36 @@ void execRdParam (const int opCode, ExecutionContext* ec)
     }
     
     ec->push(result);
+}
+
+/**
+ * Overwrites a function call parameter.
+ * Pops the parameter index and the new value from the top of the stack, 
+ * and pushes back the value
+ * If the index is out of range or not an integer, it pushes a 'null' value
+ * on the top of the stack, instead of the value.
+ * @param opCode
+ * @param ec
+ */
+void execWrParam (const int opCode, ExecutionContext* ec)
+{
+    auto        value = ec->pop();
+    const auto  paramIndex = ec->pop();
+
+    if (isInteger(paramIndex) )
+    {
+        const int           index = toInt32(paramIndex);
+        const CallFrame&    curFrame = ec->frames.back();
+        
+        if (index >= 0 && index < (int)curFrame.numParams)
+            ec->stack[curFrame.paramsIndex + index] = value;
+        else
+            value = jsNull();
+    }
+    else
+        value = jsNull();
+    
+    ec->push(value);
 }
 
 /**

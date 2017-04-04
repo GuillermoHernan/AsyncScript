@@ -141,6 +141,7 @@ string disassembly8bitInst (int opCode, const ValueVector& constants)
 //        case OC_CP_AUX:         return "CP_AUX";
 //        case OC_PUSH_AUX:       return "PUSH_AUX";
         case OC_RD_PARAM:       return "OC_RD_PARAM";
+        case OC_WR_PARAM:       return "OC_WR_PARAM";
         case OC_NUM_PARAMS:     return "OC_NUM_PARAMS";
         case OC_NOP:            return "NOP";
         default:

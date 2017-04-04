@@ -811,17 +811,25 @@ void varWriteCodegen (Ref<AstNode> node, CodegenState* pState)
     
     if (pState->isDeclared(name))
     {
+        const bool isParam = pState->isParam(name);
+        
+        if (isParam)
+            pushConstant (pState->getParamIndex(name), pState); //[index]
+        
         //Local variable.
         if (op == '=')
-            childCodegen(node, 1, pState);                      //[result]
+            childCodegen(node, 1, pState);                      //[..., result]
         else
         {
-            childCodegen(node, 0, pState);                      //[lvalue]
-            childCodegen(node, 1, pState);                      //[lvalue, rvalue]
-            binaryOperatorCode (op, pState, node->position());  //[result]          
+            childCodegen(node, 0, pState);                      //[..., lvalue]
+            childCodegen(node, 1, pState);                      //[..., lvalue, rvalue]
+            binaryOperatorCode (op, pState, node->position());  //[..., result]          
         }
         
-        writeInstruction(pState->getLocalVarOffset(name)-1, pState);    //[result]
+        if (pState->isParam(name))
+            instruction8(OC_WR_PARAM, pState);                              //[result]
+        else
+            writeInstruction(pState->getLocalVarOffset(name)-1, pState);    //[result]
     }
     else
     {
@@ -1913,7 +1921,8 @@ int calcStackOffset8(int opCode)
         case OC_RD_INDEX:   return -1;    
         case OC_WR_FIELD:   return -2;    
         case OC_WR_INDEX:   return -2;  
-        case OC_NEW_CONST_FIELD:   return -2;    
+        case OC_NEW_CONST_FIELD:   return -2;
+        case OC_WR_PARAM:   return -1;
         case OC_NUM_PARAMS: return 1;
         default:            return 0;
         }
