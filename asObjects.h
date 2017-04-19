@@ -63,8 +63,6 @@ public:
         return m_name;
     }
     
-    Ref<JSValue> call (Ref<FunctionScope> scope);
-    
     Ref<JSClass> getParent()const
     {
         return m_parent;
@@ -145,12 +143,6 @@ public:
         return VT_OBJECT;
     }
     
-    virtual const StringVector& getParams()const
-    {
-        static const StringVector    empty;
-        return empty;
-    }
-
     virtual const std::string& getName()const
     {
         static std::string empty;

@@ -103,7 +103,6 @@ public:
 
     virtual std::string getJSON(int indent) = 0;
     
-    virtual const StringVector& getParams()const=0;
     virtual const std::string& getName()const=0;
     
     Ref<JSValue> deepFreeze();
@@ -264,12 +263,6 @@ public:
         return V_TYPE;
     }
     
-    virtual const StringVector& getParams()const
-    {
-        static const StringVector    empty;
-        return empty;
-    }
-
     virtual const std::string& getName()const
     {
         static std::string empty;
