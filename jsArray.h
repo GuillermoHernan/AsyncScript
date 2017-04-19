@@ -57,9 +57,6 @@ public:
     virtual Ref<JSValue> indexedRead(Ref<JSValue> index);
     virtual Ref<JSValue> indexedWrite(Ref<JSValue> index, Ref<JSValue> value);
 
-    virtual Ref<JSValue> head();
-    virtual Ref<JSValue> tail();
-    
     /////////////////////////////////////////
 
     static Ref<JSClass> ArrayClass;
@@ -87,8 +84,11 @@ class JSArrayIterator : public JSObject
 public:
     static Ref<JSValue> create(Ref<JSArray> arr, size_t index);
 
-    virtual Ref<JSValue> head();
-    virtual Ref<JSValue> tail();
+    virtual Ref<JSValue> iterator()override
+    {
+        //TODO: temporary function
+        return jsNull();
+    }
 
 private:
     //TODO: Should it has its own class?

@@ -97,8 +97,7 @@ public:
     virtual Ref<JSValue> indexedRead(Ref<JSValue> index) = 0;
     virtual Ref<JSValue> indexedWrite(Ref<JSValue> index, Ref<JSValue> value) = 0;
     
-    virtual Ref<JSValue> head() = 0;
-    virtual Ref<JSValue> tail() = 0;    
+    virtual Ref<JSValue> iterator() = 0;
     
     //virtual Ref<JSValue> call (Ref<FunctionScope> scope);
 
@@ -238,16 +237,11 @@ public:
         return jsNull();
     }
     
-    virtual Ref<JSValue> head()
+    virtual Ref<JSValue> iterator()override
     {
-        return Ref<JSValue>(this);
-    }
-
-    virtual Ref<JSValue> tail()
-    {
+        //TODO: Return list of one element.
         return jsNull();
     }
-    
     
     virtual Ref<JSValue> deleteField(const std::string& key)
     {
@@ -299,6 +293,11 @@ public:
     virtual std::string getJSON(int indent)
     {
         return "null";
+    }
+
+    virtual Ref<JSValue> iterator()override
+    {
+        return jsNull();
     }
 };
 

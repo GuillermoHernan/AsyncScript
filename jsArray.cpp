@@ -179,22 +179,13 @@ Ref<JSValue> JSArray::indexedRead(Ref<JSValue> index)
 }
 
 /**
- * Returns the first element of the array
- * @return 
- */
-Ref<JSValue> JSArray::head()
-{
-    return getAt(0);
-}
-
-/**
  * Returns an iterator which skips the first element
  * @return 
  */
-Ref<JSValue> JSArray::tail()
-{
-    return JSArrayIterator::create(ref(this), 1);
-}
+//Ref<JSValue> JSArray::iterator()
+//{
+//    return JSArrayIterator::create(ref(this), 0);
+//}
 
 /**
  * Writes an array element
@@ -360,16 +351,16 @@ Ref<JSValue> JSArrayIterator::create(Ref<JSArray> arr, size_t index)
     else
         return jsNull();
 }
-
-Ref<JSValue> JSArrayIterator::head()
-{
-    return m_array->getAt(m_index);
-}
-
-Ref<JSValue> JSArrayIterator::tail()
-{
-    return create (m_array, m_index+1);
-}
+//
+//Ref<JSValue> JSArrayIterator::head()
+//{
+//    return m_array->getAt(m_index);
+//}
+//
+//Ref<JSValue> JSArrayIterator::tail()
+//{
+//    return create (m_array, m_index+1);
+//}
 
 Ref<JSValue> scArrayPush(ExecutionContext* ec)
 {

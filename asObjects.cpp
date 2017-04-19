@@ -283,35 +283,6 @@ Ref<JSValue> JSObject::indexedWrite(Ref<JSValue> index, Ref<JSValue> value)
 }
 
 /**
- * Gets the head element of a sequence. The default implementation just returns
- * a reference to the object.
- * @return 
- */
-Ref<JSValue> JSObject::head()
-{
-    /*auto fn = readField("head");
-    
-    if (!fn->isNull())
-        return callMemberFn(fn);
-    else*/
-        return ref(this);
-}
-
-/**
- * Gets the next elements of a sequence. The default implementation just returns null.
- * @return 
- */
-Ref<JSValue> JSObject::tail()
-{
-    /*auto fn = readField("tail");
-    
-    if (!fn->isNull())
-        return callMemberFn(fn);
-    else*/
-        return jsNull();
-}
-
-/**
  * Handles function calls, which allows to use objects as functions.
  * Default implementation just returns 'null'
  * @param scope

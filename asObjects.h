@@ -130,8 +130,11 @@ public:
     virtual Ref<JSValue> indexedRead(Ref<JSValue> index);
     virtual Ref<JSValue> indexedWrite(Ref<JSValue> index, Ref<JSValue> value);
     
-    virtual Ref<JSValue> head();
-    virtual Ref<JSValue> tail();
+    virtual Ref<JSValue> iterator()override
+    {
+        //TODO: Return list of one element.
+        return jsNull();
+    }
     
     //virtual Ref<JSValue> call (Ref<FunctionScope> scope);
     
