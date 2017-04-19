@@ -37,7 +37,7 @@
 #include "jsParser.h"
 #include "semanticCheck.h"
 #include "TinyJS_Functions.h"
-#include "actorRuntime.h"
+//#include "actorRuntime.h"
 #include "jsArray.h"
 #include "ScriptException.h"
 

@@ -13,7 +13,6 @@
 #pragma once
 
 #include "jsVars.h"
-#include "executionScope.h"
 #include "asObjects.h"
 #include <string>
 

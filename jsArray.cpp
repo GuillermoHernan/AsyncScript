@@ -10,7 +10,6 @@
 #include "ascript_pch.hpp"
 #include "jsArray.h"
 #include "utils.h"
-#include "executionScope.h"
 #include "scriptMain.h"
 #include "mvmFunctions.h"
 #include "ScriptException.h"

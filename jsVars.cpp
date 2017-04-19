@@ -10,7 +10,6 @@
 #include "ascript_pch.hpp"
 #include "jsVars.h"
 #include "utils.h"
-#include "executionScope.h"
 #include "asString.h"
 #include "microVM.h"
 #include "ScriptException.h"
@@ -310,6 +309,7 @@ Ref<JSValue> checkedVarDelete(VarMap& map, const std::string& name)
  */
 Ref<JSValue> JSValue::readField(const std::string& key)const
 {
+    //TODO: Review. I believe that this function is no longer necessary.
     typedef set<string>  FnSet;
     static FnSet functions;
     
@@ -325,9 +325,9 @@ Ref<JSValue> JSValue::readField(const std::string& key)const
         functions.insert("call");
     }
     
-    if (functions.count(key) > 0)
+    /*if (functions.count(key) > 0)
         return getGlobals()->get("@" + key);
-    else
+    else*/
         return jsNull();
 }
 

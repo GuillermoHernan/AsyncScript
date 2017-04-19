@@ -14,7 +14,6 @@
 #pragma once
 
 #include "asObjects.h"
-#include "executionScope.h"
 #include "microVM.h"
 
 class AsEndPoint;

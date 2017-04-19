@@ -9,14 +9,15 @@
 
 #include "ascript_pch.hpp"
 #include "microVM.h"
-#include "asActors.h"
+//#include "asActors.h"
+#include "asObjects.h"
 
 using namespace std;
 
 Ref<JSObject> disassemblyFunction (Ref<JSFunction> function);
-Ref<JSObject> disassemblyActorClass (Ref<AsActorClass> actorClass);
-Ref<JSObject> disassemblyInputEndPoint (Ref<AsEndPoint> ep);
-Ref<JSObject> disassemblyOutputEndPoint (Ref<AsEndPoint> ep);
+//Ref<JSObject> disassemblyActorClass (Ref<AsActorClass> actorClass);
+//Ref<JSObject> disassemblyInputEndPoint (Ref<AsEndPoint> ep);
+//Ref<JSObject> disassemblyOutputEndPoint (Ref<AsEndPoint> ep);
 Ref<JSObject> disassemblyClass (Ref<JSClass> cls);
 Ref<JSObject> disassemblyMembers (Ref<JSValue> container);
 
@@ -29,17 +30,17 @@ Ref<JSValue> constantToJS (Ref<JSValue> constant)
 {
     switch (constant->getType())
     {
-    case VT_ACTOR_CLASS:
-        return disassemblyActorClass (constant.staticCast<AsActorClass>());
+//    case VT_ACTOR_CLASS:
+//        return disassemblyActorClass (constant.staticCast<AsActorClass>());
         
     case VT_CLASS:
         return disassemblyClass (constant.staticCast<JSClass>());
     
-    case VT_INPUT_EP:
-        return disassemblyInputEndPoint (constant.staticCast<AsEndPoint>());
-    
-    case VT_OUTPUT_EP:
-        return disassemblyOutputEndPoint (constant.staticCast<AsEndPoint>());
+//    case VT_INPUT_EP:
+//        return disassemblyInputEndPoint (constant.staticCast<AsEndPoint>());
+//    
+//    case VT_OUTPUT_EP:
+//        return disassemblyOutputEndPoint (constant.staticCast<AsEndPoint>());
     
     default:
         if (constant->isFunction())
@@ -300,39 +301,39 @@ Ref<JSObject> disassemblyFunction (Ref<JSFunction> function)
  * @param actorClass
  * @return 
  */
-Ref<JSObject> disassemblyActorClass (Ref<AsActorClass> actorClass)
-{
-    Ref<JSObject>   obj = JSObject::create();
-
-    obj->writeField ("actorClass", jsString(actorClass->getName()), false );
-    
-    auto members = disassemblyMembers(actorClass);
-    obj->writeField ("members", members, false);
-
-    return obj;
-}
-
-/**
- * Transforms an input endpoint to a Javascript object representation
- * @param ep
- * @return 
- */
-Ref<JSObject> disassemblyInputEndPoint (Ref<AsEndPoint> ep)
-{
-    return disassemblyFunction(ep);
-}
-
-/**
- * Transforms an output endpoint to a Javascript object representation
- * @param ep
- * @return 
- */
-Ref<JSObject> disassemblyOutputEndPoint (Ref<AsEndPoint> ep)
-{
-    auto result = JSObject::create();
-    result->writeField ("header", jsString(ep->toString() ), false);
-    return result;
-}
+//Ref<JSObject> disassemblyActorClass (Ref<AsActorClass> actorClass)
+//{
+//    Ref<JSObject>   obj = JSObject::create();
+//
+//    obj->writeField ("actorClass", jsString(actorClass->getName()), false );
+//    
+//    auto members = disassemblyMembers(actorClass);
+//    obj->writeField ("members", members, false);
+//
+//    return obj;
+//}
+//
+///**
+// * Transforms an input endpoint to a Javascript object representation
+// * @param ep
+// * @return 
+// */
+//Ref<JSObject> disassemblyInputEndPoint (Ref<AsEndPoint> ep)
+//{
+//    return disassemblyFunction(ep);
+//}
+//
+///**
+// * Transforms an output endpoint to a Javascript object representation
+// * @param ep
+// * @return 
+// */
+//Ref<JSObject> disassemblyOutputEndPoint (Ref<AsEndPoint> ep)
+//{
+//    auto result = JSObject::create();
+//    result->writeField ("header", jsString(ep->toString() ), false);
+//    return result;
+//}
 
 /**
  * Disassemblies a class declaration

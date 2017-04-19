@@ -11,8 +11,6 @@
 
 #include "ascript_pch.hpp"
 #include "microVM.h"
-#include "asActors.h"
-#include "executionScope.h"
 #include "ScriptException.h"
 
 #include <vector>
@@ -401,56 +399,56 @@ void execCall (int nArgs, ExecutionContext* ec)
 //    }
 //}
 
-static const char *CALL_LOG_DEPTH = "@callLogDepth";
+//static const char *CALL_LOG_DEPTH = "@callLogDepth";
 
 /**
  * Logs function calls, if enabled.
  * @param fnScope
  */
-void callLog (Ref<FunctionScope> fnScope, ExecutionContext* ec)
-{
-    const auto globals = getGlobals();
-    
-    if (!globals->isDefined("callLogger"))
-        return;
-    
-    const auto logFunction = globals->get("callLogger");
-    
-    if (logFunction->isNull())
-        return;
-    
-    //Re-entry guard
-    if (logFunction == fnScope->getFunction())
-        return;
-    
-    Ref<JSValue> depth;
-    
-    if (!globals->isDefined(CALL_LOG_DEPTH))
-    {
-        depth = jsInt(1);
-        globals->newVar(CALL_LOG_DEPTH, depth, false);
-    }
-    else
-    {
-        depth = globals->get(CALL_LOG_DEPTH);
-        const int iDepth = max (1, toInt32( depth ) + 1);
-        depth = jsInt(iDepth);
-        globals->set(CALL_LOG_DEPTH, depth);
-    }
-    
-    auto obj = JSObject::create();
-    obj->writeField("level", depth, false);
-    obj->writeField("name", jsString(fnScope->getFunction()->getName()), false);
-    obj->writeField("params", fnScope->get("arguments"), false);
-    obj->writeField("this", fnScope->getThis(), false);
-    
-    ec->push(jsNull());     //this
-    ec->push(obj);          //Log entry
-    ec->push(logFunction);
-    
-    execCall(2, ec);  
-    ec->pop();              //Discard result.
-}
+//void callLog (Ref<FunctionScope> fnScope, ExecutionContext* ec)
+//{
+//    const auto globals = getGlobals();
+//    
+//    if (!globals->isDefined("callLogger"))
+//        return;
+//    
+//    const auto logFunction = globals->get("callLogger");
+//    
+//    if (logFunction->isNull())
+//        return;
+//    
+//    //Re-entry guard
+//    if (logFunction == fnScope->getFunction())
+//        return;
+//    
+//    Ref<JSValue> depth;
+//    
+//    if (!globals->isDefined(CALL_LOG_DEPTH))
+//    {
+//        depth = jsInt(1);
+//        globals->newVar(CALL_LOG_DEPTH, depth, false);
+//    }
+//    else
+//    {
+//        depth = globals->get(CALL_LOG_DEPTH);
+//        const int iDepth = max (1, toInt32( depth ) + 1);
+//        depth = jsInt(iDepth);
+//        globals->set(CALL_LOG_DEPTH, depth);
+//    }
+//    
+//    auto obj = JSObject::create();
+//    obj->writeField("level", depth, false);
+//    obj->writeField("name", jsString(fnScope->getFunction()->getName()), false);
+//    obj->writeField("params", fnScope->get("arguments"), false);
+//    obj->writeField("this", fnScope->getThis(), false);
+//    
+//    ec->push(jsNull());     //this
+//    ec->push(obj);          //Log entry
+//    ec->push(logFunction);
+//    
+//    execCall(2, ec);  
+//    ec->pop();              //Discard result.
+//}
 
 /**
  * Logs function return, if enabled.
@@ -458,49 +456,49 @@ void callLog (Ref<FunctionScope> fnScope, ExecutionContext* ec)
  * @param result
  * @param ec
  */
-void returnLog (Ref<FunctionScope> fnScope, Ref<JSValue> result, ExecutionContext* ec)
-{
-    const auto globals = getGlobals();
-
-    if (!globals->isDefined("callLogger"))
-        return;
-
-    const auto logFunction = globals->get("callLogger");
-    
-    if (!logFunction->isFunction())
-        return;
-    
-    //Re-entry guard
-    if (logFunction == fnScope->getFunction())
-        return;
-    
-    if (!globals->isDefined(CALL_LOG_DEPTH))
-        return;
-    
-    auto depth = globals->get(CALL_LOG_DEPTH);
-    
-    if (depth->getType() != VT_NUMBER)
-        depth = jsInt(0);
-    
-    if (toInt32 (depth) <= 0)
-        globals->set("callLogger", jsNull());    //Remove call logger
-    else
-    {
-        globals->set(CALL_LOG_DEPTH, jsInt(toInt32( depth )-1));
-    
-        auto obj = JSObject::create();
-        obj->writeField("level", depth, false);
-        obj->writeField("name", jsString(fnScope->getFunction()->getName()), false);
-        obj->writeField("result", result, false);
-
-        ec->push(jsNull());     //this
-        ec->push(obj);          //log entry
-        ec->push(logFunction);
-
-        execCall(2, ec);    
-        ec->pop();              //Discard result.
-    }
-}
+//void returnLog (Ref<FunctionScope> fnScope, Ref<JSValue> result, ExecutionContext* ec)
+//{
+//    const auto globals = getGlobals();
+//
+//    if (!globals->isDefined("callLogger"))
+//        return;
+//
+//    const auto logFunction = globals->get("callLogger");
+//    
+//    if (!logFunction->isFunction())
+//        return;
+//    
+//    //Re-entry guard
+//    if (logFunction == fnScope->getFunction())
+//        return;
+//    
+//    if (!globals->isDefined(CALL_LOG_DEPTH))
+//        return;
+//    
+//    auto depth = globals->get(CALL_LOG_DEPTH);
+//    
+//    if (depth->getType() != VT_NUMBER)
+//        depth = jsInt(0);
+//    
+//    if (toInt32 (depth) <= 0)
+//        globals->set("callLogger", jsNull());    //Remove call logger
+//    else
+//    {
+//        globals->set(CALL_LOG_DEPTH, jsInt(toInt32( depth )-1));
+//    
+//        auto obj = JSObject::create();
+//        obj->writeField("level", depth, false);
+//        obj->writeField("name", jsString(fnScope->getFunction()->getName()), false);
+//        obj->writeField("result", result, false);
+//
+//        ec->push(jsNull());     //this
+//        ec->push(obj);          //log entry
+//        ec->push(logFunction);
+//
+//        execCall(2, ec);    
+//        ec->pop();              //Discard result.
+//    }
+//}
 
 
 /**

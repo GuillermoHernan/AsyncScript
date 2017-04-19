@@ -10,7 +10,6 @@
 
 #include "ascript_pch.hpp"
 #include "asObjects.h"
-#include "executionScope.h"
 #include "scriptMain.h"
 #include "microVM.h"
 #include "jsArray.h"

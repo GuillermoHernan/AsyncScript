@@ -9,7 +9,7 @@
 
 #include "ascript_pch.hpp"
 #include "mvmCodegen.h"
-#include "asActors.h"
+#include "asObjects.h"
 #include "ScriptException.h"
 
 #include <set>

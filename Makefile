@@ -16,13 +16,13 @@ mvmDisassembly.cpp \
 scriptMain.cpp \
 mvmFunctions.cpp \
 semanticCheck.cpp \
-executionScope.cpp \
 asObjects.cpp \
 asString.cpp \
 jsArray.cpp \
 ScriptPosition.cpp \
 ScriptException.cpp \
 mvmCodegen.cpp 
+#executionScope.cpp \
 #actorRuntime.cpp \
 #asActors.cpp \
 

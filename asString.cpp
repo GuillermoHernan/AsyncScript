@@ -10,7 +10,6 @@
 #include "ascript_pch.hpp"
 #include "asString.h"
 #include "jsArray.h"
-#include "executionScope.h"
 #include "scriptMain.h"
 #include <string>
 
