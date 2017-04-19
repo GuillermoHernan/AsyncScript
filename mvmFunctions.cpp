@@ -423,14 +423,14 @@ Ref<JSValue> mvmToNumber (ExecutionContext* ec)
 Ref<JSValue> mvmIndexedRead (ExecutionContext* ec)
 {
     auto index = ec->getParam(1);
-    return ec->getParam(0)->indexedRead(index);
+    return ec->getParam(0)->getAt(index);
 }
 
 Ref<JSValue> mvmIndexedWrite (ExecutionContext* ec)
 {
     auto index = ec->getParam(1);
     auto value = ec->getParam(2);
-    return ec->getParam(0)->indexedWrite(index, value);
+    return ec->getParam(0)->setAt(index, value);
 }
 
 Ref<JSValue> mvmMakeClosure (ExecutionContext* ec)
@@ -493,8 +493,8 @@ void registerMvmFunctions(Ref<JSObject> scope)
     addNative0("@toString", mvmToString, scope);
     addNative0("@toBoolean", mvmToBoolean, scope);
     addNative0("@toNumber", mvmToNumber, scope);
-    addNative1("@indexedRead", "index", mvmIndexedRead, scope);
-    addNative2("@indexedWrite", "index", "value", mvmIndexedWrite, scope);
+    addNative1("@getAt", "index", mvmIndexedRead, scope);
+    addNative2("@setAt", "index", "value", mvmIndexedWrite, scope);
     //addNative0("@call", mvmCall, scope);
     
     addNative2("@makeClosure", "env", "fn", mvmMakeClosure, scope);

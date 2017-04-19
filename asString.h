@@ -38,7 +38,7 @@ public:
     }
 
     virtual Ref<JSValue> readField(const std::string& key)const;
-    virtual Ref<JSValue> indexedRead(Ref<JSValue> index);
+    virtual Ref<JSValue> getAt(Ref<JSValue> index);
 
     virtual std::string getJSON(int indent);
 

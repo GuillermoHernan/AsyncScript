@@ -257,9 +257,9 @@ StringSet JSObject::getFields(bool inherited)const
  * @param index
  * @return 
  */
-Ref<JSValue> JSObject::indexedRead(Ref<JSValue> index)
+Ref<JSValue> JSObject::getAt(Ref<JSValue> index)
 {
-    /*auto fn = readField("indexedRead");
+    /*auto fn = readField("getAt");
     
     if (!fn->isNull())
         return callMemberFn(fn, index);
@@ -272,9 +272,9 @@ Ref<JSValue> JSObject::indexedRead(Ref<JSValue> index)
  * @param index
  * @return 
  */
-Ref<JSValue> JSObject::indexedWrite(Ref<JSValue> index, Ref<JSValue> value)
+Ref<JSValue> JSObject::setAt(Ref<JSValue> index, Ref<JSValue> value)
 {
-    /*auto fn = readField("indexedWrite");
+    /*auto fn = readField("setAt");
     
     if (!fn->isNull())
         return callMemberFn(fn, index, value);

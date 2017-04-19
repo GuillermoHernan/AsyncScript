@@ -54,8 +54,8 @@ public:
     virtual Ref<JSValue> readField(const std::string& key)const;
     virtual Ref<JSValue> writeField(const std::string& key, Ref<JSValue> value, bool isConst);
     
-    virtual Ref<JSValue> indexedRead(Ref<JSValue> index);
-    virtual Ref<JSValue> indexedWrite(Ref<JSValue> index, Ref<JSValue> value);
+    virtual Ref<JSValue> getAt(Ref<JSValue> index);
+    virtual Ref<JSValue> setAt(Ref<JSValue> index, Ref<JSValue> value);
 
     /////////////////////////////////////////
 

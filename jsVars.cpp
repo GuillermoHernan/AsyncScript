@@ -318,8 +318,8 @@ Ref<JSValue> JSValue::readField(const std::string& key)const
         functions.insert("toString");
         functions.insert("toBoolean");
         functions.insert("toNumber");
-        functions.insert("indexedRead");
-        functions.insert("indexedWrite");
+        functions.insert("getAt");
+        functions.insert("setAt");
         functions.insert("head");
         functions.insert("tail");
         functions.insert("call");

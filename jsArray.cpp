@@ -170,7 +170,7 @@ Ref<JSValue> JSArray::writeField(const std::string& key, Ref<JSValue> value, boo
  * @param index
  * @return 
  */
-Ref<JSValue> JSArray::indexedRead(Ref<JSValue> index)
+Ref<JSValue> JSArray::getAt(Ref<JSValue> index)
 {
     if (!isUint(index))
         return jsNull();
@@ -193,7 +193,7 @@ Ref<JSValue> JSArray::indexedRead(Ref<JSValue> index)
  * @param value
  * @return 
  */
-Ref<JSValue> JSArray::indexedWrite(Ref<JSValue> index, Ref<JSValue> value)
+Ref<JSValue> JSArray::setAt(Ref<JSValue> index, Ref<JSValue> value)
 {
     if (!isUint(index))
         return jsNull();

@@ -94,8 +94,8 @@ public:
     virtual Ref<JSValue> deleteField(const std::string& key) = 0;
     virtual StringSet    getFields(bool inherited = true)const=0;
 
-    virtual Ref<JSValue> indexedRead(Ref<JSValue> index) = 0;
-    virtual Ref<JSValue> indexedWrite(Ref<JSValue> index, Ref<JSValue> value) = 0;
+    virtual Ref<JSValue> getAt(Ref<JSValue> index) = 0;
+    virtual Ref<JSValue> setAt(Ref<JSValue> index, Ref<JSValue> value) = 0;
     
     virtual Ref<JSValue> iterator() = 0;
     
@@ -228,11 +228,11 @@ public:
         return jsNull();
     }
     
-    virtual Ref<JSValue> indexedRead(Ref<JSValue> index)
+    virtual Ref<JSValue> getAt(Ref<JSValue> index)
     {
         return jsNull();
     }
-    virtual Ref<JSValue> indexedWrite(Ref<JSValue> index, Ref<JSValue> value)
+    virtual Ref<JSValue> setAt(Ref<JSValue> index, Ref<JSValue> value)
     {
         return jsNull();
     }

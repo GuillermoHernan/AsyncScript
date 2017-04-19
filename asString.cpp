@@ -81,11 +81,11 @@ Ref<JSValue> JSString::readField(const string& key)const
 }
 
 /**
- * It overrides 'indexedRead' to have access to individual characters.
+ * It overrides 'getAt' to have access to individual characters.
  * @param index
  * @return 
  */
-Ref<JSValue> JSString::indexedRead(Ref<JSValue> index)
+Ref<JSValue> JSString::getAt(Ref<JSValue> index)
 {
     if (isUint(index))
     {
@@ -127,7 +127,7 @@ Ref<JSValue> scStringCharAt(ExecutionContext* ec)
 {
     Ref<JSString> str = ec->getLastParam().staticCast<JSString>();
     
-    return str->indexedRead( ec->getParam(0) );
+    return str->getAt( ec->getParam(0) );
 }
 
 Ref<JSValue> scStringCharCodeAt(ExecutionContext* ec)

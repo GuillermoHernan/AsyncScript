@@ -127,8 +127,8 @@ public:
     virtual Ref<JSValue> deleteField(const std::string& key);
     virtual StringSet    getFields(bool inherited = true)const;
     
-    virtual Ref<JSValue> indexedRead(Ref<JSValue> index);
-    virtual Ref<JSValue> indexedWrite(Ref<JSValue> index, Ref<JSValue> value);
+    virtual Ref<JSValue> getAt(Ref<JSValue> index);
+    virtual Ref<JSValue> setAt(Ref<JSValue> index, Ref<JSValue> value);
     
     virtual Ref<JSValue> iterator()override
     {

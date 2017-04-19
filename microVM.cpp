@@ -760,7 +760,7 @@ void execRdIndex (const int opCode, ExecutionContext* ec)
 {
     const Ref<JSValue>  key = ec->pop();
     const Ref<JSValue>  container = ec->pop();
-    const Ref<JSValue>  val = container->indexedRead(key);
+    const Ref<JSValue>  val = container->getAt(key);
     
     ec->push(val);
 }
@@ -776,7 +776,7 @@ void execWrIndex (const int opCode, ExecutionContext* ec)
     const Ref<JSValue>  key = ec->pop();
     const Ref<JSValue>  container = ec->pop();
     
-    container->indexedWrite(key, val); 
+    container->setAt(key, val); 
     ec->push(val);
 }
 
