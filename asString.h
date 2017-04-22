@@ -24,7 +24,7 @@ class JSString : public JSObject
 public:
     static Ref<JSString> create(const std::string& value);
 
-    virtual Ref<JSValue> unFreeze(bool forceClone=false);
+    virtual ASValue unFreeze(bool forceClone=false);
 
     virtual bool toBoolean()const
     {
@@ -37,8 +37,8 @@ public:
         return m_text;
     }
 
-    virtual Ref<JSValue> readField(const std::string& key)const;
-    virtual Ref<JSValue> getAt(Ref<JSValue> index);
+    virtual ASValue readField(const std::string& key)const;
+    virtual ASValue getAt(ASValue index);
 
     virtual std::string getJSON(int indent);
 

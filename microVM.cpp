@@ -32,9 +32,9 @@ void execPushC8 (const int opCode, ExecutionContext* ec);
 void execPushC16 (const int opCode, ExecutionContext* ec);
 void execCall8 (const int opCode, ExecutionContext* ec);
 void execCall16 (const int opCode, ExecutionContext* ec);
-void execCall (int nArgs, ExecutionContext* ec);
-void callLog (Ref<FunctionScope> fnScope, ExecutionContext* ec);
-void returnLog (Ref<FunctionScope> fnScope, Ref<JSValue> result, ExecutionContext* ec);
+void mvmExecCall (int nArgs, ExecutionContext* ec);
+//void callLog (Ref<FunctionScope> fnScope, ExecutionContext* ec);
+//void returnLog (Ref<FunctionScope> fnScope, ASValue result, ExecutionContext* ec);
 void execCp8 (const int opCode, ExecutionContext* ec);
 void execWr8 (const int opCode, ExecutionContext* ec);
 void execCp16 (const int opCode, ExecutionContext* ec);
@@ -109,7 +109,7 @@ static const OpFunction s_instructions[64] =
  * @param callHook
  * @return 
  */
-//Ref<JSValue> mvmExecute (Ref<MvmRoutine> code, 
+//ASValue mvmExecute (Ref<MvmRoutine> code, 
 //                         Ref<IScope> globals, 
 //                         Ref<IScope> locals)
 //{
@@ -130,7 +130,7 @@ static const OpFunction s_instructions[64] =
  * @param ec        Execution context
  * @return 
  */
-Ref<JSValue> mvmExecRoutine (Ref<MvmRoutine> code, ExecutionContext* ec, int nParams)
+ASValue mvmExecRoutine (Ref<MvmRoutine> code, ExecutionContext* ec, int nParams)
 {
     if (code->blocks.empty())
         return jsNull();
@@ -215,7 +215,7 @@ int execBlock (const MvmBlock& block, ExecutionContext* ec)
         next = block.nextBlocks[0];
     else
     {
-        const bool r = result->toBoolean();
+        const bool r = result.toBoolean(ec);
         
         next = block.nextBlocks[r?1:0];
     }
@@ -297,7 +297,7 @@ void execPushC16 (const int opCode, ExecutionContext* ec)
 void execCall8 (const int opCode, ExecutionContext* ec)
 {
     ASSERT (opCode >= OC_CALL && opCode <= OC_CALL_MAX);
-    execCall (opCode - OC_CALL, ec);
+    mvmExecCall (opCode - OC_CALL, ec);
 }
 
 /**
@@ -310,7 +310,7 @@ void execCall16 (const int opCode, ExecutionContext* ec)
     ASSERT (opCode >= OC16_CALL && opCode <= OC16_CALL_MAX);
     const int   nArgs = (OC_CALL_MAX - OC_CALL) + 1 + (opCode - OC16_CALL);
     
-    execCall(nArgs, ec);
+    mvmExecCall(nArgs, ec);
 }
 
 /**
@@ -318,32 +318,32 @@ void execCall16 (const int opCode, ExecutionContext* ec)
  * @param nArgs     Argument count (including 'this' pointer)
  * @param ec
  */
-void execCall (int nArgs, ExecutionContext* ec)
+void mvmExecCall (int nArgs, ExecutionContext* ec)
 {
     if (nArgs + 1 > (int)ec->stack.size())
         rtError ("Stack underflow executing function call");
     
-    Ref<JSValue>    fnVal = ec->pop();
-    Ref<JSValue>    result = jsNull();
+    ASValue    fnVal = ec->pop();
+    ASValue    result = jsNull();
     
     //Find function value.
-    fnVal = fnVal->toFunction ();
+    fnVal = fnVal.toFunction ();
     const size_t            initialStack = ec->stack.size() - nArgs;
     
-    if (!fnVal->isNull())
+    if (!fnVal.isNull())
     {
         Ref<JSFunction>     function;
         
-        if (fnVal->getType() == VT_FUNCTION)
+//        if (fnVal.getType() == VT_FUNCTION)
             function = fnVal.staticCast<JSFunction>();
-        else 
-        {
-            ASSERT (fnVal->getType() == VT_CLOSURE);
-            auto closure = fnVal.staticCast<JSClosure>();
-            function = closure->getFunction();
-            ec->push( closure->getEnv() );
-            ++nArgs;
-        }
+//        else 
+//        {
+//            ASSERT (fnVal.getType() == VT_CLOSURE);
+//            auto closure = fnVal.staticCast<JSClosure>();
+//            function = closure->getFunction();
+//            ec->push( closure->getEnv() );
+//            ++nArgs;
+//        }
         
         //callLog (fnScope, ec);
         
@@ -378,7 +378,7 @@ void execCall (int nArgs, ExecutionContext* ec)
  * @param ec            Execution context object
  * @return 
  */
-//Ref<JSValue> defaultCallHook (  Ref<JSValue> fnVal, 
+//ASValue defaultCallHook (  ASValue fnVal, 
 //                                Ref<FunctionScope> scope, 
 //                                ExecutionContext* ec, 
 //                                void* defaultHook)
@@ -421,7 +421,7 @@ void execCall (int nArgs, ExecutionContext* ec)
 //    if (logFunction == fnScope->getFunction())
 //        return;
 //    
-//    Ref<JSValue> depth;
+//    ASValue depth;
 //    
 //    if (!globals->isDefined(CALL_LOG_DEPTH))
 //    {
@@ -446,7 +446,7 @@ void execCall (int nArgs, ExecutionContext* ec)
 //    ec->push(obj);          //Log entry
 //    ec->push(logFunction);
 //    
-//    execCall(2, ec);  
+//    mvmExecCall(2, ec);  
 //    ec->pop();              //Discard result.
 //}
 
@@ -456,7 +456,7 @@ void execCall (int nArgs, ExecutionContext* ec)
  * @param result
  * @param ec
  */
-//void returnLog (Ref<FunctionScope> fnScope, Ref<JSValue> result, ExecutionContext* ec)
+//void returnLog (Ref<FunctionScope> fnScope, ASValue result, ExecutionContext* ec)
 //{
 //    const auto globals = getGlobals();
 //
@@ -495,7 +495,7 @@ void execCall (int nArgs, ExecutionContext* ec)
 //        ec->push(obj);          //log entry
 //        ec->push(logFunction);
 //
-//        execCall(2, ec);    
+//        mvmExecCall(2, ec);    
 //        ec->pop();              //Discard result.
 //    }
 //}
@@ -586,8 +586,8 @@ void execWr16 (const int opCode, ExecutionContext* ec)
  */
 void execSwap (const int opCode, ExecutionContext* ec)
 {
-    const Ref<JSValue>  a = ec->pop();
-    const Ref<JSValue>  b = ec->pop();
+    const ASValue  a = ec->pop();
+    const ASValue  b = ec->pop();
     
     ec->push(a);
     ec->push(b);
@@ -649,7 +649,7 @@ void execPopScope (const int opCode, ExecutionContext* ec)
  */
 //void execRdLocal (const int opCode, ExecutionContext* ec)
 //{
-//    const Ref<JSValue>  name = ec->pop();
+//    const ASValue  name = ec->pop();
 //    auto                nameStr = name->toString();
 //    Ref<StackFrame>     frame = ec->frames.back();
 //    
@@ -673,8 +673,8 @@ void execPopScope (const int opCode, ExecutionContext* ec)
  */
 //void execWrLocal (const int opCode, ExecutionContext* ec)
 //{
-//    const Ref<JSValue>  val = ec->pop();
-//    const Ref<JSValue>  name = ec->pop();
+//    const ASValue  val = ec->pop();
+//    const ASValue  name = ec->pop();
 //    auto                nameStr = name->toString();
 //    Ref<StackFrame>     frame = ec->frames.back();
 //    
@@ -699,8 +699,8 @@ void execPopScope (const int opCode, ExecutionContext* ec)
 //{
 //    //auto globals = ec->scopes.front();
 //    
-//    const Ref<JSValue>  name = ec->pop();
-//    const Ref<JSValue>  val = getGlobals()->get(name->toString());
+//    const ASValue  name = ec->pop();
+//    const ASValue  val = getGlobals()->get(name->toString());
 //    
 //    ec->push(val);
 //}
@@ -713,8 +713,8 @@ void execPopScope (const int opCode, ExecutionContext* ec)
 //void execWrGlobal (const int opCode, ExecutionContext* ec)
 //{
 //    //auto globals = ec->scopes.front();
-//    const Ref<JSValue>  val = ec->pop();
-//    const Ref<JSValue>  name = ec->pop();
+//    const ASValue  val = ec->pop();
+//    const ASValue  name = ec->pop();
 //    
 //    getGlobals()->set(name->toString(), val);
 //}
@@ -727,9 +727,9 @@ void execPopScope (const int opCode, ExecutionContext* ec)
  */
 void execRdField (const int opCode, ExecutionContext* ec)
 {
-    const Ref<JSValue>  name = ec->pop();
-    const Ref<JSValue>  objVal = ec->pop();
-    const Ref<JSValue>  val = objVal->readField(name->toString());
+    const ASValue  name = ec->pop();
+    const ASValue  objVal = ec->pop();
+    const ASValue  val = objVal.readField(name.toString(ec));
     
     ec->push(val);
 }
@@ -741,11 +741,11 @@ void execRdField (const int opCode, ExecutionContext* ec)
  */
 void execWrField (const int opCode, ExecutionContext* ec)
 {
-    const Ref<JSValue>  val = ec->pop();
-    const Ref<JSValue>  name = ec->pop();
-    const Ref<JSValue>  objVal = ec->pop();
+    const ASValue  val = ec->pop();
+    const ASValue  name = ec->pop();
+    ASValue  objVal = ec->pop();
     
-    objVal->writeField (name->toString(), val, false);
+    objVal.writeField (name.toString(ec), val, false);
     ec->push(val);
 }
 
@@ -756,9 +756,9 @@ void execWrField (const int opCode, ExecutionContext* ec)
  */
 void execRdIndex (const int opCode, ExecutionContext* ec)
 {
-    const Ref<JSValue>  key = ec->pop();
-    const Ref<JSValue>  container = ec->pop();
-    const Ref<JSValue>  val = container->getAt(key);
+    const ASValue  key = ec->pop();
+    const ASValue  container = ec->pop();
+    const ASValue  val = container.getAt(key, ec);
     
     ec->push(val);
 }
@@ -770,11 +770,11 @@ void execRdIndex (const int opCode, ExecutionContext* ec)
  */
 void execWrIndex (const int opCode, ExecutionContext* ec)
 {
-    const Ref<JSValue>  val = ec->pop();
-    const Ref<JSValue>  key = ec->pop();
-    const Ref<JSValue>  container = ec->pop();
+    const ASValue  val = ec->pop();
+    const ASValue  key = ec->pop();
+    const ASValue  container = ec->pop();
     
-    container->setAt(key, val); 
+    container.setAt(key, val, ec); 
     ec->push(val);
 }
 
@@ -821,11 +821,11 @@ void execWrIndex (const int opCode, ExecutionContext* ec)
  */
 void execNewConstField (const int opCode, ExecutionContext* ec)
 {
-    const Ref<JSValue>  val = ec->pop();
-    const Ref<JSValue>  name = ec->pop();
-    const Ref<JSValue>  objVal = ec->pop();
+    const ASValue  val = ec->pop();
+    const ASValue  name = ec->pop();
+    ASValue  objVal = ec->pop();
     
-    objVal->writeField (name->toString(), val, true);
+    objVal.writeField (name.toString(ec), val, true);
     ec->push(val);
 }
 
@@ -841,11 +841,11 @@ void execNewConstField (const int opCode, ExecutionContext* ec)
 void execRdParam (const int opCode, ExecutionContext* ec)
 {
     const auto indexVal = ec->pop();
-    Ref<JSValue>    result = jsNull();
+    ASValue    result = jsNull();
     
-    if (isInteger(indexVal) )
+    if ( indexVal.isInteger() )
     {
-        const int           index = toInt32(indexVal);
+        const int           index = indexVal.toInt32();
         const CallFrame&    curFrame = ec->frames.back();
         
         if (index >= 0 && index < (int)curFrame.numParams)
@@ -869,9 +869,9 @@ void execWrParam (const int opCode, ExecutionContext* ec)
     auto        value = ec->pop();
     const auto  paramIndex = ec->pop();
 
-    if (isInteger(paramIndex) )
+    if ( paramIndex.isInteger() )
     {
-        const int           index = toInt32(paramIndex);
+        const int           index = paramIndex.toInt32();
         const CallFrame&    curFrame = ec->frames.back();
         
         if (index >= 0 && index < (int)curFrame.numParams)
@@ -951,7 +951,7 @@ bool ExecutionContext::checkStackNotEmpty()
     return !stack.empty();
 }
 
-Ref<JSValue> ExecutionContext::getConstant (size_t index)const
+ASValue ExecutionContext::getConstant (size_t index)const
 {
     ASSERT (!frames.empty());
     ASSERT (index < frames.back().constants->size());
@@ -959,7 +959,7 @@ Ref<JSValue> ExecutionContext::getConstant (size_t index)const
     return (*frames.back().constants)[index];
 }
 
-Ref<JSValue> ExecutionContext::getParam (size_t index)const
+ASValue ExecutionContext::getParam (size_t index)const
 {
     ASSERT (!frames.empty());
     
@@ -969,7 +969,7 @@ Ref<JSValue> ExecutionContext::getParam (size_t index)const
     return stack[curFrame.paramsIndex + index];
 }
 
-Ref<JSValue> ExecutionContext::getLastParam ()const
+ASValue ExecutionContext::getLastParam ()const
 {
     ASSERT (!frames.empty());
     

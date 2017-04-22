@@ -297,7 +297,7 @@ Ref<AstNode> astGetExtends(Ref<AstNode> node)
  */
 Ref<AstLiteral> AstLiteral::create(CScriptToken token)
 {
-    Ref<JSValue>    value;
+    ASValue    value;
     
     switch (token.type())
     {
@@ -361,7 +361,7 @@ Ref<AstNamedBranch> AstClassNode::getExtendsNode()const
  * This particular version creates an object containing all its children
  * @return 
  */
-Ref<JSValue> AstNode::toJS()const
+ASValue AstNode::toJS()const
 {
     Ref<JSObject>   obj = JSObject::create();
     
@@ -373,13 +373,13 @@ Ref<JSValue> AstNode::toJS()const
     
     const AstNodeList&  c = children();
     if (!c.empty())
-        obj->writeField("z_children", toJSArray(c), false);
+        obj->writeField("z_children", toJSArray(c)->value(), false);
 
     const auto value = getValue();
-    if (!value->isNull())
+    if (!value.isNull())
         obj->writeField("v_value", value, false);
 
-    return obj;
+    return obj->value();
 }
 
 
@@ -387,72 +387,72 @@ Ref<JSValue> AstNode::toJS()const
  * Function declaration to JSValue
  * @return 
  */
-Ref<JSValue> AstFunction::toJS()const
+ASValue AstFunction::toJS()const
 {
     Ref<JSObject>   obj = AstNode::toJS().staticCast<JSObject>();
     
-    obj->writeField("c_parameters", JSArray::createStrArray(m_params), false);
+    obj->writeField("c_parameters", JSArray::createStrArray(m_params)->value(), false);
     if (m_code.notNull())
         obj->writeField("d_code", m_code->toJS(), false);
     
-    return obj;
+    return obj->value();
 }
 
 /**
  * Class node to javascript object
  * @return 
  */
-Ref<JSValue> AstClassNode::toJS()const
+ASValue AstClassNode::toJS()const
 {
     Ref<JSObject>   obj = AstNamedBranch::toJS().staticCast<JSObject>();
     
-    obj->writeField("c_parameters", JSArray::createStrArray(m_params), false);
+    obj->writeField("c_parameters", JSArray::createStrArray(m_params)->value(), false);
     
-    return obj;
+    return obj->value();
 }
 
 /**
  * Actor node to javascript object
  * @return 
  */
-Ref<JSValue> AstActor::toJS()const
+ASValue AstActor::toJS()const
 {
     Ref<JSObject>   obj = AstNamedBranch::toJS().staticCast<JSObject>();
     
-    obj->writeField("c_parameters", JSArray::createStrArray(m_params), false);
+    obj->writeField("c_parameters", JSArray::createStrArray(m_params)->value(), false);
     
-    return obj;
+    return obj->value();
 }
 
 /**
  * Operator to JSValue
  * @return 
  */
-Ref<JSValue> AstOperator::toJS()const
+ASValue AstOperator::toJS()const
 {
     Ref<JSObject>   obj = AstBranchNode::toJS().staticCast<JSObject>();
 
     obj->writeField("d_operator", jsString(getTokenStr(code)), false);
-    return obj;
+    return obj->value();
 }
 
 /**
  * Object literal to JSValue
  * @return 
  */
-Ref<JSValue> AstObject::toJS()const
+ASValue AstObject::toJS()const
 {
     Ref<JSObject>   obj = JSObject::create();
     Ref<JSObject>   props = JSObject::create();
     
     obj->writeField("a_type", jsString(astTypeToString(getType())), false);
-    obj->writeField("b_properties", props, false);
+    obj->writeField("b_properties", props->value(), false);
     
     PropertyList::const_iterator it;
     for (it = m_properties.begin(); it != m_properties.end(); ++it)
         props->writeField(it->name, it->expr->toJS(), false);
     
-    return obj;
+    return obj->value();
 }
 
 /**

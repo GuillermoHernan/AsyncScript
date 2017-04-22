@@ -29,10 +29,10 @@ public:
                                      const VarMap& members, 
                                      const StringVector& params);
 
-    //virtual Ref<JSValue> call (Ref<FunctionScope> scope);
+    //virtual ASValue call (Ref<FunctionScope> scope);
     
     virtual StringSet getFields(bool inherited = true)const;
-    virtual Ref<JSValue> readField(const std::string& key)const;
+    virtual ASValue readField(const std::string& key)const;
     
     Ref<AsEndPoint> getEndPoint (const std::string& name);
 
@@ -87,8 +87,8 @@ public:
         return VT_ACTOR;
     }
     
-    virtual Ref<JSValue> readField(const std::string& key)const;    
-    virtual Ref<JSValue> writeField(const std::string& key, Ref<JSValue> value, bool isConst);
+    virtual ASValue readField(const std::string& key)const;    
+    virtual ASValue writeField(const std::string& key, ASValue value, bool isConst);
     
     void setOutputConnection (const std::string& msgName, Ref<AsEndPointRef> dst)
     {
@@ -102,14 +102,14 @@ public:
         return !m_finished;
     }
     
-    void stop(Ref<JSValue> result, Ref<JSValue> error);
+    void stop(ASValue result, ASValue error);
         
-    Ref<JSValue> getResult()
+    ASValue getResult()
     {
         return m_result;
     }
         
-    Ref<JSValue> getError()
+    ASValue getError()
     {
         return m_error;
     }
@@ -151,8 +151,8 @@ private:
     
     typedef std::map<std::string, Ref<AsEndPointRef> > ConnectionMap;
     ConnectionMap       m_outputConections;
-    Ref<JSValue>        m_result;
-    Ref<JSValue>        m_error;
+    ASValue        m_result;
+    ASValue        m_error;
     
     bool                m_finished;
 };
@@ -171,7 +171,7 @@ public:
         return refFromNew(new AsActorRef(actor));
     }
     
-    virtual Ref<JSValue> readField(const std::string& key)const
+    virtual ASValue readField(const std::string& key)const
     {
         return getEndPoint(key);
     }
@@ -186,7 +186,7 @@ public:
         return m_ref;
     }
     
-    Ref<JSValue> getResult()
+    ASValue getResult()
     {
         if (isRunning())
             return jsNull();
@@ -194,7 +194,7 @@ public:
             return m_ref->getResult();
     }
     
-    Ref<JSValue> getError()
+    ASValue getError()
     {
         if (isRunning())
             return jsNull();
@@ -293,7 +293,7 @@ public:
         return (m_endPoint->getType() == VT_OUTPUT_EP) ? VT_OUTPUT_EP_REF : VT_INPUT_EP_REF;
     }
     
-    Ref<JSValue> call (Ref<FunctionScope> scope);
+    ASValue call (Ref<FunctionScope> scope);
     
     Ref<AsActorRef> getActor()const
     {

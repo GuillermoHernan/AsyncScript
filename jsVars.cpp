@@ -19,7 +19,7 @@
 
 using namespace std;
 
-//Ref<JSValue> JSValue::call (Ref<FunctionScope> scope)
+//ASValue JSValue::call (Ref<FunctionScope> scope)
 //{
 //    rtError ("Not a callable object: %s", toString().c_str());
 //    return jsNull();
@@ -39,44 +39,44 @@ std::string getTypeName(JSValueTypes vType)
         types[VT_NULL] = "null";
         types[VT_NUMBER] = "Number";
         types[VT_BOOL] = "Boolean";
-        types[VT_ACTOR_REF] = "Actor reference";
-        types[VT_INPUT_EP_REF] = "Input EP reference";
-        types[VT_OUTPUT_EP_REF] = "Output EP reference";
+//        types[VT_ACTOR_REF] = "Actor reference";
+//        types[VT_INPUT_EP_REF] = "Input EP reference";
+//        types[VT_OUTPUT_EP_REF] = "Output EP reference";
         types[VT_CLASS] = "Class";
         types[VT_OBJECT] = "Object";
         types[VT_STRING] = "String";
-        types[VT_ARRAY] = "Array";
-        types[VT_ACTOR] = "Actor";
+//        types[VT_ARRAY] = "Array";
+//        types[VT_ACTOR] = "Actor";
         types[VT_FUNCTION] = "Function";
-        types[VT_CLOSURE] = "Closure";
-        types[VT_ACTOR_CLASS] = "Actor class";
-        types[VT_INPUT_EP] = "Input EP";
-        types[VT_OUTPUT_EP] = "Output EP";
+//        types[VT_CLOSURE] = "Closure";
+//        types[VT_ACTOR_CLASS] = "Actor class";
+//        types[VT_INPUT_EP] = "Input EP";
+//        types[VT_OUTPUT_EP] = "Output EP";
     }
 
     ASSERT(types.find(vType) != types.end());
     return types[vType];
 }
 
-Ref<JSValue> jsNull()
+ASValue jsNull()
 {
-    static Ref<JSValue> value = refFromNew(new JSNull);
+    static ASValue value;
     return value;
 }
 
-Ref<JSBool> jsTrue()
+ASValue jsTrue()
 {
-    static Ref<JSBool> value = refFromNew(new JSBool(true));
+    static ASValue value(true);
     return value;
 }
 
-Ref<JSBool> jsFalse()
+ASValue jsFalse()
 {
-    static Ref<JSBool> value = refFromNew(new JSBool(false));
+    static ASValue value(false);
     return value;
 }
 
-Ref<JSValue> jsBool(bool value)
+ASValue jsBool(bool value)
 {
     if (value)
         return jsTrue();
@@ -84,25 +84,27 @@ Ref<JSValue> jsBool(bool value)
         return jsFalse();
 }
 
-Ref<JSValue> jsInt(int value)
+ASValue jsInt(int value)
 {
-    return JSNumber::create(value);
+    return ASValue((double)value);
 }
 
-Ref<JSValue> jsSizeT(size_t value)
+ASValue jsSizeT(size_t value)
 {
-    return JSNumber::create((double)value);
+    return ASValue((double)value);
 }
 
 
-Ref<JSValue> jsDouble(double value)
+ASValue jsDouble(double value)
 {
-    return JSNumber::create(value);
+    return ASValue(value);
 }
 
-Ref<JSValue> jsString(const std::string& value)
+ASValue jsString(const std::string& value)
 {
-    return JSString::create(value);
+    auto str = JSString::create(value);
+    
+    return ASValue(str.getPointer(), VT_STRING);
 }
 
 /**
@@ -110,72 +112,108 @@ Ref<JSValue> jsString(const std::string& value)
  * It also stores the original string representation, to have an accurate string 
  * representation
  */
-class JSNumberConstant : public JSNumber
-{
-public:
+//class JSNumberConstant : public JSNumber
+//{
+//public:
+//
+//    static Ref<JSNumberConstant> create(const std::string& text)
+//    {
+//        if (text.size() > 0 && text[0] == '0' && isOctal(text))
+//        {
+//            const unsigned value = strtoul(text.c_str() + 1, NULL, 8);
+//
+//            return refFromNew(new JSNumberConstant(value, text));
+//        }
+//        else
+//        {
+//            const double value = strtod(text.c_str(), NULL);
+//
+//            return refFromNew(new JSNumberConstant(value, text));
+//        }
+//    }
+//
+//    virtual std::string toString()const
+//    {
+//        return m_text;
+//    }
+//
+//private:
+//
+//    JSNumberConstant(double value, const std::string& text)
+//    : JSNumber(value), m_text(text)
+//    {
+//    }
+//
+//    string m_text;
+//};//class JSNumberConstant
 
-    static Ref<JSNumberConstant> create(const std::string& text)
+ASValue createConstant(CScriptToken token)
+{
+    if (token.type() == LEX_STR)
+        return jsString(token.strValue());
+    else
     {
+        string text = token.text();
+        
         if (text.size() > 0 && text[0] == '0' && isOctal(text))
         {
             const unsigned value = strtoul(text.c_str() + 1, NULL, 8);
 
-            return refFromNew(new JSNumberConstant(value, text));
+            return jsSizeT(value);
         }
         else
         {
             const double value = strtod(text.c_str(), NULL);
 
-            return refFromNew(new JSNumberConstant(value, text));
+            return jsDouble(value);
         }
+        
     }
-
-    virtual std::string toString()const
-    {
-        return m_text;
-    }
-
-private:
-
-    JSNumberConstant(double value, const std::string& text)
-    : JSNumber(value), m_text(text)
-    {
-    }
-
-    string m_text;
-};//class JSNumberConstant
-
-Ref<JSValue> createConstant(CScriptToken token)
-{
-    if (token.type() == LEX_STR)
-        return JSString::create(token.strValue());
-    else
-        return JSNumberConstant::create(token.text());
 }
 
 /**
- * Compares two javascript values.
- * @param a
+ * Returns an iterator which points to a list which just contains
+ * the given item
+ * @param v
+ * @return 
+ */
+ASValue singleItemIterator(ASValue v)
+{
+    //TODO: Implement as specified.
+    return jsNull();    
+}
+
+
+/**
+ * Compares two values.
  * @param b
  * @return 
  */
-double jsValuesCompare(Ref<JSValue> a, Ref<JSValue> b)
+double ASValue::compare(const ASValue& b, ExecutionContext* ec)const
 {
-    auto typeA = a->getType();
-    auto typeB = b->getType();
+    auto typeA = this->getType();
+    auto typeB = b.getType();
 
     if (typeA != typeB)
         return typeA - typeB;
     else
     {
-        if (typeA <= VT_NULL)
+        switch (typeA)
+        {
+        case VT_NULL:
             return 0;
-        else if (typeA <= VT_BOOL)
-            return a->toDouble() - b->toDouble();
-        else if (typeA == VT_STRING)
-            return a->toString().compare(b->toString());
-        else
-            return a.getPointer() - b.getPointer();
+        case VT_NUMBER:
+            return this->m_content.number - b.m_content.number;
+        case VT_BOOL:
+            return int(this->m_content.boolean) - int(b.m_content.boolean);
+        case VT_STRING:
+            return toString(ec).compare(b.toString(ec));
+            
+        //TODO: Make script - overridable?
+        
+        default:
+            return this->m_content.ptr - b.m_content.ptr;
+        }
     }
 }
 
@@ -186,14 +224,12 @@ double jsValuesCompare(Ref<JSValue> a, Ref<JSValue> b)
  * @param a
  * @return 
  */
-int toInt32(Ref<JSValue> a)
+int ASValue::toInt32()const
 {
-    const double v = a->toDouble();
-
-    if (isnan(v))
+    if (m_type != VT_NUMBER)
         return 0;
     else
-        return (int) v;
+        return (int) m_content.number;
 }
 
 /**
@@ -203,19 +239,17 @@ int toInt32(Ref<JSValue> a)
  * number representable by a 64 bit integer (0xFFFFFFFFFFFFFFFF), which cannot
  * be represented by a double.
  */
-unsigned long long toUint64(Ref<JSValue> a)
+unsigned long long ASValue::toUint64()const
 {
-    const double v = a->toDouble();
-
-    if (isnan(v))
+    if (m_type != VT_NUMBER)
         return 0xFFFFFFFFFFFFFFFF;
     else
-        return (unsigned long long) v;
+        return (unsigned long long) m_content.number;
 }
 
-size_t toSizeT(Ref<JSValue> a)
+size_t ASValue::toSizeT()const
 {
-    return (size_t) toUint64(a);
+    return (size_t) toUint64();
 }
 
 /**
@@ -223,11 +257,15 @@ size_t toSizeT(Ref<JSValue> a)
  * @param a
  * @return 
  */
-bool isInteger(Ref<JSValue> a)
+bool ASValue::isInteger()const
 {
-    const double v = a->toDouble();
-
-    return floor(v) == v;
+    if (m_type != VT_NUMBER)
+        return false;
+    else
+    {
+        double v = m_content.number;
+        return floor(v) == v;
+    }
 }
 
 /**
@@ -235,28 +273,9 @@ bool isInteger(Ref<JSValue> a)
  * @param a
  * @return 
  */
-bool isUint(Ref<JSValue> a)
+bool ASValue::isUint()const
 {
-    const double v = a->toDouble();
-
-    if (v < 0)
-        return false;
-    else
-        return floor(v) == v;
-}
-
-/**
- * Creates a 'deep frozen' copy of an object, making deep frozen copies of 
- * all descendants which are necessary,
- * @param obj
- * @param transformed
- * @return 
- */
-
-Ref<JSValue> JSValue::deepFreeze()
-{
-    JSValuesMap transformed;
-    return deepFreeze(transformed);
+    return isInteger() && m_content.number >= 0;
 }
 
 /**
@@ -267,7 +286,7 @@ Ref<JSValue> JSValue::deepFreeze()
  * @param value
  * @param isConst   If true, it creates a new constant
  */
-void checkedVarWrite(VarMap& map, const std::string& name, Ref<JSValue> value, bool isConst)
+void checkedVarWrite(VarMap& map, const std::string& name, ASValue value, bool isConst)
 {
     auto it = map.find(name);
 
@@ -284,10 +303,10 @@ void checkedVarWrite(VarMap& map, const std::string& name, Ref<JSValue> value, b
  * @param name
  * @return 
  */
-Ref<JSValue> checkedVarDelete(VarMap& map, const std::string& name)
+ASValue checkedVarDelete(VarMap& map, const std::string& name)
 {
     auto it = map.find(name);
-    Ref<JSValue> value;
+    ASValue value;
 
     if (it == map.end())
         rtError("'%s' is not defined", name.c_str());
@@ -307,65 +326,65 @@ Ref<JSValue> checkedVarDelete(VarMap& map, const std::string& name)
  * @param key
  * @return 
  */
-Ref<JSValue> JSValue::readField(const std::string& key)const
-{
-    //TODO: Review. I believe that this function is no longer necessary.
-    typedef set<string>  FnSet;
-    static FnSet functions;
-    
-    if (functions.empty())
-    {
-        functions.insert("toString");
-        functions.insert("toBoolean");
-        functions.insert("toNumber");
-        functions.insert("getAt");
-        functions.insert("setAt");
-        functions.insert("head");
-        functions.insert("tail");
-        functions.insert("call");
-    }
-    
-    /*if (functions.count(key) > 0)
-        return getGlobals()->get("@" + key);
-    else*/
-        return jsNull();
-}
+//ASValue JSValue::readField(const std::string& key)const
+//{
+//    //TODO: Review. I believe that this function is no longer necessary.
+//    typedef set<string>  FnSet;
+//    static FnSet functions;
+//    
+//    if (functions.empty())
+//    {
+//        functions.insert("toString");
+//        functions.insert("toBoolean");
+//        functions.insert("toNumber");
+//        functions.insert("getAt");
+//        functions.insert("setAt");
+//        functions.insert("head");
+//        functions.insert("tail");
+//        functions.insert("call");
+//    }
+//    
+//    /*if (functions.count(key) > 0)
+//        return getGlobals()->get("@" + key);
+//    else*/
+//        return jsNull();
+//}
 
 
 // JSNumber
 //
 //////////////////////////////////////////////////
 
-/**
- * Construction function
- * @param value
- * @return 
- */
-Ref<JSNumber> JSNumber::create(double value)
-{
-    return refFromNew(new JSNumber(value));
-}
-
-std::string JSNumber::toString()const
-{
-    //TODO: Review the standard. Find about number to string conversion formats.
-    return double_to_string(m_value);
-}
-
-std::string JSNumber::getJSON(int indent)
-{
-    return double_to_string(m_value);
-}
+///**
+// * Construction function
+// * @param value
+// * @return 
+// */
+//Ref<JSNumber> JSNumber::create(double value)
+//{
+//    return refFromNew(new JSNumber(value));
+//}
+//
+//std::string JSNumber::toString()const
+//{
+//    //TODO: Review the standard. Find about number to string conversion formats.
+//    return double_to_string(m_value);
+//}
+//
+//std::string JSNumber::getJSON(int indent)
+//{
+//    return double_to_string(m_value);
+//}
 
 // JSBool
 //
 //////////////////////////////////////////////////
 
 
-std::string JSBool::getJSON(int indent)
-{
-    return toString();
-}
+//std::string JSBool::getJSON(int indent)
+//{
+//    return toString();
+//}
 
 
 // JSFunction
@@ -427,7 +446,7 @@ JSFunction::~JSFunction()
  * @param ec
  * @return 
  */
-//Ref<JSValue> JSFunction::call (Ref<FunctionScope> scope)
+//ASValue JSFunction::call (Ref<FunctionScope> scope)
 //{
 //    if (isNative())
 //        return nativePtr()(scope.getPointer());
@@ -465,12 +484,362 @@ std::string JSFunction::toString()const
     return output.str();
 }
 
-Ref<JSClosure> JSClosure::create (Ref<JSFunction> fn, Ref<JSValue> env)
+//Ref<JSClosure> JSClosure::create (Ref<JSFunction> fn, ASValue env)
+//{
+//    return refFromNew (new JSClosure(fn, env));
+//}
+//
+//JSClosure::JSClosure (Ref<JSFunction> fn, ASValue env)
+//    : m_fn(fn), m_env(env)
+//{
+//}
+
+ASValue::ASValue () : m_type(VT_NULL)
 {
-    return refFromNew (new JSClosure(fn, env));
+    m_content.ptr = NULL;
 }
 
-JSClosure::JSClosure (Ref<JSFunction> fn, Ref<JSValue> env)
-    : m_fn(fn), m_env(env)
+ASValue::ASValue (double number) : m_type(VT_NUMBER)
 {
+    m_content.number = number;
+}
+
+ASValue::ASValue (bool value) : m_type(VT_BOOL)
+{
+    m_content.boolean = value;
+}
+
+ASValue::ASValue (RefCountObj* ptr, JSValueTypes type) : m_type(type)
+{
+    ASSERT (type >= VT_CLASS);
+    
+    m_content.ptr = ptr;
+    ptr->addref();
+}
+
+ASValue::~ASValue()
+{
+    setNull();
+}
+
+void ASValue::setNull()
+{
+    if (m_type >= VT_CLASS)
+        m_content.ptr->release();
+    
+    m_type = VT_NULL;
+    m_content.ptr = NULL;
+}
+
+
+ASValue::ASValue (const ASValue& src) : m_content (src.m_content), m_type(src.m_type)
+{
+    if (src.getType() >= VT_CLASS)
+        src.m_content.ptr->addref();
+}
+
+ASValue& ASValue::operator=(const ASValue& src)
+{
+    if (src.getType() >= VT_CLASS)
+        src.m_content.ptr->addref();
+    
+    if (m_type >= VT_CLASS)
+        m_content.ptr->release();
+
+    m_type = src.getType();
+    m_content = src.m_content;
+    
+    return *this;
+}
+
+/**
+ * Gets the mutability of a value
+ * @return 
+ */
+JSMutability ASValue::getMutability()const
+{
+    if (m_type != VT_OBJECT)
+        return MT_DEEPFROZEN;
+    else
+        return staticCast<JSObject>()->getMutability();
+}
+
+bool ASValue::isMutable()const
+{
+    return getMutability() == MT_MUTABLE;
+}
+
+ASValue ASValue::freeze()const
+{
+    if (m_type != VT_OBJECT)
+        return *this;
+    else
+        return staticCast<JSObject>()->freeze();    
+}
+
+/**
+ * Creates a 'deep frozen' copy of an object, making deep frozen copies of 
+ * all descendants which are necessary,
+ * @return 
+ */
+ASValue ASValue::deepFreeze()const
+{
+    if (m_type != VT_OBJECT)
+        return *this;
+    else
+    {
+        ValuesMap   tmpMap;
+        return staticCast<JSObject>()->deepFreeze(tmpMap);    
+    }
+}
+
+ASValue ASValue::deepFreeze(ValuesMap& transformed)const
+{
+    if (m_type != VT_OBJECT)
+        return *this;
+    else
+        return staticCast<JSObject>()->deepFreeze(transformed);    
+}
+
+ASValue ASValue::unFreeze(bool forceClone)const
+{
+    if (m_type != VT_OBJECT)
+        return *this;
+    else
+        return staticCast<JSObject>()->unFreeze(forceClone);    
+}
+
+/**
+ * Casts a value into a string.
+ * @param ec
+ * @return 
+ */
+string ASValue::toString(ExecutionContext* ec)const
+{
+    switch (m_type)
+    {
+    case VT_NULL:   return "[null]";
+    case VT_NUMBER: return double_to_string (m_content.number);
+    case VT_BOOL:   return m_content.boolean ? "true" : "false";
+    case VT_CLASS: 
+        return staticCast<JSClass>()->toString();
+    case VT_OBJECT: 
+        return staticCast<JSObject>()->toString(ec);
+    case VT_STRING: 
+        return staticCast<JSString>()->toString();
+    case VT_FUNCTION: 
+        return staticCast<JSFunction>()->toString();
+    
+    default:
+        return "[Unknown value type]";
+    }
+}
+
+/**
+ * Casts a value into a boolean.
+ * @param ec
+ * @return 
+ */
+bool ASValue::toBoolean(ExecutionContext* ec)const
+{
+    switch (m_type)
+    {
+    case VT_NULL:   return false;
+    case VT_NUMBER: return m_content.number != 0;
+    case VT_BOOL:   return m_content.boolean;
+    case VT_STRING: return !toString(ec).empty();
+    case VT_OBJECT: 
+        return staticCast<JSObject>()->toBoolean(ec);
+    default:        return true;
+    }
+}
+
+
+/**
+ * Casts a value into a double precision number.
+ * @param ec
+ * @return 
+ */
+double ASValue::toDouble(ExecutionContext* ec)const
+{
+    switch (m_type)
+    {
+    case VT_NUMBER: return m_content.number;
+    case VT_BOOL:   return m_content.boolean ? 1 : 0;
+    case VT_STRING: return staticCast<JSString>()->toDouble();
+    case VT_OBJECT:
+        return staticCast<JSObject>()->toDouble(ec);
+    default:        
+        return getNaN();
+    }
+}
+
+
+/**
+ * Converts the value into a callable function (or NULL if cannot be converted)
+ * @param ec
+ * @return 
+ */
+ASValue ASValue::toFunction()const
+{
+    ASValue result = *this;
+    
+    while (result.m_type == VT_OBJECT)
+        result = result.readField("call");
+    
+    if (result.m_type == VT_CLASS)
+        result = result.staticCast<JSClass>()->getConstructor()->value();
+    
+    if (result.m_type != VT_FUNCTION)
+        result = jsNull();
+    
+    return result;
+}
+
+/**
+ * Reads a field ('.' operator)
+ * @param key
+ * @return 
+ */
+ASValue ASValue::readField(const std::string& key)const
+{
+    switch (m_type)
+    {
+    case VT_CLASS:
+        return staticCast<JSClass>()->readField(key);
+        
+    case VT_STRING:
+    case VT_OBJECT: 
+        return staticCast<JSObject>()->readField(key);
+    default:        
+        return jsNull();
+    }    
+}
+
+/**
+ * Writes a field ('.' operator)
+ * @param key
+ * @param value
+ * @param isConst
+ * @return 
+ */
+ASValue ASValue::writeField(const std::string& key, ASValue value, bool isConst)
+{
+    if (m_type == VT_OBJECT)
+        return staticCast<JSObject>()->writeField(key, value, isConst);
+    else
+        return jsNull();
+}
+
+/**
+ * Deletes a field.
+ * @param key
+ * @return 
+ */
+ASValue ASValue::deleteField(const std::string& key)
+{
+    if (m_type == VT_OBJECT)
+        return staticCast<JSObject>()->deleteField(key);
+    else
+        return jsNull();
+}
+
+/**
+ * Gets the list of fields of an object
+ * @param inherited
+ * @return 
+ */
+StringSet ASValue::getFields(bool inherited)const
+{
+    static StringSet empty;
+
+    switch (m_type)
+    {
+    case VT_CLASS:
+        return staticCast<JSClass>()->getFields(inherited);
+        
+    case VT_STRING:
+    case VT_OBJECT: 
+        return staticCast<JSObject>()->getFields(inherited);
+    default:        
+        return empty;
+    }    
+}
+
+/**
+ * Implements array access operator, for writes.
+ * @param index
+ * @param ctx
+ * @return 
+ */
+ASValue ASValue::getAt(ASValue index, ExecutionContext* ec)const
+{
+    switch (m_type)
+    {
+    case VT_STRING:
+        return staticCast<JSString>()->getAt(index);
+    case VT_OBJECT: 
+        return staticCast<JSObject>()->getAt(index, ec);
+    default:        
+        return jsNull();
+    }    
+}
+
+/**
+ * Implements array access operator, for writes.
+ * @param index
+ * @param ctx
+ * @return 
+ */
+ASValue ASValue::setAt(ASValue index, ASValue value, ExecutionContext* ec)const
+{
+    if (m_type == VT_OBJECT)
+        return staticCast<JSObject>()->getAt(index, ec);
+    else        
+        return jsNull();
+}
+
+/**
+ * Returns an iterator to walk the items contained inside the value.
+ * @param ec
+ * @return 
+ */
+ASValue ASValue::iterator(ExecutionContext* ec)const
+{
+    switch (m_type)
+    {
+    case VT_NULL:   return *this;
+    case VT_OBJECT: return staticCast<JSObject>()->iterator(ec);
+    default:
+        return singleItemIterator(*this);
+    }
+}
+
+/**
+ * Gets the JSON representation of the value.
+ * @param indent
+ * @return 
+ */
+std::string ASValue::getJSON(int indent)const
+{
+    switch (m_type)
+    {
+    case VT_NULL:   
+        return "null";
+    case VT_NUMBER:
+    case VT_BOOL:
+        return toString();
+    case VT_STRING:
+    case VT_OBJECT:
+        return staticCast<JSObject>()->getJSON(indent);
+        
+    default:
+        return "";
+    }
+    
+}
+
+bool ASValue::operator < (const ASValue& b)const
+{
+    return compare (b, NULL) < 0;
 }

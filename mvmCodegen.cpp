@@ -56,15 +56,15 @@ private:
 /**
  * Value comparer function class, to be able to use 'JSValue' objects as map keys.
  */
-struct JsValueLessComp
-{
-    bool operator ()(Ref<JSValue> a, Ref<JSValue> b)const
-    {
-        return jsValuesCompare(a, b) < 0;
-    }
-};
+//struct JsValueLessComp
+//{
+//    bool operator ()(ASValue a, ASValue b)const
+//    {
+//        return jsValuesCompare(a, b) < 0;
+//    }
+//};
 
-typedef map<Ref<JSValue>, int, JsValueLessComp> ConstantsMap;
+typedef map<ASValue, int/*, JsValueLessComp*/> ConstantsMap;
 
 /**
  * State of a codegen operation
@@ -74,7 +74,7 @@ struct CodegenState
     Ref<MvmRoutine>             curRoutine;
     VarMap                      members;
     ConstantsMap                constants;
-    map<string, Ref<JSValue> >  symbols;
+    map<string, ASValue >  symbols;
     ScriptPosition              curPos;
     CodeMap*                    pCodeMap = NULL;
     int                         stackSize = 0;
@@ -219,7 +219,7 @@ Ref<JSClass> getParentClass (Ref<AstNode> node, CodegenState* pState);
 void exportCodegen (Ref<AstNode> node, CodegenState* pState);
 void importCodegen (Ref<AstNode> node, CodegenState* pState);
 
-void pushConstant (Ref<JSValue> value, CodegenState* pState);
+void pushConstant (ASValue value, CodegenState* pState);
 void pushConstant (const char* str, CodegenState* pState);
 void pushConstant (const std::string& str, CodegenState* pState);
 void pushConstant (int value, CodegenState* pState);
@@ -677,7 +677,7 @@ void closureCodegen (Ref<JSFunction> fn, CodegenState* pState)
 {
     //TODO: This first version just passes the current environment.
     getEnvCodegen(pState);                                  //[env]
-    pushConstant(fn, pState);                               //[env, function]
+    pushConstant(fn->value(), pState);                      //[env, function]
     callCodegen("@makeClosure", 2, pState, pState->curPos); //[closure]
 }
 
@@ -1491,7 +1491,7 @@ Ref<JSClass> getParentClass (Ref<AstNode> node, CodegenState* pState)
     
     auto parentClass = itParent->second;
     
-    if (parentClass->getType() != VT_CLASS)
+    if (parentClass.getType() != VT_CLASS)
         errorAt(node->position(), "'%s' is not a class", parentName.c_str());
     
     return parentClass.staticCast<JSClass>();
@@ -1514,7 +1514,7 @@ void importCodegen (Ref<AstNode> node, CodegenState* pState)
  * @param value
  * @param pState
  */
-void pushConstant (Ref<JSValue> value, CodegenState* pState)
+void pushConstant (ASValue value, CodegenState* pState)
 {
     //TODO: It can be further optimized, by deduplicating constants at script level.
     int                             id = (int)pState->curRoutine->constants.size();

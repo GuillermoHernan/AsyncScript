@@ -100,13 +100,13 @@ JsonLogger*  s_curFunctionLogger = NULL;
  * @param pScope
  * @return 
  */
-Ref<JSValue> assertFunction(ExecutionContext* ec)
+ASValue assertFunction(ExecutionContext* ec)
 {
     auto    value =  ec->getParam(0);
     
-    if (!value->toBoolean())
+    if (!value.toBoolean(ec))
     {
-        auto    text =  ec->getParam(1)->toString();
+        auto    text =  ec->getParam(1).toString(ec);
         
         rtError("Assertion failed: %s", text.c_str());
     }
@@ -121,9 +121,9 @@ Ref<JSValue> assertFunction(ExecutionContext* ec)
  * @param pScope
  * @return 
  */
-Ref<JSValue> expectError(ExecutionContext* ec)
+ASValue expectError(ExecutionContext* ec)
 {
-    string  code =  ec->getParam(0)->toString();
+    string  code =  ec->getParam(0).toString(ec);
     
     try
     {
@@ -145,19 +145,19 @@ Ref<JSValue> expectError(ExecutionContext* ec)
  * @param pScope
  * @return 
  */
-Ref<JSValue> printLn(ExecutionContext* ec)
+ASValue printLn(ExecutionContext* ec)
 {
     auto    text =  ec->getParam(0);
     
-    printf ("%s\n", text->toString().c_str());
+    printf ("%s\n", text.toString(ec).c_str());
     
     return jsNull();
 }
 
-Ref<JSValue> enableCallLog(ExecutionContext* ec)
+ASValue enableCallLog(ExecutionContext* ec)
 {
     //TODO: Enable again
-//    auto logFn = [](ExecutionContext* ec) -> Ref<JSValue>
+//    auto logFn = [](ExecutionContext* ec) -> ASValue
 //    {
 //        auto entry = ec->getParam(0);
 //
@@ -177,24 +177,24 @@ Ref<JSValue> enableCallLog(ExecutionContext* ec)
  * @param pScope
  * @return 
  */
-Ref<JSValue> asParse(ExecutionContext* ec)
-{
-    string          code =  ec->getParam(0)->toString();
-    CScriptToken    token (code.c_str());
-    auto            result = JSArray::create();
-
-    //Parsing loop
-    token = token.next();
-    while (!token.eof())
-    {
-        const ParseResult   parseRes = parseStatement (token);
-
-        result->push(parseRes.ast->toJS());
-        token = parseRes.nextToken;
-    }
-    
-    return result;
-}
+//ASValue asParse(ExecutionContext* ec)
+//{
+//    string          code =  ec->getParam(0).toString(ec);
+//    CScriptToken    token (code.c_str());
+//    auto            result = JSArray::create();
+//
+//    //Parsing loop
+//    token = token.next();
+//    while (!token.eof())
+//    {
+//        const ParseResult   parseRes = parseStatement (token);
+//
+//        result->push(parseRes.ast->toJS());
+//        token = parseRes.nextToken;
+//    }
+//    
+//    return result;
+//}
 
 /**
  * Funs a test script loaded from a file.
@@ -225,7 +225,7 @@ bool run_test(const std::string& szFile, const string &testDir, const string& re
     addNative("function assert(value, text)", assertFunction, globals);
     addNative("function printLn(text)", printLn, globals);
     addNative("function expectError(code)", expectError, globals);
-    addNative("function asParse(code)", asParse, globals);
+    //addNative("function asParse(code)", asParse, globals);
     addNative("function enableCallLog()", enableCallLog, globals);
     try
     {
@@ -238,7 +238,7 @@ bool run_test(const std::string& szFile, const string &testDir, const string& re
         auto    ast = parseRes.ast;
 
         //Write Abstract Syntax Tree
-        const string astJSON = ast->toJS()->getJSON(0);
+        const string astJSON = ast->toJS().getJSON(0);
         writeTextFile(testResultsDir + testName + ".ast.json", astJSON);
         
         //Semantic analysis
@@ -260,14 +260,14 @@ bool run_test(const std::string& szFile, const string &testDir, const string& re
         evaluate (code, &cMap, globals);
 
         auto result = globals->readField("result");
-        if (result->toString() != "exception")
-            pass = result->toBoolean();
+        if (result.toString() != "exception")
+            pass = result.toBoolean();
         else
             printf ("No exception thrown\n");
     }
     catch (const CScriptException &e)
     {
-        if (globals->readField("result")->toString() == "exception")
+        if (globals->readField("result").toString() == "exception")
             pass = true;
         else
             printf("ERROR: %s\n", e.what());

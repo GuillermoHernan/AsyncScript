@@ -20,7 +20,7 @@
  * Runtime object for classes
  * @return 
  */
-class JSClass : public JSValueBase<VT_CLASS>
+class JSClass : public RefCountObj
 {
 public:
     static Ref<JSClass> create (const std::string& name, 
@@ -38,20 +38,20 @@ public:
     {
         return std::string("class ") + getName();
     }
-    virtual bool toBoolean()const
-    {
-        return true;
-    }
-    
-    virtual Ref<JSValue> toFunction()override
-    {
-        return m_constructor;
-    }
+//    virtual bool toBoolean()const
+//    {
+//        return true;
+//    }
+//    
+//    virtual ASValue toFunction()override
+//    {
+//        return m_constructor;
+//    }
     
     
     virtual StringSet getFields(bool inherited = true)const;
 
-    virtual Ref<JSValue> readField(const std::string& key)const;
+    virtual ASValue readField(const std::string& key)const;
     
     virtual const StringVector& getParams()const
     {
@@ -73,6 +73,11 @@ public:
         return m_constructor;
     }
     
+    ASValue value()
+    {
+        return ASValue(this, VT_CLASS);
+    }
+    
 protected:
     JSClass(const std::string& name,
             Ref<JSClass> parent,
@@ -90,7 +95,7 @@ private:
 /**
  * AsynScript object class
  */
-class JSObject : public JSValue
+class JSObject : public RefCountObj
 {
 public:
     static Ref<JSObject> create();
@@ -101,53 +106,53 @@ public:
         return m_mutability;
     }
     
-    virtual Ref<JSValue>    freeze();
-    virtual Ref<JSValue>    deepFreeze(JSValuesMap& transformed);
-    virtual Ref<JSValue>    unFreeze(bool forceClone=false);
+    virtual ASValue    freeze();
+    virtual ASValue    deepFreeze(ASValue::ValuesMap& transformed);
+    virtual ASValue    unFreeze(bool forceClone=false);
     
     void setFrozen();
     
-    std::vector <Ref<JSValue> > getKeys()const;
+    std::vector <ASValue > getKeys()const;
     
     bool isWritable(const std::string& key)const;
 
     // JSValue
     /////////////////////////////////////////
 
-    virtual std::string toString()const;
-    virtual bool        toBoolean()const;
-    virtual double      toDouble()const;
+    std::string     toString(ExecutionContext* ec)const;
+    bool            toBoolean(ExecutionContext* ec)const;
+    double          toDouble(ExecutionContext* ec)const;
     
-    virtual Ref<JSValue> toFunction()override;
+//    virtual std::string toString()const;
+//    virtual bool        toBoolean()const;
+//    virtual double      toDouble()const;
+//    
+//    virtual ASValue toFunction()override;
 
-    virtual Ref<JSValue> readField(const std::string& key)const;
-    virtual Ref<JSValue> writeField(const std::string& key, Ref<JSValue> value, bool isConst);
-    virtual Ref<JSValue> deleteField(const std::string& key);
+    virtual ASValue readField(const std::string& key)const;
+    virtual ASValue writeField(const std::string& key, ASValue value, bool isConst);
+    virtual ASValue deleteField(const std::string& key);
     virtual StringSet    getFields(bool inherited = true)const;
     
-    virtual Ref<JSValue> getAt(Ref<JSValue> index);
-    virtual Ref<JSValue> setAt(Ref<JSValue> index, Ref<JSValue> value);
+    virtual ASValue getAt(ASValue index, ExecutionContext* ec);
+    virtual ASValue setAt(ASValue index, ASValue value, ExecutionContext* ec);
     
-    virtual Ref<JSValue> iterator()override
-    {
-        //TODO: Return list of one element.
-        return jsNull();
-    }
+    virtual ASValue iterator(ExecutionContext* ec)const;
     
-    //virtual Ref<JSValue> call (Ref<FunctionScope> scope);
+    //virtual ASValue call (Ref<FunctionScope> scope);
     
     virtual std::string getJSON(int indent);
 
-    virtual JSValueTypes getType()const
-    {
-        return VT_OBJECT;
-    }
-    
-    virtual const std::string& getName()const
-    {
-        static std::string empty;
-        return empty;
-    }
+//    virtual JSValueTypes getType()const
+//    {
+//        return VT_OBJECT;
+//    }
+//    
+//    virtual const std::string& getName()const
+//    {
+//        static std::string empty;
+//        return empty;
+//    }
     /////////////////////////////////////////
     
     Ref<JSClass> getClass()const
@@ -155,10 +160,15 @@ public:
         return m_cls;
     }
     
-    void setClass(Ref<JSClass> cls)
+    ASValue value()
     {
-        m_cls = cls;
+        return ASValue(this, VT_OBJECT);
     }
+    
+//    void setClass(Ref<JSClass> cls)
+//    {
+//        m_cls = cls;
+//    }
     
     ///'JSObject' default class
     static Ref<JSClass> DefaultClass;
@@ -174,12 +184,14 @@ protected:
     
     static JSMutability     selectMutability(const JSObject& src, bool _mutable);
 
-    Ref<JSValue>    callMemberFn (Ref<JSValue> function)const;
-    Ref<JSValue>    callMemberFn (Ref<JSValue> function, Ref<JSValue> p1)const;
-    Ref<JSValue>    callMemberFn (Ref<JSValue> function, Ref<JSValue> p1, Ref<JSValue> p2)const;
+    ASValue    callMemberFn (ASValue function, ExecutionContext* ec)const;
+    ASValue    callMemberFn (ASValue function, ASValue p1, ExecutionContext* ec)const;
+    ASValue    callMemberFn (ASValue function, ASValue p1, ASValue p2, ExecutionContext* ec)const;
 private:
     VarMap          m_members;
     Ref<JSClass>    m_cls;
+    
+protected:
     JSMutability    m_mutability;
 };
 

@@ -184,7 +184,7 @@ bool isAlphaNum(const std::string &str)
 std::string double_to_string(double x)
 {
     if (isnan(x))
-        return "NaN";
+        return "[NaN]";
     else
     {
         char szTemp[128];

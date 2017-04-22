@@ -42,40 +42,40 @@
 using namespace std;
 // ----------------------------------------------- Actual Functions
 
-Ref<JSValue> scMathRand(ExecutionContext* ec)
+ASValue scMathRand(ExecutionContext* ec)
 {
     return jsDouble(double(rand()) / RAND_MAX);
 }
 
-Ref<JSValue> scMathRandInt(ExecutionContext* ec)
+ASValue scMathRandInt(ExecutionContext* ec)
 {
-    const int min = toInt32(ec->getParam(0));
-    const int max = toInt32(ec->getParam(1));
+    const int min = ec->getParam(0).toInt32();
+    const int max = ec->getParam(1).toInt32();
     const int val = min + (int) (rand() % (1 + max - min));
     return jsInt(val);
 }
 
-Ref<JSValue> scCharToInt(ExecutionContext* ec)
+ASValue scCharToInt(ExecutionContext* ec)
 {
-    string str = ec->getParam(0)->toString();
+    string str = ec->getParam(0).toString(ec);
     int val = 0;
     if (str.length() > 0)
         val = (int) str.c_str()[0];
     return jsInt(val);
 }
 
-Ref<JSValue> scIntegerParseInt(ExecutionContext* ec)
+ASValue scIntegerParseInt(ExecutionContext* ec)
 {
     //TODO: Make it more standard compliant (octal support, return NaN if fails...)
     //We can reuse the code which parses numeric constants.
-    string str = ec->getParam(0)->toString();
+    string str = ec->getParam(0).toString(ec);
     int val = strtol(str.c_str(), 0, 0);
     return jsInt(val);
 }
 
-Ref<JSValue> scIntegerValueOf(ExecutionContext* ec)
+ASValue scIntegerValueOf(ExecutionContext* ec)
 {
-    string str = ec->getParam(0)->toString();
+    string str = ec->getParam(0).toString(ec);
 
     int val = 0;
     if (str.length() == 1)
@@ -83,25 +83,25 @@ Ref<JSValue> scIntegerValueOf(ExecutionContext* ec)
     return jsInt(val);
 }
 
-Ref<JSValue> scJSONStringify(ExecutionContext* ec)
+ASValue scJSONStringify(ExecutionContext* ec)
 {
     std::string result;
-    result = ec->getParam(0)->getJSON(0);
+    result = ec->getParam(0).getJSON(0);
     return jsString(result);
 }
 
-Ref<JSValue> scEval(ExecutionContext* ec)
+ASValue scEval(ExecutionContext* ec)
 {
-    std::string str = ec->getParam(0)->toString();
+    std::string str = ec->getParam(0).toString(ec);
 
     return evaluate (str.c_str(), createDefaultGlobals());
 }
 
 void registerDefaultClasses(Ref<JSObject> scope)
 {
-    scope->writeField("Object", JSObject::DefaultClass, true);
-    scope->writeField("String", JSString::StringClass, true);
-    scope->writeField("Array", JSArray::ArrayClass, true);
+    scope->writeField("Object", JSObject::DefaultClass->value(), true);
+    scope->writeField("String", JSString::StringClass->value(), true);
+    //scope->writeField("Array", JSArray::ArrayClass, true);
 }
 
 // ----------------------------------------------- Register Functions

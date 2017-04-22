@@ -76,7 +76,7 @@ Ref<JSArray> JSArray::fromVector(const ValueVector& values)
     size_t  i;
     
     for (i=0; i <values.size(); ++i)
-        newArr->setAt(i, values[i]);
+        newArr->push(values[i]);
     
     return newArr;
 }
@@ -88,9 +88,9 @@ Ref<JSArray> JSArray::fromVector(const ValueVector& values)
  * @param value
  * @return Returns new array size
  */
-size_t JSArray::push(Ref<JSValue> value)
+size_t JSArray::push(ASValue value)
 {
-    if (isMutable())
+    if (getMutability() == MT_MUTABLE)
         m_content.push_back(value);
     
     return m_content.size();
@@ -101,7 +101,7 @@ size_t JSArray::push(Ref<JSValue> value)
  * @param index
  * @return 
  */
-Ref<JSValue> JSArray::getAt(size_t index)const
+ASValue JSArray::getAt(size_t index)const
 {
     if (index >= m_content.size())
         return jsNull();
@@ -115,7 +115,7 @@ Ref<JSValue> JSArray::getAt(size_t index)const
  * @param value
  * @return 
  */
-Ref<JSValue> JSArray::setAt(size_t index, Ref<JSValue> value)
+ASValue JSArray::setAt(size_t index, ASValue value)
 {
     if (index >= m_content.size())
         return jsNull();
@@ -133,55 +133,55 @@ Ref<JSValue> JSArray::setAt(size_t index, Ref<JSValue> value)
  * @param name
  * @return 
  */
-Ref<JSValue> JSArray::readField(const std::string& key)const
-{
-    if (key == "length")
-        return jsSizeT(m_content.size());
-    else
-        return ArrayClass->readField(key);
-}
-
-/**
- * Array 'writeField' method override. Handles:
- * - Length overwrite, which changes array length
- * - Write an element past the last one, which enlarges the array.
- * @param key
- * @param value
- * @param isConst
- * @return 
- */
-Ref<JSValue> JSArray::writeField(const std::string& key, Ref<JSValue> value, bool isConst)
-{
-    if (!isMutable())
-        return readField(key);
-    
-    if (key == "length")
-    {
-        setLength(value);
-        return jsSizeT(m_content.size());
-    }
-    else
-        return jsNull();
-}
+//ASValue JSArray::readField(const std::string& key)const
+//{
+//    if (key == "length")
+//        return jsSizeT(m_content.size());
+//    else
+//        return ArrayClass->readField(key);
+//}
+//
+///**
+// * Array 'writeField' method override. Handles:
+// * - Length overwrite, which changes array length
+// * - Write an element past the last one, which enlarges the array.
+// * @param key
+// * @param value
+// * @param isConst
+// * @return 
+// */
+//ASValue JSArray::writeField(const std::string& key, ASValue value, bool isConst)
+//{
+//    if (!isMutable())
+//        return readField(key);
+//    
+//    if (key == "length")
+//    {
+//        setLength(value);
+//        return jsSizeT(m_content.size());
+//    }
+//    else
+//        return jsNull();
+//}
 
 /**
  * Reads an element of the array
  * @param index
  * @return 
  */
-Ref<JSValue> JSArray::getAt(Ref<JSValue> index)
-{
-    if (!isUint(index))
-        return jsNull();
-    else
-        return getAt( toSizeT (index) );
-}
+//ASValue JSArray::getAt(ASValue index)
+//{
+//    if (!isUint(index))
+//        return jsNull();
+//    else
+//        return getAt( toSizeT (index) );
+//}
 
 /**
  * Returns an iterator which skips the first element
  * @return 
  */
-//Ref<JSValue> JSArray::iterator()
+//ASValue JSArray::iterator()
 //{
 //    return JSArrayIterator::create(ref(this), 0);
 //}
@@ -192,84 +192,84 @@ Ref<JSValue> JSArray::getAt(Ref<JSValue> index)
  * @param value
  * @return 
  */
-Ref<JSValue> JSArray::setAt(Ref<JSValue> index, Ref<JSValue> value)
-{
-    if (!isUint(index))
-        return jsNull();
-    else
-    {
-        size_t  i = toSizeT (index);
-        
-        if (m_content.size() <= i)
-        {
-            //Grow the backing vector if necessary
-            m_content.resize(i+1, jsNull());
-        }
-
-        return m_content[i] = value;
-    }
-}
+//ASValue JSArray::setAt(ASValue index, ASValue value)
+//{
+//    if (!isUint(index))
+//        return jsNull();
+//    else
+//    {
+//        size_t  i = toSizeT (index);
+//        
+//        if (m_content.size() <= i)
+//        {
+//            //Grow the backing vector if necessary
+//            m_content.resize(i+1, jsNull());
+//        }
+//
+//        return m_content[i] = value;
+//    }
+//}
 
 
 /**
  * String representation of the array
  * @return 
  */
-std::string JSArray::toString()const
-{
-    return join(Ref<JSArray>(const_cast<JSArray*>(this)), jsString(","));
-}
+//std::string JSArray::toString()const
+//{
+//    return join(Ref<JSArray>(const_cast<JSArray*>(this)), jsString(","));
+//}
 
 /**
  * Writes a JSON representation of the array to the output
  * @param output
  */
-std::string JSArray::getJSON(int indent)
-{
-    std::ostringstream output;
-    const size_t    n = m_content.size();
-    const bool      multiLine = n > 4;
-
-    output << '[';
-
-    for (size_t i = 0; i < n; ++i)
-    {
-        if (multiLine)
-            output << "\n" << indentText(indent + 1);
-        
-        if (i > 0)
-            output << ',';
-
-        const std::string childJSON = this->getAt(i)->getJSON(indent);
-
-        if (childJSON.empty())
-            output << "null";
-        else
-            output << childJSON;
-    }
-    
-    if (multiLine)
-            output << "\n" << indentText(indent);
-    output << ']';
-
-    return output.str();
-}
+//std::string JSArray::getJSON(int indent)
+//{
+//    std::ostringstream output;
+//    const size_t    n = m_content.size();
+//    const bool      multiLine = n > 4;
+//
+//    output << '[';
+//
+//    for (size_t i = 0; i < n; ++i)
+//    {
+//        if (multiLine)
+//            output << "\n" << indentText(indent + 1);
+//        
+//        if (i > 0)
+//            output << ',';
+//
+//        const std::string childJSON = this->getAt(i)->getJSON(indent);
+//
+//        if (childJSON.empty())
+//            output << "null";
+//        else
+//            output << childJSON;
+//    }
+//    
+//    if (multiLine)
+//            output << "\n" << indentText(indent);
+//    output << ']';
+//
+//    return output.str();
+//}
 
 /**
  * Creates an immutable copy of the array
  * @return 
  */
-Ref<JSValue> JSArray::freeze()
+ASValue JSArray::freeze()
 {
-    if (m_mutability != MT_MUTABLE)
-        return ref(this);
+    if (getMutability() != MT_MUTABLE)
+        return value();
     else
     {
         auto newArray = JSArray::create();
         
         newArray->m_content = m_content;
         newArray->m_mutability = MT_FROZEN;
-        return newArray;
+        return newArray->value();
     }
 }
 
@@ -278,11 +278,11 @@ Ref<JSValue> JSArray::freeze()
  * any mutable object
  * @return 
  */
-Ref<JSValue> JSArray::deepFreeze(JSValuesMap& transformed)
+ASValue JSArray::deepFreeze(ASValue::ValuesMap& transformed)
 {
-    auto me = ref(this);
+    auto me = value();
     
-    if (m_mutability == MT_DEEPFROZEN)
+    if (getMutability() == MT_DEEPFROZEN)
         return me;
 
     auto it = transformed.find(me);
@@ -291,17 +291,17 @@ Ref<JSValue> JSArray::deepFreeze(JSValuesMap& transformed)
 
     //Clone array
     auto newArray = JSArray::create();
-    transformed[me] = newArray;
+    transformed[me] = newArray->value();
     
     for (size_t i = 0; i < m_content.size(); ++i )
     {
-        auto value = m_content[i]->deepFreeze(transformed);
+        auto value = m_content[i].deepFreeze(transformed);
         newArray->m_content.push_back(value);
     }
 
     newArray->m_mutability = MT_DEEPFROZEN;
 
-    return newArray;
+    return newArray->value();
 }        
 
 /**
@@ -309,17 +309,17 @@ Ref<JSValue> JSArray::deepFreeze(JSValuesMap& transformed)
  * @param forceClone
  * @return 
  */
-Ref<JSValue> JSArray::unFreeze(bool forceClone)
+ASValue JSArray::unFreeze(bool forceClone)
 {
     if (m_mutability == MT_MUTABLE && !forceClone)
-        return ref(this);
+        return value();
     else
     {
         auto newArray = JSArray::create();
         
         newArray->m_content = m_content;
         newArray->m_mutability = MT_FROZEN;
-        return newArray;
+        return newArray->value();
     }
 }
 
@@ -327,14 +327,12 @@ Ref<JSValue> JSArray::unFreeze(bool forceClone)
  * Modifies array length
  * @param value
  */
-void JSArray::setLength(Ref<JSValue> value)
+void JSArray::setLength(ASValue value)
 {
-    if (!isUint(value))
-        rtError ("Invalid array index: %s", value->toString().c_str());
+    if (!value.isUint())
+        rtError ("Invalid array index: %s", value.toString().c_str());
     
-    const size_t length = toSizeT(value);
-    
-    m_content.resize(length, jsNull());
+    m_content.resize(value.toSizeT(), jsNull());
 }
 
 /**
@@ -343,42 +341,42 @@ void JSArray::setLength(Ref<JSValue> value)
  * @param index
  * @return 
  */
-Ref<JSValue> JSArrayIterator::create(Ref<JSArray> arr, size_t index)
-{
-    if (index < arr->length())
-        return refFromNew(new JSArrayIterator(arr, index));
-    else
-        return jsNull();
-}
+//ASValue JSArrayIterator::create(Ref<JSArray> arr, size_t index)
+//{
+//    if (index < arr->length())
+//        return refFromNew(new JSArrayIterator(arr, index));
+//    else
+//        return jsNull();
+//}
 //
-//Ref<JSValue> JSArrayIterator::head()
+//ASValue JSArrayIterator::head()
 //{
 //    return m_array->getAt(m_index);
 //}
 //
-//Ref<JSValue> JSArrayIterator::tail()
+//ASValue JSArrayIterator::tail()
 //{
 //    return create (m_array, m_index+1);
 //}
 
-Ref<JSValue> scArrayPush(ExecutionContext* ec)
+ASValue scArrayPush(ExecutionContext* ec)
 {
     auto    arr =  ec->getLastParam().staticCast<JSArray>();
     auto    val =  ec->getParam(0);
     
     arr->push(val);
     
-    return arr;
+    return arr->value();
 }
 
-Ref<JSValue> scArrayIndexOf(ExecutionContext* ec)
+ASValue scArrayIndexOf(ExecutionContext* ec)
 {
     auto    arrVal =  ec->getLastParam();
     auto    arr =  arrVal.staticCast<JSArray>();
     auto    searchElement =  ec->getParam(0);
     auto    fromIndex =  ec->getParam(1);
 
-    if (arrVal->isNull()) 
+    if (arrVal.isNull()) 
         return jsInt(-1);
 
     const size_t len = arr->length();
@@ -388,8 +386,8 @@ Ref<JSValue> scArrayIndexOf(ExecutionContext* ec)
 
     size_t n = 0;
     
-    if (!fromIndex->isNull())
-        n = (size_t)floor(fromIndex->toDouble());
+    if (!fromIndex.isNull())
+        n = fromIndex.toSizeT();
 
     if (n >= len)
         return jsInt(-1);
@@ -397,18 +395,18 @@ Ref<JSValue> scArrayIndexOf(ExecutionContext* ec)
     for (; n < len; n++) {
         auto item = arr->getAt (n);
         
-        if (mvmAreTypeEqual (item, searchElement))
+        if (item.compare(searchElement, ec) == 0)
             return jsInt(n);
     }
     return jsInt(-1);
 }
 
-std::string JSArray::join(Ref<JSArray> arr, Ref<JSValue> sep)
+std::string JSArray::join(Ref<JSArray> arr, ASValue sep, ExecutionContext* ec)
 {
     string          sepStr = ",";
 
-    if (!sep->isNull())
-        sepStr = sep->toString();
+    if (!sep.isNull())
+        sepStr = sep.toString(ec);
 
     ostringstream output;
     const size_t n = arr->length();
@@ -416,18 +414,18 @@ std::string JSArray::join(Ref<JSArray> arr, Ref<JSValue> sep)
     {
         if (i > 0) 
             output << sepStr;
-        output << arr->getAt(i)->toString();
+        output << arr->getAt(i).toString(ec);
     }
 
     return output.str();
 }
 
-Ref<JSValue>scArrayJoin(ExecutionContext* ec)
+ASValue scArrayJoin(ExecutionContext* ec)
 {
     auto    arr = ec->getLastParam().staticCast<JSArray>();
     auto    sep = ec->getParam(0);
 
-    return jsString( JSArray::join(arr, sep) );
+    return jsString( JSArray::join(arr, sep, ec) );
 }
 
 /**
@@ -436,16 +434,16 @@ Ref<JSValue>scArrayJoin(ExecutionContext* ec)
  * @param pScope
  * @return 
  */
-Ref<JSValue>scArraySlice(ExecutionContext* ec)
+ASValue scArraySlice(ExecutionContext* ec)
 {
     Ref<JSArray>    arr = ec->getLastParam().staticCast<JSArray>();
     auto            begin = ec->getParam(0);
     auto            end = ec->getParam(1);
-    const size_t    iBegin = toSizeT( begin );
+    const size_t    iBegin = begin.toSizeT();
     size_t          iEnd = arr->length();
     
-    if (isUint(end))
-        iEnd = toSizeT( end );
+    if (end.isUint())
+        iEnd = end.toSizeT();
     
     iEnd = max (iEnd, iBegin);
     
@@ -454,12 +452,12 @@ Ref<JSValue>scArraySlice(ExecutionContext* ec)
     for (size_t i = iBegin; i < iEnd; ++i)
         result->push(arr->getAt(i));
 
-    return result;
+    return result->value();
 }
 
-Ref<JSValue> scArrayConstructor(ExecutionContext* ec)
+ASValue scArrayConstructor(ExecutionContext* ec)
 {
-    return JSArray::create();
+    return JSArray::create()->value();
 }
 
 Ref<JSClass> createArrayClass()

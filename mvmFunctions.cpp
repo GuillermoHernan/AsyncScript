@@ -23,11 +23,11 @@ using namespace std;
  * @param pScope
  * @return 
  */
-Ref<JSValue> mvmNewArray (ExecutionContext* ec)
+ASValue mvmNewArray (ExecutionContext* ec)
 {
-    const size_t size = toSizeT( ec->getParam(0) );
+    const size_t size = ec->getParam(0).toSizeT();
     
-    return JSArray::create(size);
+    return JSArray::create(size)->value();
 }
 
 /**
@@ -35,9 +35,9 @@ Ref<JSValue> mvmNewArray (ExecutionContext* ec)
  * @param pScope
  * @return 
  */
-Ref<JSValue> mvmInc (ExecutionContext* ec)
+ASValue mvmInc (ExecutionContext* ec)
 {
-    return jsDouble(ec->getParam(0)->toDouble() + 1);
+    return jsDouble(ec->getParam(0).toDouble(ec) + 1);
 }
 
 /**
@@ -45,9 +45,9 @@ Ref<JSValue> mvmInc (ExecutionContext* ec)
  * @param pScope
  * @return 
  */
-Ref<JSValue> mvmDec (ExecutionContext* ec)
+ASValue mvmDec (ExecutionContext* ec)
 {
-    return jsDouble(ec->getParam(0)->toDouble() - 1);
+    return jsDouble(ec->getParam(0).toDouble(ec) - 1);
 }
 
 /**
@@ -55,9 +55,9 @@ Ref<JSValue> mvmDec (ExecutionContext* ec)
  * @param pScope
  * @return 
  */
-Ref<JSValue> mvmNegate (ExecutionContext* ec)
+ASValue mvmNegate (ExecutionContext* ec)
 {
-    return jsDouble(- ec->getParam(0)->toDouble());
+    return jsDouble(- ec->getParam(0).toDouble(ec));
 }
 
 /**
@@ -65,18 +65,18 @@ Ref<JSValue> mvmNegate (ExecutionContext* ec)
  * @param pScope
  * @return 
  */
-Ref<JSValue> mvmAdd (ExecutionContext* ec)
+ASValue mvmAdd (ExecutionContext* ec)
 {
-    Ref<JSValue> opA = ec->getParam(0);
-    Ref<JSValue> opB = ec->getParam(1);
+    ASValue opA = ec->getParam(0);
+    ASValue opB = ec->getParam(1);
     
-    const JSValueTypes typeA = opA->getType();
-    const JSValueTypes typeB = opB->getType();
+    const JSValueTypes typeA = opA.getType();
+    const JSValueTypes typeB = opB.getType();
 
     if (typeA >= VT_STRING || typeB >= VT_STRING)
-        return jsString(opA->toString() + opB->toString());
+        return jsString(opA.toString(ec) + opB.toString(ec));
     else
-        return jsDouble(opA->toDouble() + opB->toDouble());
+        return jsDouble(opA.toDouble(ec) + opB.toDouble(ec));
 }
 
 /**
@@ -84,10 +84,10 @@ Ref<JSValue> mvmAdd (ExecutionContext* ec)
  * @param pScope
  * @return 
  */
-Ref<JSValue> mvmSub (ExecutionContext* ec)
+ASValue mvmSub (ExecutionContext* ec)
 {
-    const double valA = ec->getParam(0)->toDouble();
-    const double valB = ec->getParam(1)->toDouble();
+    const double valA = ec->getParam(0).toDouble(ec);
+    const double valB = ec->getParam(1).toDouble(ec);
     
     return jsDouble( valA - valB );
 }
@@ -97,10 +97,10 @@ Ref<JSValue> mvmSub (ExecutionContext* ec)
  * @param pScope
  * @return 
  */
-Ref<JSValue> mvmMultiply (ExecutionContext* ec)
+ASValue mvmMultiply (ExecutionContext* ec)
 {
-    const double valA = ec->getParam(0)->toDouble();
-    const double valB = ec->getParam(1)->toDouble();
+    const double valA = ec->getParam(0).toDouble(ec);
+    const double valB = ec->getParam(1).toDouble(ec);
     
     return jsDouble( valA * valB );
 }
@@ -110,10 +110,10 @@ Ref<JSValue> mvmMultiply (ExecutionContext* ec)
  * @param pScope
  * @return 
  */
-Ref<JSValue> mvmDivide (ExecutionContext* ec)
+ASValue mvmDivide (ExecutionContext* ec)
 {
-    const double valA = ec->getParam(0)->toDouble();
-    const double valB = ec->getParam(1)->toDouble();
+    const double valA = ec->getParam(0).toDouble(ec);
+    const double valB = ec->getParam(1).toDouble(ec);
     
     return jsDouble( valA / valB );
 }
@@ -123,10 +123,10 @@ Ref<JSValue> mvmDivide (ExecutionContext* ec)
  * @param pScope
  * @return 
  */
-Ref<JSValue> mvmModulus (ExecutionContext* ec)
+ASValue mvmModulus (ExecutionContext* ec)
 {
-    const double valA = ec->getParam(0)->toDouble();
-    const double valB = ec->getParam(1)->toDouble();
+    const double valA = ec->getParam(0).toDouble(ec);
+    const double valB = ec->getParam(1).toDouble(ec);
     
     return jsDouble( fmod(valA, valB) );
 }
@@ -136,10 +136,10 @@ Ref<JSValue> mvmModulus (ExecutionContext* ec)
  * @param pScope
  * @return 
  */
-Ref<JSValue> mvmPower (ExecutionContext* ec)
+ASValue mvmPower (ExecutionContext* ec)
 {
-    const double valA = ec->getParam(0)->toDouble();
-    const double valB = ec->getParam(1)->toDouble();
+    const double valA = ec->getParam(0).toDouble(ec);
+    const double valB = ec->getParam(1).toDouble(ec);
     
     return jsDouble( pow(valA, valB) );
 }
@@ -149,9 +149,9 @@ Ref<JSValue> mvmPower (ExecutionContext* ec)
  * @param pScope
  * @return 
  */
-Ref<JSValue> mvmBinNot (ExecutionContext* ec)
+ASValue mvmBinNot (ExecutionContext* ec)
 {
-    const int valA = toInt32( ec->getParam(0) );
+    const int valA =  ec->getParam(0).toInt32();
     
     return jsInt(~valA);
 }
@@ -161,10 +161,10 @@ Ref<JSValue> mvmBinNot (ExecutionContext* ec)
  * @param pScope
  * @return 
  */
-Ref<JSValue> mvmBinAnd (ExecutionContext* ec)
+ASValue mvmBinAnd (ExecutionContext* ec)
 {
-    const int valA = toInt32( ec->getParam(0) );
-    const int valB = toInt32( ec->getParam(1) );
+    const int valA =  ec->getParam(0).toInt32();
+    const int valB =  ec->getParam(1).toInt32();
     
     return jsInt (valA & valB);
 }
@@ -174,10 +174,10 @@ Ref<JSValue> mvmBinAnd (ExecutionContext* ec)
  * @param pScope
  * @return 
  */
-Ref<JSValue> mvmBinOr (ExecutionContext* ec)
+ASValue mvmBinOr (ExecutionContext* ec)
 {
-    const int valA = toInt32( ec->getParam(0) );
-    const int valB = toInt32( ec->getParam(1) );
+    const int valA =  ec->getParam(0).toInt32();
+    const int valB =  ec->getParam(1).toInt32();
     
     return jsInt (valA | valB);
 }
@@ -187,10 +187,10 @@ Ref<JSValue> mvmBinOr (ExecutionContext* ec)
  * @param pScope
  * @return 
  */
-Ref<JSValue> mvmBinXor (ExecutionContext* ec)
+ASValue mvmBinXor (ExecutionContext* ec)
 {
-    const int valA = toInt32( ec->getParam(0) );
-    const int valB = toInt32( ec->getParam(1) );
+    const int valA =  ec->getParam(0).toInt32();
+    const int valB =  ec->getParam(1).toInt32();
     
     return jsInt (valA ^ valB);
 }
@@ -200,9 +200,9 @@ Ref<JSValue> mvmBinXor (ExecutionContext* ec)
  * @param pScope
  * @return 
  */
-Ref<JSValue> mvmLogicNot (ExecutionContext* ec)
+ASValue mvmLogicNot (ExecutionContext* ec)
 {
-    const bool valA = ec->getParam(0)->toBoolean();
+    const bool valA = ec->getParam(0).toBoolean(ec);
     
     return jsBool (!valA);
 }
@@ -212,10 +212,10 @@ Ref<JSValue> mvmLogicNot (ExecutionContext* ec)
  * @param pScope
  * @return 
  */
-Ref<JSValue> mvmLshift (ExecutionContext* ec)
+ASValue mvmLshift (ExecutionContext* ec)
 {
-    const int valA = toInt32( ec->getParam(0) );
-    const unsigned valB = unsigned(toInt32( ec->getParam(1)));
+    const int valA =  ec->getParam(0).toInt32();
+    const unsigned valB = unsigned( ec->getParam(1).toInt32() );
     
     return jsInt (valA << valB);
 }
@@ -225,10 +225,10 @@ Ref<JSValue> mvmLshift (ExecutionContext* ec)
  * @param pScope
  * @return 
  */
-Ref<JSValue> mvmRshift (ExecutionContext* ec)
+ASValue mvmRshift (ExecutionContext* ec)
 {
-    const int valA = toInt32( ec->getParam(0) );
-    const unsigned valB = unsigned(toInt32 (ec->getParam(1)));
+    const int valA =  ec->getParam(0).toInt32();
+    const unsigned valB = unsigned( ec->getParam(1).toInt32() );
     
     return jsInt (valA >> valB);
 }
@@ -238,31 +238,12 @@ Ref<JSValue> mvmRshift (ExecutionContext* ec)
  * @param pScope
  * @return 
  */
-Ref<JSValue> mvmRshiftu (ExecutionContext* ec)
+ASValue mvmRshiftu (ExecutionContext* ec)
 {
-    const unsigned valA = unsigned(toInt32( ec->getParam(0) ));
-    const unsigned valB = unsigned(toInt32( ec->getParam(1)));
+    const unsigned valA = unsigned( ec->getParam(0).toInt32() );
+    const unsigned valB = unsigned( ec->getParam(1).toInt32() );
     
     return jsDouble (double(valA >> valB));
-}
-
-/**
- * Performs Javascript comparision operations.
- * @param opA
- * @param opB
- * @return 
- */
-double jsCompare(Ref<JSValue> opA, Ref<JSValue> opB)
-{
-    const JSValueTypes typeA = opA->getType();
-    const JSValueTypes typeB = opB->getType();
-
-    //TODO: Missing compare semantics between objects
-
-    if (typeA >= VT_STRING && typeB >= VT_STRING)
-        return opA->toString().compare(opB->toString());
-    else
-        return opA->toDouble() - opB->toDouble();
 }
 
 /**
@@ -270,15 +251,15 @@ double jsCompare(Ref<JSValue> opA, Ref<JSValue> opB)
  * @param pScope
  * @return 
  */
-Ref<JSValue> mvmLess (ExecutionContext* ec)
+ASValue mvmLess (ExecutionContext* ec)
 {
-    Ref<JSValue> opA = ec->getParam(0);
-    Ref<JSValue> opB = ec->getParam(1);
+    ASValue opA = ec->getParam(0);
+    ASValue opB = ec->getParam(1);
     
-    if (opA->isNull() || opB->isNull())
+    if (opA.isNull() || opB.isNull())
         return jsFalse();
     else
-        return jsBool (jsCompare(opA, opB) < 0);
+        return jsBool (opA.compare(opB, ec) < 0);
 }
 
 /**
@@ -286,15 +267,15 @@ Ref<JSValue> mvmLess (ExecutionContext* ec)
  * @param pScope
  * @return 
  */
-Ref<JSValue> mvmGreater (ExecutionContext* ec)
+ASValue mvmGreater (ExecutionContext* ec)
 {
-    Ref<JSValue> opA = ec->getParam(0);
-    Ref<JSValue> opB = ec->getParam(1);
+    ASValue opA = ec->getParam(0);
+    ASValue opB = ec->getParam(1);
     
-    if (opA->isNull() || opB->isNull())
+    if (opA.isNull() || opB.isNull())
         return jsFalse();
     else
-        return jsBool (jsCompare(opA, opB) > 0);
+        return jsBool (opA.compare(opB, ec) > 0);
 }
 
 /**
@@ -302,15 +283,15 @@ Ref<JSValue> mvmGreater (ExecutionContext* ec)
  * @param pScope
  * @return 
  */
-Ref<JSValue> mvmLequal (ExecutionContext* ec)
+ASValue mvmLequal (ExecutionContext* ec)
 {
-    Ref<JSValue> opA = ec->getParam(0);
-    Ref<JSValue> opB = ec->getParam(1);
+    ASValue opA = ec->getParam(0);
+    ASValue opB = ec->getParam(1);
     
-    if (opA->isNull() || opB->isNull())
+    if (opA.isNull() || opB.isNull())
         return jsFalse();
     else
-        return jsBool (jsCompare(opA, opB) <= 0);
+        return jsBool (opA.compare(opB, ec) <= 0);
 }
 
 /**
@@ -318,15 +299,15 @@ Ref<JSValue> mvmLequal (ExecutionContext* ec)
  * @param pScope
  * @return 
  */
-Ref<JSValue> mvmGequal (ExecutionContext* ec)
+ASValue mvmGequal (ExecutionContext* ec)
 {
-    Ref<JSValue> opA = ec->getParam(0);
-    Ref<JSValue> opB = ec->getParam(1);
+    ASValue opA = ec->getParam(0);
+    ASValue opB = ec->getParam(1);
     
-    if (opA->isNull() || opB->isNull())
+    if (opA.isNull() || opB.isNull())
         return jsFalse();
     else
-        return jsBool (jsCompare(opA, opB) <= 0);
+        return jsBool (opA.compare(opB, ec) <= 0);
 }
 
 /**
@@ -334,19 +315,16 @@ Ref<JSValue> mvmGequal (ExecutionContext* ec)
  * @param pScope
  * @return 
  */
-bool mvmAreEqual (Ref<JSValue> opA, Ref<JSValue> opB)
+//bool mvmAreEqual (ASValue opA, ASValue opB)
+//{
+//    return opA.compare(opB, ec) == 0;
+//}
+ASValue mvmAreEqual (ExecutionContext* ec)
 {
-    if (opA->isNull() || opB->isNull())
-        return opA->isNull() && opB->isNull();
-    else
-        return jsCompare(opA, opB) == 0;
-}
-Ref<JSValue> mvmAreEqual (ExecutionContext* ec)
-{
-    Ref<JSValue> opA = ec->getParam(0);
-    Ref<JSValue> opB = ec->getParam(1);
+    ASValue opA = ec->getParam(0);
+    ASValue opB = ec->getParam(1);
  
-    return jsBool (mvmAreEqual(opA, opB));
+    return jsBool (opA.compare(opB, ec) == 0);
 }
 
 /**
@@ -354,21 +332,22 @@ Ref<JSValue> mvmAreEqual (ExecutionContext* ec)
  * @param pScope
  * @return 
  */
-bool mvmAreTypeEqual (Ref<JSValue> opA, Ref<JSValue> opB)
+//bool mvmAreTypeEqual (ASValue opA, ASValue opB)
+//{
+//    if (opA.getType() != opB.getType() )
+//        return false;
+//    else
+//        return opA.compare(opB, ec) == 0;
+//}
+ASValue mvmAreTypeEqual (ExecutionContext* ec)
 {
-    if (opA->getType() != opB->getType() )
-        return false;
-    else if (opA->isNull())
-        return true;        //Both are 'null', because they have the same types.
-    else
-        return jsCompare(opA, opB) == 0;
-}
-Ref<JSValue> mvmAreTypeEqual (ExecutionContext* ec)
-{
-    Ref<JSValue> opA = ec->getParam(0);
-    Ref<JSValue> opB = ec->getParam(1);
+    ASValue opA = ec->getParam(0);
+    ASValue opB = ec->getParam(1);
 
-    return jsBool (mvmAreTypeEqual(opA, opB));
+    if (opA.getType() != opB.getType() )
+        return jsFalse();
+    else
+        return jsBool (opA.compare(opB, ec) == 0);
 }
 
 /**
@@ -376,15 +355,15 @@ Ref<JSValue> mvmAreTypeEqual (ExecutionContext* ec)
  * @param pScope
  * @return 
  */
-Ref<JSValue> mvmNotEqual (ExecutionContext* ec)
+ASValue mvmNotEqual (ExecutionContext* ec)
 {
-    Ref<JSValue> opA = ec->getParam(0);
-    Ref<JSValue> opB = ec->getParam(1);
+    ASValue opA = ec->getParam(0);
+    ASValue opB = ec->getParam(1);
     
-    if (opA->isNull() || opB->isNull())
-        return jsBool( !(opA->isNull() && opB->isNull()) );
+    if (opA.isNull() || opB.isNull())
+        return jsBool( !(opA.isNull() && opB.isNull()) );
     else
-        return jsBool (jsCompare(opA, opB) != 0);
+        return jsBool (opA.compare (opB, ec) != 0);
 }
 
 /**
@@ -392,60 +371,58 @@ Ref<JSValue> mvmNotEqual (ExecutionContext* ec)
  * @param pScope
  * @return 
  */
-Ref<JSValue> mvmNotTypeEqual (ExecutionContext* ec)
+ASValue mvmNotTypeEqual (ExecutionContext* ec)
 {
-    Ref<JSValue> opA = ec->getParam(0);
-    Ref<JSValue> opB = ec->getParam(1);
+    ASValue opA = ec->getParam(0);
+    ASValue opB = ec->getParam(1);
     
-    if (opA->getType() != opB->getType() )
+    if (opA.getType() != opB.getType() )
         return jsTrue();
-    else if (opA->isNull())
-        return jsFalse();        //Both are null, because they have the same types.
     else
-        return jsBool (jsCompare(opA, opB) != 0);
+        return jsBool ( opA.compare(opB, ec) != 0 );
 }
 
-Ref<JSValue> mvmToString (ExecutionContext* ec)
+ASValue mvmToString (ExecutionContext* ec)
 {
-    return jsString(ec->getParam(0)->toString());
+    return jsString(ec->getParam(0).toString(ec));
 }
 
-Ref<JSValue> mvmToBoolean (ExecutionContext* ec)
+ASValue mvmToBoolean (ExecutionContext* ec)
 {
-    return jsBool(ec->getParam(0)->toBoolean());
+    return jsBool(ec->getParam(0).toBoolean(ec));
 }
 
-Ref<JSValue> mvmToNumber (ExecutionContext* ec)
+ASValue mvmToNumber (ExecutionContext* ec)
 {
-    return jsDouble(ec->getParam(0)->toDouble());
+    return jsDouble(ec->getParam(0).toDouble(ec));
 }
 
-Ref<JSValue> mvmIndexedRead (ExecutionContext* ec)
+ASValue mvmIndexedRead (ExecutionContext* ec)
 {
     auto index = ec->getParam(1);
-    return ec->getParam(0)->getAt(index);
+    return ec->getParam(0).getAt(index,ec);
 }
 
-Ref<JSValue> mvmIndexedWrite (ExecutionContext* ec)
+ASValue mvmIndexedWrite (ExecutionContext* ec)
 {
     auto index = ec->getParam(1);
     auto value = ec->getParam(2);
-    return ec->getParam(0)->setAt(index, value);
+    return ec->getParam(0).setAt(index, value, ec);
 }
 
-Ref<JSValue> mvmMakeClosure (ExecutionContext* ec)
-{
-    auto env = ec->getParam(0);
-    auto fn = ec->getParam(1);
-    
-    if (!fn->isFunction())
-        rtError ("'fn' parameter is not a function");
-    
-    return JSClosure::create(fn.staticCast<JSFunction>(), env);
-}
+//ASValue mvmMakeClosure (ExecutionContext* ec)
+//{
+//    auto env = ec->getParam(0);
+//    auto fn = ec->getParam(1);
+//    
+//    if (!fn->isFunction())
+//        rtError ("'fn' parameter is not a function");
+//    
+//    return JSClosure::create(fn.staticCast<JSFunction>(), env);
+//}
 
 
-//Ref<JSValue> mvmCall (ExecutionContext* ec)
+//ASValue mvmCall (ExecutionContext* ec)
 //{
 //    return ec->getThis()->call(pScope);
 //}
@@ -497,5 +474,5 @@ void registerMvmFunctions(Ref<JSObject> scope)
     addNative2("@setAt", "index", "value", mvmIndexedWrite, scope);
     //addNative0("@call", mvmCall, scope);
     
-    addNative2("@makeClosure", "env", "fn", mvmMakeClosure, scope);
+    //addNative2("@makeClosure", "env", "fn", mvmMakeClosure, scope);
 }

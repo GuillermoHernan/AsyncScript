@@ -73,7 +73,7 @@ VarMap AsActorClass::createDefaultEndPoints (const VarMap& members)
  * @param ec
  * @return 
  */
-Ref<JSValue> AsActorClass::call (Ref<FunctionScope> scope)
+ASValue AsActorClass::call (Ref<FunctionScope> scope)
 {
     return actorConstructor(Ref<AsActorClass>(this), scope);
 }
@@ -98,7 +98,7 @@ StringSet AsActorClass::getFields(bool inherited)const
  * @param key
  * @return 
  */
-Ref<JSValue> AsActorClass::readField(const std::string& key)const
+ASValue AsActorClass::readField(const std::string& key)const
 {
     auto it = m_members.find(key);
 
@@ -149,7 +149,7 @@ Ref<AsEndPointRef> AsActorRef::getEndPoint (const std::string& name)const
  * @param result
  * @param error
  */
-void AsActor::stop(Ref<JSValue> result, Ref<JSValue> error)
+void AsActor::stop(ASValue result, ASValue error)
 {
     m_result = result;
     m_error = error;
@@ -186,7 +186,7 @@ std::string AsEndPoint::toString()const
  * @param scope
  * @return 
  */
-Ref<JSValue> AsEndPointRef::call (Ref<FunctionScope> scope)
+ASValue AsEndPointRef::call (Ref<FunctionScope> scope)
 {
     if (isInput())
         return inputEpCall(Ref<AsEndPointRef>(this), scope);
@@ -199,7 +199,7 @@ Ref<JSValue> AsEndPointRef::call (Ref<FunctionScope> scope)
  * @param key
  * @return 
  */
-Ref<JSValue> AsActor::readField(const std::string& key)const
+ASValue AsActor::readField(const std::string& key)const
 {
     auto it = m_members.find(key);
     
@@ -223,7 +223,7 @@ Ref<JSValue> AsActor::readField(const std::string& key)const
  * @param value
  * @return 
  */
-Ref<JSValue> AsActor::writeField(const std::string& key, Ref<JSValue> value, bool isConst)
+ASValue AsActor::writeField(const std::string& key, ASValue value, bool isConst)
 {
     //TODO: Check class fields
     checkedVarWrite(m_members, key, value, isConst);

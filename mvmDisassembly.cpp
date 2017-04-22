@@ -19,22 +19,22 @@ Ref<JSObject> disassemblyFunction (Ref<JSFunction> function);
 //Ref<JSObject> disassemblyInputEndPoint (Ref<AsEndPoint> ep);
 //Ref<JSObject> disassemblyOutputEndPoint (Ref<AsEndPoint> ep);
 Ref<JSObject> disassemblyClass (Ref<JSClass> cls);
-Ref<JSObject> disassemblyMembers (Ref<JSValue> container);
+Ref<JSObject> disassemblyMembers (ASValue container);
 
 /**
  * Generates a Javascript object representation of a single constant
  * @param constants
  * @return 
  */
-Ref<JSValue> constantToJS (Ref<JSValue> constant)
+ASValue constantToJS (ASValue constant)
 {
-    switch (constant->getType())
+    switch (constant.getType())
     {
 //    case VT_ACTOR_CLASS:
 //        return disassemblyActorClass (constant.staticCast<AsActorClass>());
         
     case VT_CLASS:
-        return disassemblyClass (constant.staticCast<JSClass>());
+        return disassemblyClass (constant.staticCast<JSClass>())->value();
     
 //    case VT_INPUT_EP:
 //        return disassemblyInputEndPoint (constant.staticCast<AsEndPoint>());
@@ -43,8 +43,8 @@ Ref<JSValue> constantToJS (Ref<JSValue> constant)
 //        return disassemblyOutputEndPoint (constant.staticCast<AsEndPoint>());
     
     default:
-        if (constant->isFunction())
-            return disassemblyFunction (constant.staticCast<JSFunction>());
+        if (constant.getType() == VT_FUNCTION)
+            return disassemblyFunction (constant.staticCast<JSFunction>())->value();
         else
             return constant;
     }//switch
@@ -55,7 +55,7 @@ Ref<JSValue> constantToJS (Ref<JSValue> constant)
  * @param constants
  * @return 
  */
-Ref<JSObject> constantsToJS (const ValueVector& constants)
+ASValue constantsToJS (const ValueVector& constants)
 {
     Ref<JSObject>   obj = JSObject::create();
     char            name[64];
@@ -63,12 +63,12 @@ Ref<JSObject> constantsToJS (const ValueVector& constants)
     for (size_t i=0; i < constants.size(); ++i )
     {
         sprintf_s (name, "%04lu", i);
-        Ref<JSValue>    value = constantToJS(constants[i]);
+        ASValue    value = constantToJS(constants[i]);
         
         obj->writeField(name, value, false);
     }
     
-    return obj;
+    return obj->value();
 }
 
 /**
@@ -81,7 +81,7 @@ string disassemblyPushC (int index, const ValueVector& constants)
 {
     ostringstream   output;
 
-    output << "PUSHC(" << index << ") -> " << constants[index]->toString();
+    output << "PUSHC(" << index << ") -> " << constants[index].toString();
     //output << "PUSHC(" << index << ")";
     return output.str();
     
@@ -237,12 +237,12 @@ Ref<JSObject> blocksToJS (const BlockVector& blocks,
         sprintf_s (name, "Block%04lu", i);
         Ref<JSObject>   blockObj = JSObject::create();
 
-        obj->writeField(name, blockObj, false);
+        obj->writeField(name, blockObj->value(), false);
         
         blockObj->writeField("nextTrue", jsInt(blocks[i].nextBlocks[1]), false);
         blockObj->writeField("nextFalse", jsInt(blocks[i].nextBlocks[0]), false);
         blockObj->writeField("instructions", 
-                             disassemblyInstructions (blocks[i].instructions, constants), 
+                             disassemblyInstructions (blocks[i].instructions, constants)->value(), 
                              false);
         
     }
@@ -272,7 +272,7 @@ Ref<JSObject> toJSObject (Ref<MvmRoutine> code)
     Ref<JSObject>   obj = JSObject::create();
     
     obj->writeField ("constants", constantsToJS(code->constants), false);
-    obj->writeField ("blocks", blocksToJS(code->blocks, code->constants), false);
+    obj->writeField ("blocks", blocksToJS(code->blocks, code->constants)->value(), false);
     
     return obj;
 }
@@ -291,7 +291,11 @@ Ref<JSObject> disassemblyFunction (Ref<JSFunction> function)
     if (function->isNative())
         obj->writeField("code", jsString("native"), false);
     else
-        obj->writeField("code", toJSObject(function->getCodeMVM().staticCast<MvmRoutine>()), false);
+    {
+        obj->writeField("code", 
+                        toJSObject(function->getCodeMVM().staticCast<MvmRoutine>())->value(), 
+                        false);
+    }
 
     return obj;
 }
@@ -346,7 +350,7 @@ Ref<JSObject> disassemblyClass (Ref<JSClass> cls)
     result->writeField ("Class", jsString(cls->getName()), false);
     
     auto    parent = cls->getParent();
-    auto    constructor = constantToJS(cls->getConstructor());
+    auto    constructor = constantToJS(cls->getConstructor()->value());
     string  parentName;
     
     if (parent.notNull())
@@ -355,9 +359,9 @@ Ref<JSObject> disassemblyClass (Ref<JSClass> cls)
     result->writeField ("Parent", jsString(parentName), false);
     result->writeField("constructor", constructor, false);
     
-    auto members = disassemblyMembers(cls);
+    auto members = disassemblyMembers(cls->value());
     
-    result->writeField("members", members, false);
+    result->writeField("members", members->value(), false);
     
     return result;
 }
@@ -367,14 +371,14 @@ Ref<JSObject> disassemblyClass (Ref<JSClass> cls)
  * @param container
  * @return 
  */
-Ref<JSObject> disassemblyMembers (Ref<JSValue> container)
+Ref<JSObject> disassemblyMembers (ASValue container)
 {
-    auto memberNames = container->getFields(false);
+    auto memberNames = container.getFields(false);
     auto members = JSObject::create();
     
     for (auto it = memberNames.begin(); it != memberNames.end(); ++it)
     {
-        auto member = container->readField(*it);
+        auto member = container.readField(*it);
         members->writeField(*it, constantToJS(member), false);
     }
     

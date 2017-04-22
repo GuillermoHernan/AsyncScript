@@ -35,9 +35,9 @@ Ref<JSString> JSString::create(const std::string & value)
  * @param forceClone
  * @return 
  */
-Ref<JSValue> JSString::unFreeze(bool forceClone)
+ASValue JSString::unFreeze(bool forceClone)
 {
-    return Ref<JSValue>(this);
+    return ASValue(this);
 }
 
 /**
@@ -71,7 +71,7 @@ std::string JSString::getJSON(int indent)
  * @param key
  * @return 
  */
-Ref<JSValue> JSString::readField(const string& key)const
+ASValue JSString::readField(const string& key)const
 {
     if (key == "length")
         return jsDouble (m_text.size());
@@ -84,11 +84,11 @@ Ref<JSValue> JSString::readField(const string& key)const
  * @param index
  * @return 
  */
-Ref<JSValue> JSString::getAt(Ref<JSValue> index)
+ASValue JSString::getAt(ASValue index)
 {
-    if (isUint(index))
+    if (index.isUint())
     {
-        const size_t    uIndex = toSizeT(index);
+        const size_t    uIndex = index.toSizeT();
         
         if (uIndex >= m_text.length())
             return jsNull();
@@ -100,20 +100,20 @@ Ref<JSValue> JSString::getAt(Ref<JSValue> index)
 }
 
 
-Ref<JSValue> scStringIndexOf(ExecutionContext* ec)
+ASValue scStringIndexOf(ExecutionContext* ec)
 {
-    string str = ec->getLastParam()->toString();
-    string search = ec->getParam(0)->toString();
+    string str = ec->getLastParam().toString(ec);
+    string search = ec->getParam(0).toString(ec);
     size_t p = str.find(search);
     int val = (p == string::npos) ? -1 : p;
     return jsInt(val);
 }
 
-Ref<JSValue> scStringSubstring(ExecutionContext* ec)
+ASValue scStringSubstring(ExecutionContext* ec)
 {
-    string str = ec->getLastParam()->toString();
-    const size_t lo = toSizeT(ec->getParam(0));
-    const size_t hi = toSizeT(ec->getParam(1));
+    string str = ec->getLastParam().toString(ec);
+    const size_t lo = ec->getParam(0).toSizeT();
+    const size_t hi = ec->getParam(1).toSizeT();
 
     size_t l = hi - lo;
     if (l > 0 && lo >= 0 && lo + l <= str.length())
@@ -122,26 +122,26 @@ Ref<JSValue> scStringSubstring(ExecutionContext* ec)
         return jsString("");
 }
 
-Ref<JSValue> scStringCharAt(ExecutionContext* ec)
+ASValue scStringCharAt(ExecutionContext* ec)
 {
     Ref<JSString> str = ec->getLastParam().staticCast<JSString>();
     
     return str->getAt( ec->getParam(0) );
 }
 
-Ref<JSValue> scStringCharCodeAt(ExecutionContext* ec)
+ASValue scStringCharCodeAt(ExecutionContext* ec)
 {
-    string str = scStringCharAt(ec)->toString();
+    string str = scStringCharAt(ec).toString(ec);
     if (!str.empty())
         return jsInt(str[0]);
     else
         return jsInt(0);
 }
 
-Ref<JSValue> scStringSplit(ExecutionContext* ec)
+ASValue scStringSplit(ExecutionContext* ec)
 {
-    string str = ec->getLastParam()->toString();
-    string sep = ec->getParam(0)->toString();
+    string str = ec->getLastParam().toString(ec);
+    string sep = ec->getParam(0).toString(ec);
     Ref<JSArray> result = JSArray::create();
 
     size_t pos = str.find(sep);
@@ -155,18 +155,18 @@ Ref<JSValue> scStringSplit(ExecutionContext* ec)
     if (str.size() > 0)
         result->push(jsString(str));
 
-    return result;
+    return result->value();
 }
 
-Ref<JSValue> scStringFromCharCode(ExecutionContext* ec)
+ASValue scStringFromCharCode(ExecutionContext* ec)
 {
     char str[2];
-    str[0] = (char)toInt32( ec->getParam(0));
+    str[0] = (char)ec->getParam(0).toInt32();
     str[1] = 0;
     return jsString(str);
 }
 
-Ref<JSValue> scStringConstructor(ExecutionContext* ec)
+ASValue scStringConstructor(ExecutionContext* ec)
 {
     return jsString("");
 }

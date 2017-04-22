@@ -44,13 +44,13 @@
 //const char *code = "{ var b = 1; for (var i=0;i<4;i=i+1) b = b * 2; }";
 const char *code = "function myfunc(x, y) { return x + y; } var a = myfunc(1,2); print(a);";
 
-Ref<JSValue> js_print(ExecutionContext* ec)
+ASValue js_print(ExecutionContext* ec)
 {
-    printf("> %s\n", ec->getParam(0)->toString().c_str());
+    printf("> %s\n", ec->getParam(0).toString(ec).c_str());
     return jsNull();
 }
 
-Ref<JSValue> js_dump(ExecutionContext* ec)
+ASValue js_dump(ExecutionContext* ec)
 {
     printf ("Temporarily out of order!\n");
     //TODO: Make it work again.
@@ -80,7 +80,7 @@ int main(int argc, char **argv)
         printf("ERROR: %s\n", e.what());
     }
 
-    while (evaluate("lets_quit", globals)->toBoolean() == false)
+    while (evaluate("lets_quit", globals).toBoolean() == false)
     {
         char buffer[2048];
         fgets(buffer, sizeof (buffer), stdin);
@@ -88,7 +88,7 @@ int main(int argc, char **argv)
         {
             auto result = evaluate(buffer, globals);
             
-            printf ("> %s\n", result->toString().c_str());
+            printf ("> %s\n", result.toString().c_str());
         }
         catch (const CScriptException &e)
         {

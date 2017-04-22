@@ -32,7 +32,7 @@ StringVector parseArgumentList(CScriptToken token);
  * @param globals   Global symbols
  * @return 
  */
-Ref<JSValue> evaluate (const char* script, Ref<JSObject> globals)
+ASValue evaluate (const char* script, Ref<JSObject> globals)
 {
     CScriptToken    token (script);
     
@@ -59,13 +59,13 @@ Ref<JSValue> evaluate (const char* script, Ref<JSObject> globals)
  * @param globals
  * @return 
  */
-Ref<JSValue> evaluate (Ref<MvmRoutine> code, const CodeMap* codeMap, Ref<JSObject> globals)
+ASValue evaluate (Ref<MvmRoutine> code, const CodeMap* codeMap, Ref<JSObject> globals)
 {
     try
     {
         ExecutionContext    ec;
         
-        ec.stack.push_back(globals);
+        ec.stack.push_back(globals->value());
         return mvmExecRoutine(code, &ec, 1);
         //return mvmExecute(code, globals, Ref<IScope>());
     }
@@ -123,12 +123,12 @@ Ref<JSFunction> addNative (const std::string& szFunctionHeader,
     while (token.type() == '.')
     {
         token = token.match('.');
-        Ref<JSValue> child = container->readField(funcName);
+        ASValue child = container->readField(funcName);
         
         // if it doesn't exist or it is not an object, make an object class
-        if (!child->isObject())
+        if (child.getType() != VT_OBJECT)
         {
-            child = JSObject::create();
+            child = JSObject::create()->value();
             container->writeField(funcName, child, isConst);
         }
         container = child.staticCast<JSObject>();
@@ -141,7 +141,7 @@ Ref<JSFunction> addNative (const std::string& szFunctionHeader,
                                                         parseArgumentList(token),
                                                         pFn);
 
-    container->writeField(funcName, function, isConst);
+    container->writeField(funcName, function->value(), isConst);
     
     return function;
 }
@@ -170,7 +170,7 @@ Ref<JSFunction> addNative (const std::string& szFunctionHeader,
                                                         parseArgumentList(token),
                                                         pFn);
 
-    varMap[funcName] = VarProperties(function, true);
+    varMap[funcName] = VarProperties(function->value(), true);
     
     return function;
 }
@@ -219,7 +219,7 @@ Ref<JSFunction> addNative0 (const std::string& szName,
 {
     Ref<JSFunction> function = JSFunction::createNative(szName, StringVector(), pFn);
 
-    container->writeField(szName, function, true);
+    container->writeField(szName, function->value(), true);
     
     return function;
     
@@ -243,7 +243,7 @@ Ref<JSFunction> addNative1 (const std::string& szName,
     arguments.push_back(p1);
     Ref<JSFunction> function = JSFunction::createNative(szName, arguments, pFn);
 
-    container->writeField(szName, function, true);
+    container->writeField(szName, function->value(), true);
     
     return function;
 }
@@ -270,7 +270,7 @@ Ref<JSFunction> addNative2 (const std::string& szName,
     arguments.push_back(p2);
     Ref<JSFunction> function = JSFunction::createNative(szName, arguments, pFn);
 
-    container->writeField(szName, function, true);
+    container->writeField(szName, function->value(), true);
     
     return function;
 }

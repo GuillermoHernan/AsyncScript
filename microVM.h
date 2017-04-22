@@ -20,10 +20,11 @@ struct MvmRoutine;
 struct ExecutionContext;
 
 
-/*Ref<JSValue>    mvmExecute (Ref<MvmRoutine> code, 
+/*ASValue    mvmExecute (Ref<MvmRoutine> code, 
                             Ref<IScope> globals,
                             Ref<IScope> locals);*/
-Ref<JSValue>    mvmExecRoutine (Ref<MvmRoutine> code, ExecutionContext* ec, int nParams);
+ASValue         mvmExecRoutine (Ref<MvmRoutine> code, ExecutionContext* ec, int nParams);
+void            mvmExecCall (int nArgs, ExecutionContext* ec);
 std::string     mvmDisassembly (Ref<MvmRoutine> code);
 Ref<JSObject>   toJSObject (Ref<MvmRoutine> code);
 
@@ -82,7 +83,7 @@ enum OpCodes16
 };
 
 typedef std::vector<unsigned char>      ByteVector;
-typedef std::vector<Ref<JSValue> >      ValueVector;
+typedef std::vector<ASValue >      ValueVector;
 
 struct MvmBlock
 {
@@ -148,30 +149,29 @@ struct ExecutionContext
     FrameVector     frames;
 //    ValueVector*    constants;
 //    ScopeStack      scopes;
-//    Ref<JSValue>    auxRegister;
+//    ASValue    auxRegister;
     
-    Ref<JSValue> pop()
+    ASValue pop()
     {
         checkStackNotEmpty();
         
-        Ref<JSValue>    r = stack.back();
+        ASValue    r = stack.back();
         stack.pop_back();
         return r;
     }
     
-    Ref<JSValue> push(Ref<JSValue> value)
+    ASValue push(ASValue value)
     {
-        ASSERT (value.notNull());
         stack.push_back(value);
         return value;
     }
     
     bool checkStackNotEmpty();
     
-    Ref<JSValue> getConstant (size_t index)const;
+    ASValue getConstant (size_t index)const;
     
-    Ref<JSValue> getParam (size_t index)const;
-    Ref<JSValue> getLastParam ()const;
+    ASValue getParam (size_t index)const;
+    ASValue getLastParam ()const;
 
 };
 

@@ -17,8 +17,8 @@
 
 void registerMvmFunctions(Ref<JSObject> scope);
 
-bool mvmAreEqual (Ref<JSValue> opA, Ref<JSValue> opB);
-bool mvmAreTypeEqual (Ref<JSValue> opA, Ref<JSValue> opB);
+//bool mvmAreEqual (ASValue opA, ASValue opB);
+//bool mvmAreTypeEqual (ASValue opA, ASValue opB);
 
 
 

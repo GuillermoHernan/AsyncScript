@@ -20,8 +20,6 @@
 #include <vector>
 
 class CScriptToken;
-struct IScope;
-class FunctionScope;
 class ExecutionContext;
 
 /**
@@ -32,19 +30,19 @@ enum JSValueTypes
     VT_NULL,
     VT_NUMBER,
     VT_BOOL,
-    VT_ACTOR_REF,
-    VT_INPUT_EP_REF,
-    VT_OUTPUT_EP_REF,
+    //VT_ACTOR_REF,
+    //VT_INPUT_EP_REF,
+    //VT_OUTPUT_EP_REF,
     VT_CLASS,
     VT_OBJECT,
     VT_STRING,
-    VT_ARRAY,
-    VT_ACTOR,
+    //VT_ARRAY,
+    //VT_ACTOR,
     VT_FUNCTION,
-    VT_CLOSURE,
-    VT_ACTOR_CLASS,
-    VT_INPUT_EP,
-    VT_OUTPUT_EP,
+    //VT_CLOSURE,
+    //VT_ACTOR_CLASS,
+    //VT_INPUT_EP,
+    //VT_OUTPUT_EP,
 };
 std::string getTypeName(JSValueTypes vType);
 
@@ -62,6 +60,90 @@ enum JSMutability
                     //which may lead to a mutable object.
 };
 
+struct ExecutionContext;
+
+/**
+ * Class which contains an AsyncScript value.
+ */
+class ASValue
+{
+public:
+    ASValue ();
+    ASValue (double number);
+    ASValue (bool value);
+    ASValue (RefCountObj* ptr, JSValueTypes type);
+    ~ASValue();
+    
+    ASValue (const ASValue& src);
+    ASValue& operator=(const ASValue& src);
+    
+    JSValueTypes getType()const
+    {
+        return m_type;
+    }
+    bool isNull()const
+    {
+        return m_type == VT_NULL;
+    }
+
+    typedef std::map< ASValue, ASValue >  ValuesMap;
+
+    JSMutability    getMutability()const;
+    bool            isMutable()const;
+    ASValue         freeze()const;
+    ASValue         deepFreeze()const;
+    ASValue         deepFreeze(ValuesMap& transformed)const;
+    ASValue         unFreeze(bool forceClone=false)const;
+
+    std::string     toString(ExecutionContext* ec = NULL)const;
+    bool            toBoolean(ExecutionContext* ec = NULL)const;
+    double          toDouble(ExecutionContext* ec = NULL)const;
+    ASValue         toFunction()const;
+
+    ASValue         readField(const std::string& key)const;
+    ASValue         writeField(const std::string& key, ASValue value, bool isConst);
+    ASValue         deleteField(const std::string& key);
+    StringSet       getFields(bool inherited = true)const;
+
+    ASValue         getAt(ASValue index, ExecutionContext* ctx)const;
+    ASValue         setAt(ASValue index, ASValue value, ExecutionContext* ctx)const;
+    
+    ASValue         iterator(ExecutionContext* ctx)const;
+    
+    std::string     getJSON(int indent)const;
+    
+    bool            operator < (const ASValue& b)const;
+    double          compare (const ASValue& b, ExecutionContext* ec)const;
+
+    int             toInt32 ()const;
+    unsigned long long toUint64 ()const;
+    size_t          toSizeT ()const;
+    bool            isInteger ()const;
+    bool            isUint ()const;
+    
+    template <class T>
+    Ref<T> staticCast()const
+    {
+        ASSERT(m_type >= VT_CLASS);
+        return ref(static_cast<T*>(m_content.ptr));
+    }
+
+private:
+    void        setNull();
+
+private:
+    //The different data types which an 'ASValue' can hold.
+    union Content
+    {
+        bool            boolean;
+        double          number;
+        RefCountObj*    ptr;
+    };
+    
+    Content         m_content;
+    JSValueTypes    m_type;
+};
+
 /**
  * Root class for all Javascript types.
  * Defines several operations which must be implemented by the derived types.
@@ -71,7 +153,7 @@ enum JSMutability
  *  - Type checking
  *  - JSON generation
  */
-class JSValue : public RefCountObj
+/*class JSValue : public RefCountObj
 {
 public:
     virtual JSValueTypes getType()const = 0;
@@ -83,24 +165,37 @@ public:
     virtual Ref<JSValue>    deepFreeze(JSValuesMap& transformed)=0;
     virtual Ref<JSValue>    unFreeze(bool forceClone=false)=0;
 
+    //TODO: [Sobreescribir] Lo mejor en estas funciones es no usar
+    //funciones virtuales (creo)
+    //Aún así, si hay que ejecutar código MVM para resolver la llamada,
+    //habría que pasarle el puntero al 'ExecutionContext'.
+    //Se usen o no funciones virtuales. A no ser que el 'ExecutionContext'
+    //se ponga en una variable global.
     virtual std::string toString()const = 0;
     virtual bool toBoolean()const = 0;
     virtual double toDouble()const = 0;
 
+    //TODO: [Sobreescribir]: Se podría resolver sin llamar a código MVM
+    //Es simplemente buscar la funciṕn sobreescrita y devolverla.
+    //Si todas fuesen como esta sería todo más fácil... ¿Y si hago que sea así?    
     virtual Ref<JSValue> toFunction() = 0;
 
+    //TODO: [Sobreescribir]: Estas no.
     virtual Ref<JSValue> readField(const std::string& key)const;
     virtual Ref<JSValue> writeField(const std::string& key, Ref<JSValue> value, bool isConst) = 0;
     virtual Ref<JSValue> deleteField(const std::string& key) = 0;
     virtual StringSet    getFields(bool inherited = true)const=0;
 
+    //TODO: [Sobreescribir]: Más o menos la misma problemática que todas.
     virtual Ref<JSValue> getAt(Ref<JSValue> index) = 0;
     virtual Ref<JSValue> setAt(Ref<JSValue> index, Ref<JSValue> value) = 0;
     
+    //TODO: [Sobreescribir]: Más o menos la misma problemática que todas.
     virtual Ref<JSValue> iterator() = 0;
     
     //virtual Ref<JSValue> call (Ref<FunctionScope> scope);
 
+    //TODO: [Sobreescribir]: Más o menos la misma problemática que todas.
     virtual std::string getJSON(int indent) = 0;
     
     virtual const std::string& getName()const=0;
@@ -144,32 +239,26 @@ public:
     {
         return getMutability() == MT_MUTABLE;
     }
-};
+};*/
 
 // JSValue helper functions
 //////////////////////////////////////////
 
-class JSBool;
+//class JSBool;
 class JSObject;
 
-Ref<JSValue>    jsNull();
-Ref<JSBool>     jsTrue();
-Ref<JSBool>     jsFalse();
-Ref<JSValue>    jsBool(bool value);
-Ref<JSValue>    jsInt(int value);
-Ref<JSValue>    jsSizeT(size_t value);
-Ref<JSValue>    jsDouble(double value);
-Ref<JSValue>    jsString(const std::string& value);
+ASValue    jsNull();
+ASValue    jsTrue();
+ASValue    jsFalse();
+ASValue    jsBool(bool value);
+ASValue    jsInt(int value);
+ASValue    jsSizeT(size_t value);
+ASValue    jsDouble(double value);
+ASValue    jsString(const std::string& value);
 
-Ref<JSValue>    createConstant(CScriptToken token);
+ASValue    createConstant(CScriptToken token);
+ASValue    singleItemIterator(ASValue v);
 
-double          jsValuesCompare (Ref<JSValue> a, Ref<JSValue> b);
-
-int             toInt32 (Ref<JSValue> a);
-unsigned long long toUint64 (Ref<JSValue> a);
-size_t          toSizeT (Ref<JSValue> a);
-bool            isInteger (Ref<JSValue> a);
-bool            isUint (Ref<JSValue> a);
 
 //////////////////////////////////////////
 
@@ -177,7 +266,7 @@ bool            isUint (Ref<JSValue> a);
  * Helper class to implement 'JSValue' derived classes.
  * Provides a default implementation for every virtual method.
  */
-template <JSValueTypes V_TYPE>
+/*template <JSValueTypes V_TYPE>
 class JSValueBase : public JSValue
 {
 public:
@@ -187,19 +276,19 @@ public:
         return MT_DEEPFROZEN;
     }
     
-    virtual Ref<JSValue> freeze()
+    virtual ASValue freeze()
     {
-        return Ref<JSValue>(this);
+        return ASValue(this);
     }
     
-    virtual Ref<JSValue> deepFreeze(JSValuesMap& transformed)
+    virtual ASValue deepFreeze(JSValuesMap& transformed)
     {
-        return Ref<JSValue>(this);
+        return ASValue(this);
     }
     
-    virtual Ref<JSValue> unFreeze(bool forceClone=false)
+    virtual ASValue unFreeze(bool forceClone=false)
     {
-        return Ref<JSValue>(this);
+        return ASValue(this);
     }
 
     virtual std::string toString()const
@@ -217,32 +306,32 @@ public:
         return getNaN();
     }
     
-    virtual Ref<JSValue> toFunction()override
+    virtual ASValue toFunction()override
     {
         return jsNull();
     }
 
-    virtual Ref<JSValue> writeField(const std::string& key, Ref<JSValue> value, bool isConst)
+    virtual ASValue writeField(const std::string& key, ASValue value, bool isConst)
     {
         return jsNull();
     }
     
-    virtual Ref<JSValue> getAt(Ref<JSValue> index)
+    virtual ASValue getAt(ASValue index)
     {
         return jsNull();
     }
-    virtual Ref<JSValue> setAt(Ref<JSValue> index, Ref<JSValue> value)
+    virtual ASValue setAt(ASValue index, ASValue value)
     {
         return jsNull();
     }
     
-    virtual Ref<JSValue> iterator()override
+    virtual ASValue iterator()override
     {
         //TODO: Return list of one element.
         return jsNull();
     }
     
-    virtual Ref<JSValue> deleteField(const std::string& key)
+    virtual ASValue deleteField(const std::string& key)
     {
         return jsNull();
     }
@@ -269,12 +358,12 @@ public:
         return empty;
     }
     
-};//class JSValueBase
+};//class JSValueBase*/
 
 /**
  * Class for 'null' values.
  */
-class JSNull : public JSValueBase<VT_NULL>
+/*class JSNull : public JSValueBase<VT_NULL>
 {
 public:
 
@@ -288,11 +377,11 @@ public:
         return "null";
     }
 
-    virtual Ref<JSValue> iterator()override
+    virtual ASValue iterator()override
     {
         return jsNull();
     }
-};
+};*/
 
 /**
  * Javascript number class.
@@ -300,7 +389,7 @@ public:
  * as a 64 floating point value.
  * Javascript numbers are immutable. Once created, they cannot be modified.
  */
-class JSNumber : public JSValueBase<VT_NUMBER>
+/*class JSNumber : public JSValueBase<VT_NUMBER>
 {
 public:
     static Ref<JSNumber> create(double value);
@@ -326,14 +415,14 @@ protected:
 
 private:
     const double m_value;
-};
+};*/
 
 
 /**
  * Javascript booleans class.
  * Javascript booleans are immutable. Once created, they cannot be modified.
  */
-class JSBool : public JSValueBase<VT_BOOL>
+/*class JSBool : public JSValueBase<VT_BOOL>
 {
 public:
     friend Ref<JSBool> jsTrue();
@@ -364,7 +453,7 @@ private:
     }
 
     const bool m_value;
-};
+};*/
 
 /**
  * Stores a variable properties
@@ -372,7 +461,7 @@ private:
 class VarProperties
 {
 public:
-    Ref<JSValue> value()const
+    ASValue value()const
     {
         return m_value;
     }
@@ -382,7 +471,7 @@ public:
         return m_isConst;
     }
     
-    VarProperties (Ref<JSValue> value, bool isConst) 
+    VarProperties (ASValue value, bool isConst) 
     : m_value(value), m_isConst(isConst)
     {        
     }
@@ -393,26 +482,23 @@ public:
     }
     
 private:
-    Ref<JSValue>    m_value;
+    ASValue    m_value;
     bool            m_isConst;
 };
 
 typedef std::map<std::string, VarProperties> VarMap;
 
-void            checkedVarWrite (VarMap& map, const std::string& name, Ref<JSValue> value, bool isConst);
-Ref<JSValue>    checkedVarDelete (VarMap& map, const std::string& name);
-
-class FunctionScope;
+void       checkedVarWrite (VarMap& map, const std::string& name, ASValue value, bool isConst);
+ASValue    checkedVarDelete (VarMap& map, const std::string& name);
 
 /// Pointer to native function type. 
 /// Native functions must have this signature
-typedef Ref<JSValue> (*JSNativeFn)(ExecutionContext* var);
+typedef ASValue (*JSNativeFn)(ExecutionContext* var);
 
 /**
  * Javascript function class.
- * Extends 'JSObject', as functions are objects.
  */
-class JSFunction : public JSValueBase<VT_FUNCTION>
+class JSFunction : public RefCountObj
 {
 public:
     static Ref<JSFunction> createJS(const std::string& name, 
@@ -456,27 +542,32 @@ public:
     /////////////////////////////////////////
     virtual std::string toString()const;
     
-    virtual Ref<JSValue> toFunction()override
-    {
-        return ref(this);
-    }
+//    virtual ASValue toFunction()override
+//    {
+//        return ref(this);
+//    }
 
 
     //TODO: adding functions to the JSON yields invalid JSON. But it is a valuable
     //debug information. Add some kind of flag to enable / disable it.
-    virtual std::string getJSON(int indent)
-    {
-        return "";
-    }
+//    virtual std::string getJSON(int indent)
+//    {
+//        return "";
+//    }
 
-    virtual JSValueTypes getType()const
-    {
-        return VT_FUNCTION;
-    }
+//    virtual JSValueTypes getType()const
+//    {
+//        return VT_FUNCTION;
+//    }
     
-    //virtual Ref<JSValue> call (Ref<FunctionScope> scope);
+    //virtual ASValue call (Ref<FunctionScope> scope);
     
     /////////////////////////////////////////
+    
+    ASValue value()
+    {
+        return ASValue(this, VT_FUNCTION);
+    }
 
 protected:
 
@@ -495,29 +586,29 @@ private:
  * A closure contains a function, and a reference to environment on
  * which it has been created.
  */
-class JSClosure : public JSValueBase<VT_CLOSURE>
-{
-public:
-    static Ref<JSClosure> create (Ref<JSFunction> fn, Ref<JSValue> env);
-    
-    Ref<JSFunction> getFunction()const 
-    {
-        return m_fn;
-    }
-    
-    Ref<JSValue> getEnv()const
-    {
-        return m_env;
-    }
-    
-    virtual Ref<JSValue> toFunction()override
-    {
-        return ref(this);
-    }
-    
-private:
-    JSClosure (Ref<JSFunction> fn, Ref<JSValue> env);
-
-    Ref<JSFunction> m_fn;
-    Ref<JSValue> m_env;
-};
+//class JSClosure : public JSValueBase<VT_CLOSURE>
+//{
+//public:
+//    static Ref<JSClosure> create (Ref<JSFunction> fn, ASValue env);
+//    
+//    Ref<JSFunction> getFunction()const 
+//    {
+//        return m_fn;
+//    }
+//    
+//    ASValue getEnv()const
+//    {
+//        return m_env;
+//    }
+//    
+//    virtual ASValue toFunction()override
+//    {
+//        return ref(this);
+//    }
+//    
+//private:
+//    JSClosure (Ref<JSFunction> fn, ASValue env);
+//
+//    Ref<JSFunction> m_fn;
+//    ASValue m_env;
+//};

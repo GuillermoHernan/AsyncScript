@@ -45,8 +45,7 @@ using namespace std;
 
 #define F_RNG(a,min,max)    ((a)<(min) ? min : ((a)>(max) ? max : a ))
 
-#define scGetInt(a)         ( ec->getParam(a)->toInt32() )
-#define scGetDouble(a)      ( ec->getParam(a)->toDouble() )  
+#define scGetDouble(a)      ( ec->getParam(a).toDouble(ec) )  
 
 #ifdef _MSC_VER
 namespace
@@ -80,21 +79,21 @@ namespace
 
 //Math.abs(x) - returns absolute of given value
 
-Ref<JSValue> scMathAbs(ExecutionContext* ec)
+ASValue scMathAbs(ExecutionContext* ec)
 {
-    return jsDouble(fabs(ec->getParam(0)->toDouble()));
+    return jsDouble(fabs(ec->getParam(0).toDouble(ec)));
 }
 
 //Math.round(a) - returns nearest round of given value
 
-Ref<JSValue> scMathRound(ExecutionContext* ec)
+ASValue scMathRound(ExecutionContext* ec)
 {
     return jsDouble(round(scGetDouble(0)));
 }
 
 //Math.min(a,b) - returns minimum of two given values 
 
-Ref<JSValue> scMathMin(ExecutionContext* ec)
+ASValue scMathMin(ExecutionContext* ec)
 {
     const double result = min(scGetDouble(0), scGetDouble(1));
 
@@ -103,7 +102,7 @@ Ref<JSValue> scMathMin(ExecutionContext* ec)
 
 //Math.max(a,b) - returns maximum of two given values  
 
-Ref<JSValue> scMathMax(ExecutionContext* ec)
+ASValue scMathMax(ExecutionContext* ec)
 {
     const double result = max(scGetDouble(0), scGetDouble(1));
 
@@ -112,7 +111,7 @@ Ref<JSValue> scMathMax(ExecutionContext* ec)
 
 //Math.range(x,a,b) - returns value limited between two given values  
 
-Ref<JSValue> scMathRange(ExecutionContext* ec)
+ASValue scMathRange(ExecutionContext* ec)
 {
     const double x = scGetDouble(0);
     const double a = scGetDouble(1);
@@ -126,7 +125,7 @@ Ref<JSValue> scMathRange(ExecutionContext* ec)
 
 //Math.sign(a) - returns sign of given value (-1==negative,0=zero,1=positive)
 
-Ref<JSValue> scMathSign(ExecutionContext* ec)
+ASValue scMathSign(ExecutionContext* ec)
 {
     const double a = scGetDouble(0);
     int result = 0;
@@ -141,154 +140,154 @@ Ref<JSValue> scMathSign(ExecutionContext* ec)
 
 //Math.PI() - returns PI value
 
-Ref<JSValue> scMathPI(ExecutionContext* ec)
+ASValue scMathPI(ExecutionContext* ec)
 {
     return jsDouble(k_PI);
 }
 
 //Math.toDegrees(a) - returns degree value of a given angle in radians
 
-Ref<JSValue> scMathToDegrees(ExecutionContext* ec)
+ASValue scMathToDegrees(ExecutionContext* ec)
 {
     return jsDouble((180.0 / k_PI)*(scGetDouble(0)));
 }
 
 //Math.toRadians(a) - returns radians value of a given angle in degrees
 
-Ref<JSValue> scMathToRadians(ExecutionContext* ec)
+ASValue scMathToRadians(ExecutionContext* ec)
 {
     return jsDouble((k_PI / 180.0)*(scGetDouble(0)));
 }
 
 //Math.sin(a) - returns trig. sine of given angle in radians
 
-Ref<JSValue> scMathSin(ExecutionContext* ec)
+ASValue scMathSin(ExecutionContext* ec)
 {
     return jsDouble(sin(scGetDouble(0)));
 }
 
 //Math.asin(a) - returns trig. arcsine of given angle in radians
 
-Ref<JSValue> scMathASin(ExecutionContext* ec)
+ASValue scMathASin(ExecutionContext* ec)
 {
     return jsDouble(asin(scGetDouble(0)));
 }
 
 //Math.cos(a) - returns trig. cosine of given angle in radians
 
-Ref<JSValue> scMathCos(ExecutionContext* ec)
+ASValue scMathCos(ExecutionContext* ec)
 {
     return jsDouble(cos(scGetDouble(0)));
 }
 
 //Math.acos(a) - returns trig. arccosine of given angle in radians
 
-Ref<JSValue> scMathACos(ExecutionContext* ec)
+ASValue scMathACos(ExecutionContext* ec)
 {
     return jsDouble(acos(scGetDouble(0)));
 }
 
 //Math.tan(a) - returns trig. tangent of given angle in radians
 
-Ref<JSValue> scMathTan(ExecutionContext* ec)
+ASValue scMathTan(ExecutionContext* ec)
 {
     return jsDouble(tan(scGetDouble(0)));
 }
 
 //Math.atan(a) - returns trig. arctangent of given angle in radians
 
-Ref<JSValue> scMathATan(ExecutionContext* ec)
+ASValue scMathATan(ExecutionContext* ec)
 {
     return jsDouble(atan(scGetDouble(0)));
 }
 
 //Math.sinh(a) - returns trig. hyperbolic sine of given angle in radians
 
-Ref<JSValue> scMathSinh(ExecutionContext* ec)
+ASValue scMathSinh(ExecutionContext* ec)
 {
     return jsDouble(sinh(scGetDouble(0)));
 }
 
 //Math.asinh(a) - returns trig. hyperbolic arcsine of given angle in radians
 
-Ref<JSValue> scMathASinh(ExecutionContext* ec)
+ASValue scMathASinh(ExecutionContext* ec)
 {
     return jsDouble(asinh(scGetDouble(0)));
 }
 
 //Math.cosh(a) - returns trig. hyperbolic cosine of given angle in radians
 
-Ref<JSValue> scMathCosh(ExecutionContext* ec)
+ASValue scMathCosh(ExecutionContext* ec)
 {
     return jsDouble(cosh(scGetDouble(0)));
 }
 
 //Math.acosh(a) - returns trig. hyperbolic arccosine of given angle in radians
 
-Ref<JSValue> scMathACosh(ExecutionContext* ec)
+ASValue scMathACosh(ExecutionContext* ec)
 {
     return jsDouble(acosh(scGetDouble(0)));
 }
 
 //Math.tanh(a) - returns trig. hyperbolic tangent of given angle in radians
 
-Ref<JSValue> scMathTanh(ExecutionContext* ec)
+ASValue scMathTanh(ExecutionContext* ec)
 {
     return jsDouble(tanh(scGetDouble(0)));
 }
 
 //Math.atan(a) - returns trig. hyperbolic arctangent of given angle in radians
 
-Ref<JSValue> scMathATanh(ExecutionContext* ec)
+ASValue scMathATanh(ExecutionContext* ec)
 {
     return jsDouble(atan(scGetDouble(0)));
 }
 
 //Math.E() - returns E Neplero value
 
-Ref<JSValue> scMathE(ExecutionContext* ec)
+ASValue scMathE(ExecutionContext* ec)
 {
     return jsDouble(k_E);
 }
 
 //Math.log(a) - returns natural logaritm (base E) of given value
 
-Ref<JSValue> scMathLog(ExecutionContext* ec)
+ASValue scMathLog(ExecutionContext* ec)
 {
     return jsDouble(log(scGetDouble(0)));
 }
 
 //Math.log10(a) - returns logaritm(base 10) of given value
 
-Ref<JSValue> scMathLog10(ExecutionContext* ec)
+ASValue scMathLog10(ExecutionContext* ec)
 {
     return jsDouble(log10(scGetDouble(0)));
 }
 
 //Math.exp(a) - returns e raised to the power of a given number
 
-Ref<JSValue> scMathExp(ExecutionContext* ec)
+ASValue scMathExp(ExecutionContext* ec)
 {
     return jsDouble(exp(scGetDouble(0)));
 }
 
 //Math.pow(a,b) - returns the result of a number raised to a power (a)^(b)
 
-Ref<JSValue> scMathPow(ExecutionContext* ec)
+ASValue scMathPow(ExecutionContext* ec)
 {
     return jsDouble(pow(scGetDouble(0), scGetDouble(1)));
 }
 
 //Math.sqr(a) - returns square of given value
 
-Ref<JSValue> scMathSqr(ExecutionContext* ec)
+ASValue scMathSqr(ExecutionContext* ec)
 {
     return jsDouble((scGetDouble(0) * scGetDouble(0)));
 }
 
 //Math.sqrt(a) - returns square root of given value
 
-Ref<JSValue> scMathSqrt(ExecutionContext* ec)
+ASValue scMathSqrt(ExecutionContext* ec)
 {
     return jsDouble(sqrt(scGetDouble(0)));
 }

@@ -18,7 +18,7 @@ using namespace std;
 
 void execMessageLoop (Ref<ActorRuntime> runtime, CodeMap* pMap);
 
-Ref<JSValue>    connectOperator (ExecutionContext* ec);
+ASValue    connectOperator (ExecutionContext* ec);
 
 
 /**
@@ -58,7 +58,7 @@ public:
      * @param pScope
      * @return 
      */
-    static Ref<JSValue> routineActorExec (ExecutionContext* ec)
+    static ASValue routineActorExec (ExecutionContext* ec)
     {
         auto actor = pScope->getThis().staticCast<RoutineActor>();
         auto actorRef = AsActorRef::create(actor);
@@ -86,7 +86,7 @@ private:
  * @param globals
  * @return pair of 'JSValue'. The first value is success, the second is error.
  */
-pair<Ref<JSValue>, Ref<JSValue> > asBlockingExec(Ref<MvmRoutine> code, 
+pair<ASValue, ASValue > asBlockingExec(Ref<MvmRoutine> code, 
                                                       Ref<GlobalScope> globals, 
                                                       CodeMap* pMap)
 {
@@ -122,7 +122,7 @@ void execMessageLoop (Ref<ActorRuntime> runtime, CodeMap* pMap)
  * @param pScope
  * @return 
  */
-Ref<JSValue> connectOperator (ExecutionContext* ec)
+ASValue connectOperator (ExecutionContext* ec)
 {
     auto runtime = ActorRuntime::getRuntime(pScope);
     auto src = ec->getParam("src");
@@ -156,7 +156,7 @@ Ref<JSValue> connectOperator (ExecutionContext* ec)
  * @param scope
  * @return 
  */
-Ref<JSValue> inputEpCall(Ref<AsEndPointRef> endPoint, Ref<FunctionScope> scope)
+ASValue inputEpCall(Ref<AsEndPointRef> endPoint, Ref<FunctionScope> scope)
 {
     auto runtime = ActorRuntime::getRuntime(scope.getPointer());
     auto params = scope->get("arguments").staticCast<JSArray>();
@@ -173,7 +173,7 @@ Ref<JSValue> inputEpCall(Ref<AsEndPointRef> endPoint, Ref<FunctionScope> scope)
  * @param scope
  * @return 
  */
-Ref<JSValue> outputEpCall(Ref<AsEndPointRef> endPoint, Ref<FunctionScope> scope)
+ASValue outputEpCall(Ref<AsEndPointRef> endPoint, Ref<FunctionScope> scope)
 {
     //TODO: Check that it is invoked from the owning actor.
     auto actor = endPoint->getActor()->getActor();
@@ -191,7 +191,7 @@ Ref<JSValue> outputEpCall(Ref<AsEndPointRef> endPoint, Ref<FunctionScope> scope)
  * @param scope
  * @return 
  */
-Ref<JSValue> actorConstructor(Ref<AsActorClass> actorClass, Ref<FunctionScope> scope)
+ASValue actorConstructor(Ref<AsActorClass> actorClass, Ref<FunctionScope> scope)
 {
     auto curGlobals = ::getGlobals().staticCast<GlobalScope>();
     auto newGlobals = curGlobals->share();
@@ -225,7 +225,7 @@ Ref<JSValue> actorConstructor(Ref<AsActorClass> actorClass, Ref<FunctionScope> s
  * @param pScope
  * @return 
  */
-Ref<JSValue> actorChildStoppedDefaultHandler(ExecutionContext* ec)
+ASValue actorChildStoppedDefaultHandler(ExecutionContext* ec)
 {
     auto actor = pScope->getThis().staticCast<AsActor>();
     auto actorRef = AsActorRef::create(actor);
@@ -290,7 +290,7 @@ void ActorRuntime::sendMessage0 (Ref<AsActorRef> dstActor, const std::string& ep
  */
 void ActorRuntime::sendMessage1 (Ref<AsActorRef> dstActor, 
                                  const std::string& epName, 
-                                 Ref<JSValue> p1)
+                                 ASValue p1)
 {
     auto params = JSArray::create();
     
@@ -308,8 +308,8 @@ void ActorRuntime::sendMessage1 (Ref<AsActorRef> dstActor,
  */
 void ActorRuntime::sendMessage2 (Ref<AsActorRef> dstActor, 
                                  const std::string& epName, 
-                                 Ref<JSValue> p1,
-                                 Ref<JSValue> p2)
+                                 ASValue p1,
+                                 ASValue p2)
 {
     auto params = JSArray::create();
     
@@ -329,9 +329,9 @@ void ActorRuntime::sendMessage2 (Ref<AsActorRef> dstActor,
  */
 void ActorRuntime::sendMessage3 (Ref<AsActorRef> dstActor, 
                                  const std::string& epName, 
-                                 Ref<JSValue> p1,
-                                 Ref<JSValue> p2,
-                                 Ref<JSValue> p3)
+                                 ASValue p1,
+                                 ASValue p2,
+                                 ASValue p3)
 {
     auto params = JSArray::create();
     
@@ -379,7 +379,7 @@ void ActorRuntime::sendMessage (Ref<AsEndPointRef> dstEndPoint, Ref<JSArray> par
  * @param value
  * @param error
  */
-void ActorRuntime::stopActor (Ref<AsActorRef> actorRef, Ref<JSValue> value, Ref<JSValue> error)
+void ActorRuntime::stopActor (Ref<AsActorRef> actorRef, ASValue value, ASValue error)
 {
     auto actor = actorRef->getActor();
     

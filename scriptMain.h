@@ -18,8 +18,8 @@
 
 class MvmRoutine;
 
-Ref<JSValue>    evaluate (const char* script, Ref<JSObject> globals);
-Ref<JSValue>    evaluate (Ref<MvmRoutine> code, const CodeMap* codeMap, Ref<JSObject> globals);
+ASValue    evaluate (const char* script, Ref<JSObject> globals);
+ASValue    evaluate (Ref<MvmRoutine> code, const CodeMap* codeMap, Ref<JSObject> globals);
 
 Ref<JSObject> createDefaultGlobals();
 

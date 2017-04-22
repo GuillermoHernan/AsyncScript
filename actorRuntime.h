@@ -20,15 +20,15 @@ struct MvmRoutine;
 class FunctionScope;
 class CScriptException;
 
-std::pair<Ref<JSValue>, Ref<JSValue> > asBlockingExec(Ref<MvmRoutine> code, 
+std::pair<ASValue, ASValue > asBlockingExec(Ref<MvmRoutine> code, 
                                                       Ref<GlobalScope> globals, 
                                                       CodeMap* pMap);
 
-Ref<JSValue> actorChildStoppedDefaultHandler(ExecutionContext* ec);
+ASValue actorChildStoppedDefaultHandler(ExecutionContext* ec);
 
-Ref<JSValue>    inputEpCall(Ref<AsEndPointRef> endPoint, Ref<FunctionScope> scope);
-Ref<JSValue>    outputEpCall(Ref<AsEndPointRef> endPoint, Ref<FunctionScope> scope);
-Ref<JSValue>    actorConstructor(Ref<AsActorClass> actorClass, Ref<FunctionScope> scope);
+ASValue    inputEpCall(Ref<AsEndPointRef> endPoint, Ref<FunctionScope> scope);
+ASValue    outputEpCall(Ref<AsEndPointRef> endPoint, Ref<FunctionScope> scope);
+ASValue    actorConstructor(Ref<AsActorClass> actorClass, Ref<FunctionScope> scope);
 
 
 /**
@@ -51,22 +51,22 @@ public:
     void sendMessage0(Ref<AsActorRef> dstActor, const std::string& msgName);
     void sendMessage1(Ref<AsActorRef> dstActor,
                       const std::string& msgName,
-                      Ref<JSValue> p1);
+                      ASValue p1);
     void sendMessage2(Ref<AsActorRef> dstActor,
                       const std::string& msgName,
-                      Ref<JSValue> p1,
-                      Ref<JSValue> p2);
+                      ASValue p1,
+                      ASValue p2);
     void sendMessage3(Ref<AsActorRef> dstActor,
                       const std::string& msgName,
-                      Ref<JSValue> p1,
-                      Ref<JSValue> p2,
-                      Ref<JSValue> p3);
+                      ASValue p1,
+                      ASValue p2,
+                      ASValue p3);
     void sendMessage(Ref<AsActorRef> dstActor, 
                      const std::string& msgName, 
                      Ref<JSArray> params);
     void sendMessage(Ref<AsEndPointRef> dstMessage, Ref<JSArray> params);
     
-    void stopActor (Ref<AsActorRef> actorRef, Ref<JSValue> value, Ref<JSValue> error);
+    void stopActor (Ref<AsActorRef> actorRef, ASValue value, ASValue error);
 
     bool dispatchMessage(CodeMap* pMap);
     

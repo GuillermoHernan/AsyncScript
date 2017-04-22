@@ -143,7 +143,7 @@ public:
         return "";
     }
     
-    virtual Ref<JSValue> getValue()const
+    virtual ASValue getValue()const
     {
         return jsNull();
     }
@@ -181,7 +181,7 @@ public:
         return m_position;
     }
 
-    virtual Ref<JSValue> toJS()const;
+    virtual ASValue toJS()const;
 
     AstNodeTypes getType()const
     {
@@ -289,7 +289,7 @@ public:
         return m_params;
     }
     
-    virtual Ref<JSValue> toJS()const;
+    virtual ASValue toJS()const;
 
     AstFunction(AstNodeTypes type, ScriptPosition position, const std::string& name) :
     AstNode(type, position),
@@ -326,7 +326,7 @@ public:
         return m_params;
     }
     
-    virtual Ref<JSValue> toJS()const;
+    virtual ASValue toJS()const;
 
 protected:
     AstActor(ScriptPosition position, const std::string& name) :
@@ -346,7 +346,7 @@ class AstOperator : public AstBranchNode
 public:
     const int code;
     
-    virtual Ref<JSValue> toJS()const;
+    virtual ASValue toJS()const;
     
     AstOperator (AstNodeTypes type, ScriptPosition position, int opCode) : 
     AstBranchNode (type, position), code (opCode)
@@ -364,19 +364,19 @@ public:
     static Ref<AstLiteral> create(ScriptPosition pos, int value);
     static Ref<AstLiteral> createNull(ScriptPosition pos);
     
-    virtual Ref<JSValue> getValue()const
+    virtual ASValue getValue()const
     {
         return m_value;
     }
     
 protected:
-    AstLiteral (ScriptPosition position, Ref<JSValue> val) : 
+    AstLiteral (ScriptPosition position, ASValue val) : 
     AstNode(AST_LITERAL, position),
         m_value (val)
     {        
     }
 
-    const Ref<JSValue>  m_value;
+    const ASValue  m_value;
 };
 
 /**
@@ -442,7 +442,7 @@ public:
         return m_properties;
     }
     
-    virtual Ref<JSValue> toJS()const;
+    virtual ASValue toJS()const;
 
 protected:
     AstObject(ScriptPosition pos) : AstNode(AST_OBJECT, pos)
@@ -477,7 +477,7 @@ public:
     
     Ref<AstNamedBranch> getExtendsNode()const;
     
-    virtual Ref<JSValue> toJS()const;
+    virtual ASValue toJS()const;
 
 protected:
     AstClassNode(ScriptPosition position, const std::string& name) :
