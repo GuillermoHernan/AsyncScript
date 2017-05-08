@@ -109,7 +109,7 @@ static void traceLogger (int opCode, const ExecutionContext* ec)
     {
         string instruction = mvmDisassemblyInstruction (opCode, *ec->frames.back().constants);
         
-        fprintf (pf, "%s\t\t", instruction.c_str());
+        fprintf (pf, "%-24s\t", instruction.c_str());
         if (ec->stack.empty())
             fprintf (pf, "[Empty stack]\n");
         else{
