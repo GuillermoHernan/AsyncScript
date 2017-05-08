@@ -40,6 +40,7 @@
 //#include "actorRuntime.h"
 #include "jsArray.h"
 #include "ScriptException.h"
+#include "microVM.h"
 
 #include <assert.h>
 #include <sys/stat.h>
@@ -92,8 +93,45 @@ private:
     bool    m_first;
 };
 
+
 JsonLogger*  s_curFunctionLogger = NULL;
 
+static string s_traceLoggerPath;
+
+/**
+ * Logs MicroVM instructions
+ */
+static void traceLogger (int opCode, const ExecutionContext* ec)
+{
+    FILE *pf = fopen(s_traceLoggerPath.c_str(), "a+");
+    
+    if (pf != NULL)
+    {
+        string instruction = mvmDisassemblyInstruction (opCode, *ec->frames.back().constants);
+        
+        fprintf (pf, "%s\t\t", instruction.c_str());
+        if (ec->stack.empty())
+            fprintf (pf, "[Empty stack]\n");
+        else{
+            //Print the top value of the stack, but using only basic string conversion
+            ASValue value = ec->stack.back();
+            
+            if (value.getType() == VT_STRING)
+                fprintf (pf, "[\"%s\"]\n", value.toString(NULL).c_str());
+            else
+                fprintf (pf, "[%s]\n", value.toString(NULL).c_str());
+        }
+        fclose(pf);
+    }
+}
+
+static void resetFile (const char* szPath)
+{
+    FILE *pf = fopen (szPath, "w");
+    
+    if (pf != NULL)
+        fclose(pf);
+}
 
 /**
  * Assertion function exported to tests
@@ -255,9 +293,13 @@ bool run_test(const std::string& szFile, const string &testDir, const string& re
         //'enableCallLog'
         JsonLogger  callLogger (testResultsDir + testName + ".calls.json");
         s_curFunctionLogger = &callLogger;
+        
+        //Execution traces log.
+        s_traceLoggerPath = testResultsDir + testName + ".trace.log";
+        resetFile (s_traceLoggerPath.c_str());
 
         //Execution
-        evaluate (code, &cMap, globals);
+        evaluate (code, &cMap, globals, traceLogger);
 
         auto result = globals->readField("result");
         if (result.toString() != "exception")

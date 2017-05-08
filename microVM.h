@@ -19,6 +19,8 @@
 struct MvmRoutine;
 struct ExecutionContext;
 
+typedef std::vector<unsigned char>      ByteVector;
+typedef std::vector<ASValue >      ValueVector;
 
 /*ASValue    mvmExecute (Ref<MvmRoutine> code, 
                             Ref<IScope> globals,
@@ -26,6 +28,7 @@ struct ExecutionContext;
 ASValue         mvmExecRoutine (Ref<MvmRoutine> code, ExecutionContext* ec, int nParams);
 void            mvmExecCall (int nArgs, ExecutionContext* ec);
 std::string     mvmDisassembly (Ref<MvmRoutine> code);
+std::string     mvmDisassemblyInstruction (int opCode, const ValueVector& constants);
 Ref<JSObject>   toJSObject (Ref<MvmRoutine> code);
 
 /**
@@ -82,9 +85,6 @@ enum OpCodes16
     OC16_16BIT_FLAG = 0x8000    //Always active for 16 bit instructions
 };
 
-typedef std::vector<unsigned char>      ByteVector;
-typedef std::vector<ASValue >      ValueVector;
-
 struct MvmBlock
 {
     int         nextBlocks[2];
@@ -140,6 +140,7 @@ struct CallFrame
 };
 typedef std::vector <CallFrame> FrameVector;
 
+typedef void (*TraceFN)(int opCode, const ExecutionContext* ec);
 /**
  * MVM execution context
  */
@@ -147,6 +148,7 @@ struct ExecutionContext
 {
     ValueVector     stack;
     FrameVector     frames;
+    TraceFN         trace = NULL;
 //    ValueVector*    constants;
 //    ScopeStack      scopes;
 //    ASValue    auxRegister;

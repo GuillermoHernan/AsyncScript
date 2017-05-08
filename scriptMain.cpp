@@ -59,11 +59,16 @@ ASValue evaluate (const char* script, Ref<JSObject> globals)
  * @param globals
  * @return 
  */
-ASValue evaluate (Ref<MvmRoutine> code, const CodeMap* codeMap, Ref<JSObject> globals)
+ASValue evaluate (Ref<MvmRoutine> code, 
+                  const CodeMap* codeMap, 
+                  Ref<JSObject> globals,
+                  TraceFN tracer)
 {
     try
     {
         ExecutionContext    ec;
+        
+        ec.trace = tracer;
         
         ec.stack.push_back(globals->value());
         return mvmExecRoutine(code, &ec, 1);

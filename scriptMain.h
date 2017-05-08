@@ -17,9 +17,15 @@
 #include <string>
 
 class MvmRoutine;
+struct ExecutionContext;
+typedef void (*TraceFN)(int opCode, const ExecutionContext* ec);
+
 
 ASValue    evaluate (const char* script, Ref<JSObject> globals);
-ASValue    evaluate (Ref<MvmRoutine> code, const CodeMap* codeMap, Ref<JSObject> globals);
+ASValue    evaluate (Ref<MvmRoutine> code, 
+                     const CodeMap* codeMap, 
+                     Ref<JSObject> globals,
+                     TraceFN tracer = NULL);
 
 Ref<JSObject> createDefaultGlobals();
 

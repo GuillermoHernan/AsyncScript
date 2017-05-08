@@ -262,6 +262,21 @@ string mvmDisassembly (Ref<MvmRoutine> code)
 }
 
 /**
+ * Disassemblies a single instruction
+ * @param opCode
+ * @param constants
+ * @return 
+ */
+string mvmDisassemblyInstruction (int opCode, const ValueVector& constants)
+{
+    if (opCode <= 127)
+        return disassembly8bitInst(opCode, constants);
+    else
+        return disassembly16bitInst(opCode, constants);
+}
+
+
+/**
  * Transforms a compiled scirpt into a JSObject.
  * It can be used later from JAvascript code or written to a JSOn file.
  * @param code

@@ -247,6 +247,9 @@ void execInstruction16 (const int opCode, ExecutionContext* ec)
         execWr16(decoded, ec);
     else
         rtError ("Invalid 16 bit opCode: %04X", opCode);
+    
+    if (ec->trace != NULL)
+        ec->trace (opCode, ec);
 }
 
 /**
@@ -263,6 +266,9 @@ void execInstruction8 (const int opCode, ExecutionContext* ec)
         //The remaining op codes are decoded with a table (there are only 64)
         s_instructions[opCode](opCode, ec);
     }
+    
+    if (ec->trace != NULL)
+        ec->trace (opCode, ec);
 }
 
 /**
