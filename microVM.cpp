@@ -190,6 +190,8 @@ int execBlock (const MvmBlock& block, ExecutionContext* ec)
 
             if (opCode & OC_EXT_FLAG)
             {
+                if (i >= block.instructions.size())
+                    rtError("Unexpected end of instruction");
                 opCode = (opCode << 8) | block.instructions[i++];
                 execInstruction16 (opCode, ec);
             }
