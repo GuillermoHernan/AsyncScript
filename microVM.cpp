@@ -342,16 +342,16 @@ void mvmExecCall (int nArgs, ExecutionContext* ec)
     {
         Ref<JSFunction>     function;
         
-//        if (fnVal.getType() == VT_FUNCTION)
+        if (fnVal.getType() == VT_FUNCTION)
             function = fnVal.staticCast<JSFunction>();
-//        else 
-//        {
-//            ASSERT (fnVal.getType() == VT_CLOSURE);
-//            auto closure = fnVal.staticCast<JSClosure>();
-//            function = closure->getFunction();
-//            ec->push( closure->getEnv() );
-//            ++nArgs;
-//        }
+        else 
+        {
+            ASSERT (fnVal.getType() == VT_CLOSURE);
+            auto closure = fnVal.staticCast<JSClosure>();
+            function = closure->getFunction();
+            ec->push( closure->value() );
+            ++nArgs;
+        }
         
         //callLog (fnScope, ec);
         
@@ -985,4 +985,12 @@ ASValue ExecutionContext::getLastParam ()const
     ASSERT (curFrame.numParams > 0);
 
     return stack[curFrame.paramsIndex + curFrame.numParams - 1];
+}
+
+size_t ExecutionContext::getNumParams ()const
+{
+    ASSERT (!frames.empty());
+    
+    const CallFrame&    curFrame = frames.back();
+    return curFrame.numParams > 0;
 }

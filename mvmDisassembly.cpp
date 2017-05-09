@@ -15,6 +15,7 @@
 using namespace std;
 
 Ref<JSObject> disassemblyFunction (Ref<JSFunction> function);
+Ref<JSObject> disassemblyClosure (Ref<JSClosure> function);
 //Ref<JSObject> disassemblyActorClass (Ref<AsActorClass> actorClass);
 //Ref<JSObject> disassemblyInputEndPoint (Ref<AsEndPoint> ep);
 //Ref<JSObject> disassemblyOutputEndPoint (Ref<AsEndPoint> ep);
@@ -35,6 +36,12 @@ ASValue constantToJS (ASValue constant)
         
     case VT_CLASS:
         return disassemblyClass (constant.staticCast<JSClass>())->value();
+        
+    case VT_FUNCTION:
+        return disassemblyFunction (constant.staticCast<JSFunction>())->value();
+        
+    case VT_CLOSURE:
+        return disassemblyClosure (constant.staticCast<JSClosure>())->value();
     
 //    case VT_INPUT_EP:
 //        return disassemblyInputEndPoint (constant.staticCast<AsEndPoint>());
@@ -43,10 +50,7 @@ ASValue constantToJS (ASValue constant)
 //        return disassemblyOutputEndPoint (constant.staticCast<AsEndPoint>());
     
     default:
-        if (constant.getType() == VT_FUNCTION)
-            return disassemblyFunction (constant.staticCast<JSFunction>())->value();
-        else
-            return constant;
+        return constant;
     }//switch
 }
 
@@ -313,6 +317,16 @@ Ref<JSObject> disassemblyFunction (Ref<JSFunction> function)
     }
 
     return obj;
+}
+
+/**
+ * Generates an human readable representation of a closure
+ * @param closure
+ * @return 
+ */
+Ref<JSObject> disassemblyClosure (Ref<JSClosure> closure)
+{
+    return disassemblyFunction (closure->getFunction());
 }
 
 /**

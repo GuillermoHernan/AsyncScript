@@ -20,7 +20,6 @@ struct MvmRoutine;
 struct ExecutionContext;
 
 typedef std::vector<unsigned char>      ByteVector;
-typedef std::vector<ASValue >      ValueVector;
 
 /*ASValue    mvmExecute (Ref<MvmRoutine> code, 
                             Ref<IScope> globals,
@@ -174,6 +173,7 @@ struct ExecutionContext
     
     ASValue getParam (size_t index)const;
     ASValue getLastParam ()const;
+    size_t getNumParams()const;
 
 };
 

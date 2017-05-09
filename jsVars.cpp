@@ -48,7 +48,7 @@ std::string getTypeName(JSValueTypes vType)
 //        types[VT_ARRAY] = "Array";
 //        types[VT_ACTOR] = "Actor";
         types[VT_FUNCTION] = "Function";
-//        types[VT_CLOSURE] = "Closure";
+        types[VT_CLOSURE] = "Closure";
 //        types[VT_ACTOR_CLASS] = "Actor class";
 //        types[VT_INPUT_EP] = "Input EP";
 //        types[VT_OUTPUT_EP] = "Output EP";
@@ -484,15 +484,117 @@ std::string JSFunction::toString()const
     return output.str();
 }
 
-//Ref<JSClosure> JSClosure::create (Ref<JSFunction> fn, ASValue env)
-//{
-//    return refFromNew (new JSClosure(fn, env));
-//}
+
+// JSClosure
 //
-//JSClosure::JSClosure (Ref<JSFunction> fn, ASValue env)
-//    : m_fn(fn), m_env(env)
-//{
-//}
+//////////////////////////////////////////////////
+
+
+Ref<JSClosure> JSClosure::create (Ref<JSFunction> fn, const ASValue* first, size_t count)
+{
+    return refFromNew (new JSClosure(fn, first, count));
+}
+
+JSClosure::JSClosure (Ref<JSFunction> fn, const ASValue* first, size_t count)
+    : m_fn(fn), 
+    m_params(first+1, first + count),
+    m_env(*first), 
+    m_mutability (selectMutability(first+1, count -1))  
+{
+    ASSERT (count > 0);
+}
+
+/**
+ * Constructor used during 'deepFreeze' operation. Is private.
+ * @param fn
+ * @param env
+ */
+JSClosure::JSClosure (Ref<JSFunction> fn, ASValue env)
+    : m_fn(fn), 
+    m_env(env), 
+    m_mutability (MT_DEEPFROZEN)  
+{
+}
+
+std::string JSClosure::toString()const
+{
+    return getFunction()->toString();
+}
+
+/**
+ * Creates a deep-frozen copy of a closure, if it is not already deep-frozen
+ * @param transformed
+ * @return 
+ */
+ASValue JSClosure::deepFreeze(ValuesMap& transformed)const
+{
+    if (m_mutability == MT_DEEPFROZEN)
+        return const_cast<JSClosure*>(this)->value();
+    else
+    {
+        Ref<JSClosure>  newCl = refFromNew(new JSClosure(m_fn, m_env));
+        
+        for (const auto& param : m_params)
+            newCl->m_params.push_back(param.deepFreeze(transformed));
+        
+        return newCl->value();
+    }
+}
+
+/**
+ * Field reads on closures are redirected to environment attribute.
+ */
+ASValue JSClosure::readField(const std::string& key)
+{
+    return m_env.readField(key);
+}
+
+/**
+ * Field writes are redirected to environment attribute.
+ * @param key
+ * @param value
+ * @param isConst
+ * @return 
+ */
+ASValue JSClosure::writeField(const std::string& key, ASValue value, bool isConst)
+{
+    return m_env.writeField(key, value, isConst);
+}
+
+/**
+ * Reads one of the parameters
+ * @param index
+ * @return 
+ */
+ASValue JSClosure::getAt(ASValue index)
+{
+    if (!index.isUint())
+        return jsNull();
+    
+    size_t stIndex = index.toSizeT();
+    
+    if (stIndex >= m_params.size())
+        return jsNull();
+    else
+        return m_params.at(stIndex);    
+}
+
+/**
+ * Selects which mutability will have a closure, depending on its contents
+ * @param first
+ * @param count
+ * @return 
+ */
+JSMutability JSClosure::selectMutability (const ASValue* first, size_t count)
+{
+    for (size_t i = 0; i < count; ++i){
+        if (first[i].getMutability() != MT_DEEPFROZEN)
+            return MT_FROZEN;
+    }
+    
+    return MT_DEEPFROZEN;
+}
+
 
 ASValue::ASValue () : m_type(VT_NULL)
 {
@@ -558,10 +660,12 @@ ASValue& ASValue::operator=(const ASValue& src)
  */
 JSMutability ASValue::getMutability()const
 {
-    if (m_type != VT_OBJECT)
-        return MT_DEEPFROZEN;
-    else
-        return staticCast<JSObject>()->getMutability();
+    switch (m_type)
+    {
+    case VT_OBJECT:     return staticCast<JSObject>()->getMutability();
+    case VT_CLOSURE:    return staticCast<JSClosure>()->getMutability();
+    default:            return MT_DEEPFROZEN;
+    }
 }
 
 bool ASValue::isMutable()const
@@ -571,10 +675,11 @@ bool ASValue::isMutable()const
 
 ASValue ASValue::freeze()const
 {
-    if (m_type != VT_OBJECT)
-        return *this;
-    else
-        return staticCast<JSObject>()->freeze();    
+    switch (m_type)
+    {
+    case VT_OBJECT:     return staticCast<JSObject>()->freeze();
+    default:            return *this;
+    }
 }
 
 /**
@@ -584,21 +689,18 @@ ASValue ASValue::freeze()const
  */
 ASValue ASValue::deepFreeze()const
 {
-    if (m_type != VT_OBJECT)
-        return *this;
-    else
-    {
-        ValuesMap   tmpMap;
-        return staticCast<JSObject>()->deepFreeze(tmpMap);    
-    }
+    ValuesMap   tmpMap;
+    return deepFreeze (tmpMap);
 }
 
 ASValue ASValue::deepFreeze(ValuesMap& transformed)const
 {
-    if (m_type != VT_OBJECT)
-        return *this;
-    else
-        return staticCast<JSObject>()->deepFreeze(transformed);    
+    switch (m_type)
+    {
+    case VT_OBJECT:     return staticCast<JSObject>()->deepFreeze(transformed);
+    case VT_CLOSURE:    return staticCast<JSClosure>()->deepFreeze(transformed);
+    default:            return *this;
+    }
 }
 
 ASValue ASValue::unFreeze(bool forceClone)const
@@ -629,6 +731,8 @@ string ASValue::toString(ExecutionContext* ec)const
         return staticCast<JSString>()->toString();
     case VT_FUNCTION: 
         return staticCast<JSFunction>()->toString();
+    case VT_CLOSURE: 
+        return staticCast<JSClosure>()->toString();
     
     default:
         return "[Unknown value type]";
@@ -687,13 +791,18 @@ ASValue ASValue::toFunction()const
     while (result.m_type == VT_OBJECT)
         result = result.readField("call");
     
-    if (result.m_type == VT_CLASS)
-        result = result.staticCast<JSClass>()->getConstructor()->value();
-    
-    if (result.m_type != VT_FUNCTION)
-        result = jsNull();
-    
-    return result;
+    switch (result.m_type)
+    {
+    case VT_CLASS:
+        return result.staticCast<JSClass>()->getConstructor()->value();
+        
+    case VT_FUNCTION:
+    case VT_CLOSURE:
+        return result;
+        
+    default:
+        return jsNull();
+    }
 }
 
 /**
@@ -711,6 +820,8 @@ ASValue ASValue::readField(const std::string& key)const
     case VT_STRING:
     case VT_OBJECT: 
         return staticCast<JSObject>()->readField(key);
+    case VT_CLOSURE:
+        return staticCast<JSClosure>()->readField(key);
     default:        
         return jsNull();
     }    
@@ -725,10 +836,12 @@ ASValue ASValue::readField(const std::string& key)const
  */
 ASValue ASValue::writeField(const std::string& key, ASValue value, bool isConst)
 {
-    if (m_type == VT_OBJECT)
-        return staticCast<JSObject>()->writeField(key, value, isConst);
-    else
-        return jsNull();
+    switch (m_type)
+    {
+    case VT_OBJECT:     return staticCast<JSObject>()->writeField(key, value, isConst);
+    case VT_CLOSURE:    return staticCast<JSClosure>()->writeField(key, value, isConst);
+    default:            return jsNull();
+    }
 }
 
 /**
@@ -780,6 +893,8 @@ ASValue ASValue::getAt(ASValue index, ExecutionContext* ec)const
         return staticCast<JSString>()->getAt(index);
     case VT_OBJECT: 
         return staticCast<JSObject>()->getAt(index, ec);
+    case VT_CLOSURE: 
+        return staticCast<JSClosure>()->getAt(index);
     default:        
         return jsNull();
     }    

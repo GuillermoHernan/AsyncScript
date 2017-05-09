@@ -410,16 +410,22 @@ ASValue mvmIndexedWrite (ExecutionContext* ec)
     return ec->getParam(0).setAt(index, value, ec);
 }
 
-//ASValue mvmMakeClosure (ExecutionContext* ec)
-//{
-//    auto env = ec->getParam(0);
-//    auto fn = ec->getParam(1);
-//    
-//    if (!fn->isFunction())
-//        rtError ("'fn' parameter is not a function");
-//    
-//    return JSClosure::create(fn.staticCast<JSFunction>(), env);
-//}
+ASValue mvmMakeClosure (ExecutionContext* ec)
+{
+    ASSERT (!ec->frames.empty());
+    
+    const CallFrame&    curFrame = ec->frames.back();
+    const size_t        nParams = curFrame.numParams;
+    
+    ASSERT (nParams >= 2);
+    ASValue*    paramsBegin = &ec->stack[curFrame.paramsIndex];
+    auto        fn = paramsBegin[nParams-1];
+    
+    if (fn.getType() != VT_FUNCTION)
+        rtError ("'fn' parameter is not a function");
+    
+    return JSClosure::create(fn.staticCast<JSFunction>(), paramsBegin, nParams-1)->value();
+}
 
 
 //ASValue mvmCall (ExecutionContext* ec)
@@ -474,5 +480,5 @@ void registerMvmFunctions(Ref<JSObject> scope)
     addNative2("@setAt", "index", "value", mvmIndexedWrite, scope);
     //addNative0("@call", mvmCall, scope);
     
-    //addNative2("@makeClosure", "env", "fn", mvmMakeClosure, scope);
+    addNative2("@makeClosure", "env", "fn", mvmMakeClosure, scope);
 }

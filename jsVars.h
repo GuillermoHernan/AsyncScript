@@ -39,7 +39,7 @@ enum JSValueTypes
     //VT_ARRAY,
     //VT_ACTOR,
     VT_FUNCTION,
-    //VT_CLOSURE,
+    VT_CLOSURE,
     //VT_ACTOR_CLASS,
     //VT_INPUT_EP,
     //VT_OUTPUT_EP,
@@ -86,7 +86,7 @@ public:
         return m_type == VT_NULL;
     }
 
-    typedef std::map< ASValue, ASValue >  ValuesMap;
+    typedef std::map< ASValue, ASValue >    ValuesMap;
 
     JSMutability    getMutability()const;
     bool            isMutable()const;
@@ -143,6 +143,10 @@ private:
     Content         m_content;
     JSValueTypes    m_type;
 };
+
+typedef std::vector<ASValue >   ValueVector;
+typedef ASValue::ValuesMap      ValuesMap;
+
 
 /**
  * Root class for all Javascript types.
@@ -586,29 +590,42 @@ private:
  * A closure contains a function, and a reference to environment on
  * which it has been created.
  */
-//class JSClosure : public JSValueBase<VT_CLOSURE>
-//{
-//public:
-//    static Ref<JSClosure> create (Ref<JSFunction> fn, ASValue env);
-//    
-//    Ref<JSFunction> getFunction()const 
-//    {
-//        return m_fn;
-//    }
-//    
-//    ASValue getEnv()const
-//    {
-//        return m_env;
-//    }
-//    
-//    virtual ASValue toFunction()override
-//    {
-//        return ref(this);
-//    }
-//    
-//private:
-//    JSClosure (Ref<JSFunction> fn, ASValue env);
-//
-//    Ref<JSFunction> m_fn;
-//    ASValue m_env;
-//};
+class JSClosure : public RefCountObj
+{
+public:
+    static Ref<JSClosure> create (Ref<JSFunction> fn, const ASValue* first, size_t count);
+    
+    Ref<JSFunction> getFunction()const 
+    {
+        return m_fn;
+    }
+    
+    std::string toString()const;
+    
+    ASValue value()
+    {
+        return ASValue(this, VT_CLOSURE);
+    }
+    
+    JSMutability getMutability()const
+    {
+        return m_mutability;
+    }
+    
+    ASValue deepFreeze(ValuesMap& transformed)const;
+    ASValue readField(const std::string& key);
+    ASValue writeField(const std::string& key, ASValue value, bool isConst);
+    ASValue getAt(ASValue index);
+   
+    
+private:
+    JSClosure (Ref<JSFunction> fn, const ASValue* first, size_t count);
+    JSClosure (Ref<JSFunction> fn, ASValue env);
+    
+    static JSMutability selectMutability (const ASValue* first, size_t count);
+
+    Ref<JSFunction> m_fn;
+    ValueVector     m_params;
+    ASValue         m_env;
+    JSMutability    m_mutability;
+};
