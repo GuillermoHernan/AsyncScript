@@ -192,6 +192,23 @@ ASValue printLn(ExecutionContext* ec)
     return jsNull();
 }
 
+/**
+ * Script exported function to enable trace log.
+ * @param ec
+ * @return 
+ */
+ASValue enableTraceLog(ExecutionContext* ec)
+{
+    auto enable = ec->getParam(0);
+    
+    if (enable.isNull() || enable.toBoolean(ec) == true)
+        ec->trace = traceLogger;
+    else
+        ec->trace = NULL;
+    
+    return jsNull();
+}
+
 ASValue enableCallLog(ExecutionContext* ec)
 {
     //TODO: Enable again
@@ -265,6 +282,7 @@ bool run_test(const std::string& szFile, const string &testDir, const string& re
     addNative("function expectError(code)", expectError, globals);
     //addNative("function asParse(code)", asParse, globals);
     addNative("function enableCallLog()", enableCallLog, globals);
+    addNative("function enableTraceLog()", enableTraceLog, globals);
     try
     {
         //This code is copied from 'evaluate', to log the intermediate results 
@@ -299,7 +317,7 @@ bool run_test(const std::string& szFile, const string &testDir, const string& re
         resetFile (s_traceLoggerPath.c_str());
 
         //Execution
-        evaluate (code, &cMap, globals, traceLogger);
+        evaluate (code, &cMap, globals);
 
         auto result = globals->readField("result");
         if (result.toString() != "exception")
