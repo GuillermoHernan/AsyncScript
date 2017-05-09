@@ -720,7 +720,7 @@ string ASValue::toString(ExecutionContext* ec)const
 {
     switch (m_type)
     {
-    case VT_NULL:   return "[null]";
+    case VT_NULL:   return "null";
     case VT_NUMBER: return double_to_string (m_content.number);
     case VT_BOOL:   return m_content.boolean ? "true" : "false";
     case VT_CLASS: 
