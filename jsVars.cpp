@@ -909,7 +909,7 @@ ASValue ASValue::getAt(ASValue index, ExecutionContext* ec)const
 ASValue ASValue::setAt(ASValue index, ASValue value, ExecutionContext* ec)const
 {
     if (m_type == VT_OBJECT)
-        return staticCast<JSObject>()->getAt(index, ec);
+        return staticCast<JSObject>()->setAt(index, value, ec);
     else        
         return jsNull();
 }

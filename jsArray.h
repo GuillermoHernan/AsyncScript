@@ -50,13 +50,14 @@ public:
     virtual ASValue freeze();
     virtual ASValue deepFreeze(ASValue::ValuesMap& transformed);
     virtual ASValue unFreeze(bool forceClone=false);
-//
-//    virtual ASValue readField(const std::string& key)const;
-//    virtual ASValue writeField(const std::string& key, ASValue value, bool isConst);
-//    
-//    virtual ASValue getAt(ASValue index);
-//    virtual ASValue setAt(ASValue index, ASValue value);
-//
+
+    virtual ASValue     readField(const std::string& key)const;
+    virtual ASValue     writeField(const std::string& key, ASValue value, bool isConst);
+    virtual StringSet   getFields(bool inherited = true)const;
+    
+    virtual ASValue getAt(ASValue index, ExecutionContext* ec);
+    virtual ASValue setAt(ASValue index, ASValue value, ExecutionContext* ec);
+
     /////////////////////////////////////////
 
     static Ref<JSClass> ArrayClass;

@@ -133,49 +133,49 @@ ASValue JSArray::setAt(size_t index, ASValue value)
  * @param name
  * @return 
  */
-//ASValue JSArray::readField(const std::string& key)const
-//{
-//    if (key == "length")
-//        return jsSizeT(m_content.size());
-//    else
-//        return ArrayClass->readField(key);
-//}
-//
-///**
-// * Array 'writeField' method override. Handles:
-// * - Length overwrite, which changes array length
-// * - Write an element past the last one, which enlarges the array.
-// * @param key
-// * @param value
-// * @param isConst
-// * @return 
-// */
-//ASValue JSArray::writeField(const std::string& key, ASValue value, bool isConst)
-//{
-//    if (!isMutable())
-//        return readField(key);
-//    
-//    if (key == "length")
-//    {
-//        setLength(value);
-//        return jsSizeT(m_content.size());
-//    }
-//    else
-//        return jsNull();
-//}
+ASValue JSArray::readField(const std::string& key)const
+{
+    if (key == "length")
+        return jsSizeT(m_content.size());
+    else
+        return JSObject::readField(key);
+}
+
+/**
+ * Array 'writeField' method override. Handles:
+ * - Length overwrite, which changes array length
+ * - Write an element past the last one, which enlarges the array.
+ * @param key
+ * @param value
+ * @param isConst
+ * @return 
+ */
+ASValue JSArray::writeField(const std::string& key, ASValue value, bool isConst)
+{
+    if (getMutability() != MT_MUTABLE)
+        return readField(key);
+    
+    if (key == "length")
+    {
+        setLength(value);
+        return jsSizeT(m_content.size());
+    }
+    else
+        return jsNull();
+}
 
 /**
  * Reads an element of the array
  * @param index
  * @return 
  */
-//ASValue JSArray::getAt(ASValue index)
-//{
-//    if (!isUint(index))
-//        return jsNull();
-//    else
-//        return getAt( toSizeT (index) );
-//}
+ASValue JSArray::getAt(ASValue index, ExecutionContext* ec)
+{
+    if (!index.isUint())
+        return jsNull();
+    else
+        return getAt( index.toSizeT () );
+}
 
 /**
  * Returns an iterator which skips the first element
@@ -192,24 +192,36 @@ ASValue JSArray::setAt(size_t index, ASValue value)
  * @param value
  * @return 
  */
-//ASValue JSArray::setAt(ASValue index, ASValue value)
-//{
-//    if (!isUint(index))
-//        return jsNull();
-//    else
-//    {
-//        size_t  i = toSizeT (index);
-//        
-//        if (m_content.size() <= i)
-//        {
-//            //Grow the backing vector if necessary
-//            m_content.resize(i+1, jsNull());
-//        }
-//
-//        return m_content[i] = value;
-//    }
-//}
+ASValue JSArray::setAt(ASValue index, ASValue value, ExecutionContext* ec)
+{
+    if (!index.isUint())
+        return jsNull();
+    else
+    {
+        size_t  i = index.toSizeT ();
+        
+        if (m_content.size() <= i)
+        {
+            //Grow the backing vector if necessary
+            m_content.resize(i+1, jsNull());
+        }
 
+        return m_content[i] = value;
+    }
+}
+
+/**
+ * Gets the fields of the 'Array' object.
+ * @param inherited
+ * @return 
+ */
+StringSet JSArray::getFields(bool inherited)const
+{
+    StringSet result = JSObject::getFields(inherited);
+    
+    result.insert("length");
+    return result;
+}
 
 /**
  * String representation of the array
@@ -463,6 +475,10 @@ ASValue scArrayConstructor(ExecutionContext* ec)
 Ref<JSClass> createArrayClass()
 {
     VarMap  members;
+    
+//    addNative("getAt(index)", scArrayGetAt, members);
+//    addNative("setAt(index, value)", scArraySetAt, members);
+//    addNative("iterator()", scArrayIterator, members);
 
     addNative("function slice(begin, end)", scArraySlice, members);
     addNative("function join(separator)", scArrayJoin, members);
