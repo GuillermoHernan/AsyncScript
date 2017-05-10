@@ -1027,10 +1027,11 @@ void arrayCodegen (Ref<AstNode> statement, CodegenState* pState)
     
     for (int i=0; i < (int)children.size(); ++i)
     {
-        instruction8(OC_CP, pState);        //Copy array reference
-        pushConstant(i, pState);            //Array index
-        childCodegen(statement, i, pState); //Value expression
-        instruction8(OC_WR_INDEX, pState);
+        instruction8(OC_CP, pState);        //[array, array]
+        pushConstant(i, pState);            //[array, array, index]
+        childCodegen(statement, i, pState); //[array, array, index, value]
+        instruction8(OC_WR_INDEX, pState);  //[array, value]
+        instruction8(OC_POP, pState);       //[array]
     }
     
     //After the loop, the array reference is on the top of the stack
