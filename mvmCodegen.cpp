@@ -1022,19 +1022,22 @@ void arrayCodegen (Ref<AstNode> statement, CodegenState* pState)
 {
     const AstNodeList children = statement->children();
     
-    pushConstant((int)children.size(), pState);
-    callCodegen("@newArray", 1, pState, statement->position());
+    pushConstant(0, pState);
+    callCodegen("@newArray", 1, pState, statement->position()); //[array]
+    instruction8(OC_CP, pState);        //[array, array]
+    pushConstant("push", pState);       //["push", array, array]
+    instruction8(OC_RD_FIELD, pState);  //[push, array]
     
     for (int i=0; i < (int)children.size(); ++i)
     {
-        instruction8(OC_CP, pState);        //[array, array]
-        pushConstant(i, pState);            //[array, array, index]
-        childCodegen(statement, i, pState); //[array, array, index, value]
-        instruction8(OC_WR_INDEX, pState);  //[array, value]
-        instruction8(OC_POP, pState);       //[array]
+        childCodegen(statement, i, pState); //[value, push, array]
+        copyInstruction(2, pState);         //[array, value, push, array]
+        copyInstruction(2, pState);         //[push, array, value, push, array]
+        callInstruction(2, pState, children[i]->position());    //[array, push, array]
+        instruction8(OC_POP, pState);       //[push, array]
     }
     
-    //After the loop, the array reference is on the top of the stack
+    instruction8(OC_POP, pState);       //[array]
 }
 
 /**
