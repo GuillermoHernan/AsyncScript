@@ -1928,6 +1928,7 @@ int calcStackOffset8(int opCode)
         case OC_NEW_CONST_FIELD:   return -2;
         case OC_WR_PARAM:   return -1;
         case OC_NUM_PARAMS: return 1;
+        case OC_PUSH_THIS:  return 1;
         default:            return 0;
         }
     }
