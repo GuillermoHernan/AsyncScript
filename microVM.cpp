@@ -1007,9 +1007,10 @@ ASValue ExecutionContext::getParam (size_t index)const
     ASSERT (!frames.empty());
     
     const CallFrame&    curFrame = frames.back();
-    ASSERT (curFrame.numParams > index);
-
-    return stack[curFrame.paramsIndex + index];
+    if (index < curFrame.numParams)
+        return stack[curFrame.paramsIndex + index];
+    else
+        return jsNull();
 }
 
 ASValue ExecutionContext::getThis ()const
