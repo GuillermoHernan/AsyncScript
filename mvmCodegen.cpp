@@ -950,14 +950,14 @@ void thisCallCodegen (Ref<AstNode> node, CodegenState* pState)
         childCodegen(node, i, pState);
 
                                             //[[params]]
-    childCodegen(fnExpr, 0, pState);        //[[params], this]
-    copyInstruction(0, pState);             //[[params], this, this]
+    childCodegen(fnExpr, 0, pState);        //[this, [params]]
+    instruction8 (OC_WR_THISP, pState);     //[this, [params]]
     
     const string  fnName = fnExpr->children()[1]->getName();
-    pushConstant(fnName, pState);           //[[params], this, this, fnName]
-    instruction8(OC_RD_FIELD, pState);      //[[params], this, function]
+    pushConstant(fnName, pState);           //[fnName, this, [params]]
+    instruction8(OC_RD_FIELD, pState);      //[function, [params]]
     
-    callInstruction (nChilds, pState, node->position());
+    callInstruction (nChilds-1, pState, node->position());
 }
 
 /**
@@ -1651,6 +1651,7 @@ void callInstruction (int nParams, CodegenState* pState, const ScriptPosition& p
  */
 void copyInstruction (int offset, CodegenState* pState)
 {
+    ASSERT (offset >= 0);
     if (offset <= OC_CP_MAX - OC_CP)
         instruction8 (OC_CP + offset, pState);
     else

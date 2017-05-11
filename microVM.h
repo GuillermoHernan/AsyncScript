@@ -190,7 +190,7 @@ public:
     ASValue getConstant (size_t index)const;
     
     ASValue getParam (size_t index)const;
-    ASValue getLastParam ()const;
+    ASValue getThis ()const;
     size_t getNumParams()const;
 
 };

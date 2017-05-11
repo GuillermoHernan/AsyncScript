@@ -373,7 +373,7 @@ void JSArray::setLength(ASValue value)
 
 ASValue scArrayPush(ExecutionContext* ec)
 {
-    auto    arr =  ec->getLastParam().staticCast<JSArray>();
+    auto    arr =  ec->getThis().staticCast<JSArray>();
     auto    val =  ec->getParam(0);
     
     arr->push(val);
@@ -383,7 +383,7 @@ ASValue scArrayPush(ExecutionContext* ec)
 
 ASValue scArrayIndexOf(ExecutionContext* ec)
 {
-    auto    arrVal =  ec->getLastParam();
+    auto    arrVal =  ec->getThis();
     auto    arr =  arrVal.staticCast<JSArray>();
     auto    searchElement =  ec->getParam(0);
     auto    fromIndex =  ec->getParam(1);
@@ -434,7 +434,7 @@ std::string JSArray::join(Ref<JSArray> arr, ASValue sep, ExecutionContext* ec)
 
 ASValue scArrayJoin(ExecutionContext* ec)
 {
-    auto    arr = ec->getLastParam().staticCast<JSArray>();
+    auto    arr = ec->getThis().staticCast<JSArray>();
     auto    sep = ec->getParam(0);
 
     return jsString( JSArray::join(arr, sep, ec) );
@@ -448,7 +448,7 @@ ASValue scArrayJoin(ExecutionContext* ec)
  */
 ASValue scArraySlice(ExecutionContext* ec)
 {
-    Ref<JSArray>    arr = ec->getLastParam().staticCast<JSArray>();
+    Ref<JSArray>    arr = ec->getThis().staticCast<JSArray>();
     auto            begin = ec->getParam(0);
     auto            end = ec->getParam(1);
     const size_t    iBegin = begin.toSizeT();

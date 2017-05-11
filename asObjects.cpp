@@ -589,21 +589,21 @@ std::string JSObject::getJSON(int indent)
 
 ASValue scObjectFreeze(ExecutionContext* ec)
 {
-    auto obj = ec->getLastParam();
+    auto obj = ec->getThis();
     
     return obj.freeze();
 }
 
 ASValue scObjectDeepFreeze(ExecutionContext* ec)
 {
-    auto obj = ec->getLastParam();
+    auto obj = ec->getThis();
     
     return obj.deepFreeze();
 }
 
 ASValue scObjectUnfreeze(ExecutionContext* ec)
 {
-    auto obj = ec->getLastParam();
+    auto obj = ec->getThis();
     auto forceClone = ec->getParam(0);
     
     return obj.unFreeze(forceClone.toBoolean(ec));
@@ -611,14 +611,14 @@ ASValue scObjectUnfreeze(ExecutionContext* ec)
 
 ASValue scObjectIsFrozen(ExecutionContext* ec)
 {
-    auto obj = ec->getLastParam();
+    auto obj = ec->getThis();
     
     return jsBool (!obj.isMutable());
 }
 
 ASValue scObjectIsDeepFrozen(ExecutionContext* ec)
 {
-    auto obj = ec->getLastParam();
+    auto obj = ec->getThis();
     
     return jsBool (obj.getMutability() == MT_DEEPFROZEN);
 }

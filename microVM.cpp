@@ -1012,14 +1012,12 @@ ASValue ExecutionContext::getParam (size_t index)const
     return stack[curFrame.paramsIndex + index];
 }
 
-ASValue ExecutionContext::getLastParam ()const
+ASValue ExecutionContext::getThis ()const
 {
     ASSERT (!frames.empty());
-    
     const CallFrame&    curFrame = frames.back();
-    ASSERT (curFrame.numParams > 0);
 
-    return stack[curFrame.paramsIndex + curFrame.numParams - 1];
+    return curFrame.thisValue;
 }
 
 size_t ExecutionContext::getNumParams ()const

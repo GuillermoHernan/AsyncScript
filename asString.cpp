@@ -102,7 +102,7 @@ ASValue JSString::getAt(ASValue index)
 
 ASValue scStringIndexOf(ExecutionContext* ec)
 {
-    string str = ec->getLastParam().toString(ec);
+    string str = ec->getThis().toString(ec);
     string search = ec->getParam(0).toString(ec);
     size_t p = str.find(search);
     int val = (p == string::npos) ? -1 : p;
@@ -111,7 +111,7 @@ ASValue scStringIndexOf(ExecutionContext* ec)
 
 ASValue scStringSubstring(ExecutionContext* ec)
 {
-    string str = ec->getLastParam().toString(ec);
+    string str = ec->getThis().toString(ec);
     const size_t lo = ec->getParam(0).toSizeT();
     const size_t hi = ec->getParam(1).toSizeT();
 
@@ -124,7 +124,7 @@ ASValue scStringSubstring(ExecutionContext* ec)
 
 ASValue scStringCharAt(ExecutionContext* ec)
 {
-    Ref<JSString> str = ec->getLastParam().staticCast<JSString>();
+    Ref<JSString> str = ec->getThis().staticCast<JSString>();
     
     return str->getAt( ec->getParam(0) );
 }
@@ -140,7 +140,7 @@ ASValue scStringCharCodeAt(ExecutionContext* ec)
 
 ASValue scStringSplit(ExecutionContext* ec)
 {
-    string str = ec->getLastParam().toString(ec);
+    string str = ec->getThis().toString(ec);
     string sep = ec->getParam(0).toString(ec);
     Ref<JSArray> result = JSArray::create();
 
