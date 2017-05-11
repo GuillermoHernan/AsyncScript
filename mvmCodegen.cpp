@@ -1031,9 +1031,11 @@ void arrayCodegen (Ref<AstNode> statement, CodegenState* pState)
     for (int i=0; i < (int)children.size(); ++i)
     {
         childCodegen(statement, i, pState); //[value, push, array]
-        copyInstruction(2, pState);         //[array, value, push, array]
-        copyInstruction(2, pState);         //[push, array, value, push, array]
-        callInstruction(2, pState, children[i]->position());    //[array, push, array]
+        copyInstruction(1, pState);         //[push, value, push, array]
+        copyInstruction(3, pState);         //[array, push, value, push, array]
+        instruction8(OC_WR_THISP, pState);
+        instruction8(OC_POP, pState);       //[push, value, push, array]
+        callInstruction(1, pState, children[i]->position());    //[array, push, array]
         instruction8(OC_POP, pState);       //[push, array]
     }
     
