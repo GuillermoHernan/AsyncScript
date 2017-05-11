@@ -57,9 +57,9 @@ void execNewConstField (const int opCode, ExecutionContext* ec);
 void execRdParam (const int opCode, ExecutionContext* ec);
 void execWrParam (const int opCode, ExecutionContext* ec);
 void execNumParams (const int opCode, ExecutionContext* ec);
+void execPushThis (const int opCode, ExecutionContext* ec);
+void execWrThisP (const int opCode, ExecutionContext* ec);
 void execNop (const int opCode, ExecutionContext* ec);
-void execCpAux (const int opCode, ExecutionContext* ec);
-void execPushAux (const int opCode, ExecutionContext* ec);
 
 void invalidOp (const int opCode, ExecutionContext* ec);
 
@@ -84,8 +84,8 @@ static const OpFunction s_instructions[64] =
     execRdIndex,    execWrIndex,    execNewConstField, invalidOp,
     
     //32
-    execRdParam,    execWrParam,    execNumParams,  invalidOp,
-    invalidOp,      invalidOp,      invalidOp,      invalidOp,
+    execRdParam,    execWrParam,    execNumParams,  execPushThis,
+    execWrThisP,    invalidOp,      invalidOp,      invalidOp,
     
     //40
     invalidOp,      invalidOp,      invalidOp,      invalidOp,
@@ -139,7 +139,10 @@ ASValue mvmExecRoutine (Ref<MvmRoutine> code, ExecutionContext* ec, int nParams)
     
     //Create stack frame
     const size_t stackSize = ec->frames.size();
-    CallFrame   frame (&code->constants, ec->stack.size()-nParams, nParams);
+    CallFrame   frame (&code->constants, 
+                       ec->stack.size()-nParams, 
+                       nParams,
+                       ec->getThisParam());
     ec->frames.push_back(frame);
     
     while (nextBlock >= 0)
@@ -357,7 +360,10 @@ void mvmExecCall (int nArgs, ExecutionContext* ec)
         
         if (function->isNative())
         {
-            ec->frames.push_back(CallFrame(NULL, ec->stack.size()-nArgs, nArgs));
+            ec->frames.push_back(CallFrame(NULL, 
+                                           ec->stack.size()-nArgs, 
+                                           nArgs,
+                                           ec->getThisParam()));
             result = function->nativePtr()(ec);
             ec->frames.pop_back();
         }
@@ -904,6 +910,35 @@ void execNumParams (const int opCode, ExecutionContext* ec)
     const CallFrame&    curFrame = ec->frames.back();
 
     ec->push(jsSizeT(curFrame.numParams));
+}
+
+/**
+ * Pushes the value of the current "this" register on top of the stack.
+ * @param opCode
+ * @param ec
+ */
+void execPushThis (const int opCode, ExecutionContext* ec)
+{
+    const CallFrame&    curFrame = ec->frames.back();
+
+    ec->push(curFrame.thisValue);
+}
+
+/**
+ * Writes the value on top of the stack in "this parameter" register.
+ * This register is not the register readable with 'OC_PUSH_THIS', it
+ * will become the value of that register on the next call instruction.
+ * 
+ * The value is not removed from the top of the stack, so this instruction
+ * leaves the stack unchanged.
+ * @param opCode
+ * @param ec
+ */
+void execWrThisP (const int opCode, ExecutionContext* ec)
+{
+    ec->checkStackNotEmpty();
+    
+    ec->setThisParam (ec->stack.back());
 }
 
 /**

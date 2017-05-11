@@ -63,6 +63,8 @@ enum OpCodes8
     OC_RD_PARAM = 32,
     OC_WR_PARAM = 33,
     OC_NUM_PARAMS = 34,
+    OC_PUSH_THIS = 35,
+    OC_WR_THISP = 36,
     OC_NOP = 63,
     OC_PUSHC = 64,
     OC_EXT_FLAG = 128
@@ -131,9 +133,10 @@ struct CallFrame
     ValueVector*    constants = NULL;
     size_t          paramsIndex;
     size_t          numParams;
+    ASValue         thisValue;
     
-    CallFrame (ValueVector* consts, size_t paramsIdx, size_t nParams)
-    : constants(consts), paramsIndex(paramsIdx), numParams(nParams)
+    CallFrame (ValueVector* consts, size_t paramsIdx, size_t nParams, ASValue thisVal)
+    : constants(consts), paramsIndex(paramsIdx), numParams(nParams), thisValue(thisVal)
     {}
     
 };
@@ -148,6 +151,9 @@ struct ExecutionContext
     ValueVector     stack;
     FrameVector     frames;
     TraceFN         trace = NULL;
+private:
+    ASValue         thisParam;
+public:
 //    ValueVector*    constants;
 //    ScopeStack      scopes;
 //    ASValue    auxRegister;
@@ -165,6 +171,18 @@ struct ExecutionContext
     {
         stack.push_back(value);
         return value;
+    }
+    
+    ASValue getThisParam ()
+    {
+        ASValue temp = thisParam;
+        thisParam = jsNull();
+        return temp;
+    }
+    
+    void setThisParam(ASValue val)
+    {
+        thisParam = val;
     }
     
     bool checkStackNotEmpty();
