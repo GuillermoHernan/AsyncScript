@@ -64,6 +64,18 @@ std::string JSString::getJSON(int indent)
     return escapeString(m_text, true);
 }
 
+/**
+ * String comparision function.
+ * @param b
+ * @param ec
+ * @return 
+ */
+double JSString::compare (const ASValue& b, ExecutionContext* ec)const
+{
+    return m_text.compare (b.toString(ec));
+}
+
+
 
 /**
  * Member access function overridden to have access to 'length' property, and to

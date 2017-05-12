@@ -327,27 +327,12 @@ ASValue mvmAreEqual (ExecutionContext* ec)
     return jsBool (opA.compare(opB, ec) == 0);
 }
 
-/**
- * Type and value equality compare (===)
- * @param pScope
- * @return 
- */
-//bool mvmAreTypeEqual (ASValue opA, ASValue opB)
-//{
-//    if (opA.getType() != opB.getType() )
-//        return false;
-//    else
-//        return opA.compare(opB, ec) == 0;
-//}
 ASValue mvmAreTypeEqual (ExecutionContext* ec)
 {
     ASValue opA = ec->getParam(0);
     ASValue opB = ec->getParam(1);
 
-    if (opA.getType() != opB.getType() )
-        return jsFalse();
-    else
-        return jsBool (opA.compare(opB, ec) == 0);
+    return jsBool (opA.typedCompare(opB, ec) == 0);
 }
 
 /**
@@ -375,11 +360,8 @@ ASValue mvmNotTypeEqual (ExecutionContext* ec)
 {
     ASValue opA = ec->getParam(0);
     ASValue opB = ec->getParam(1);
-    
-    if (opA.getType() != opB.getType() )
-        return jsTrue();
-    else
-        return jsBool ( opA.compare(opB, ec) != 0 );
+
+    return jsBool (opA.typedCompare(opB, ec) != 0);
 }
 
 ASValue mvmToString (ExecutionContext* ec)

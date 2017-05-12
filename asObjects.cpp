@@ -307,6 +307,29 @@ ASValue JSObject::iterator(ExecutionContext* ec)const
 }
 
 /**
+ * Compares two objects.
+ * Default implementation compares addresses.
+ * 
+ * @param b
+ * @param ec
+ * @return 
+ */
+double JSObject::compare(const ASValue& b, ExecutionContext* ec)const
+{
+    ASValue fn = jsNull();
+    
+    if (ec != NULL)
+        fn = readField("compare");
+    
+    if (!fn.isNull())
+        return callMemberFn(fn, b, ec).toDouble(ec);
+    else if (b.getType() != VT_OBJECT)
+        return VT_OBJECT - b.getType();
+    else
+        return double (this - b.staticCast<JSObject>().getPointer());
+}
+
+/**
  * Handles function calls, which allows to use objects as functions.
  * Default implementation just returns 'null'
  * @param scope

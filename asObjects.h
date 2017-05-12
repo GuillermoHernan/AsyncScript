@@ -138,10 +138,13 @@ public:
     virtual ASValue setAt(ASValue index, ASValue value, ExecutionContext* ec);
     
     virtual ASValue iterator(ExecutionContext* ec)const;
+
+    virtual double compare (const ASValue& b, ExecutionContext* ec)const;
     
     //virtual ASValue call (Ref<FunctionScope> scope);
     
     virtual std::string getJSON(int indent);
+
 
 //    virtual JSValueTypes getType()const
 //    {

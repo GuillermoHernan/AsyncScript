@@ -42,11 +42,13 @@ public:
 
     virtual std::string getJSON(int indent);
 
-    virtual JSValueTypes getType()const
-    {
-        return VT_STRING;
-    }
+//    virtual JSValueTypes getType()const
+//    {
+//        return VT_STRING;
+//    }
     
+    virtual double compare (const ASValue& b, ExecutionContext* ec)const;
+
     static Ref<JSClass> StringClass;
 
 protected:

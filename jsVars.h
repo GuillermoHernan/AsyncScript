@@ -28,8 +28,8 @@ class ExecutionContext;
 enum JSValueTypes
 {
     VT_NULL,
-    VT_NUMBER,
     VT_BOOL,
+    VT_NUMBER,
     //VT_ACTOR_REF,
     //VT_INPUT_EP_REF,
     //VT_OUTPUT_EP_REF,
@@ -113,6 +113,7 @@ public:
     std::string     getJSON(int indent)const;
     
     bool            operator < (const ASValue& b)const;
+    double          typedCompare (const ASValue& b, ExecutionContext* ec)const;
     double          compare (const ASValue& b, ExecutionContext* ec)const;
 
     int             toInt32 ()const;

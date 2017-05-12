@@ -183,6 +183,23 @@ ASValue singleItemIterator(ASValue v)
     return jsNull();    
 }
 
+/**
+ * Compares two values, taking into account its types.
+ * @param b
+ * @param ec
+ * @return 
+ */
+double ASValue::typedCompare(const ASValue& b, ExecutionContext* ec)const
+{
+    auto typeA = this->getType();
+    auto typeB = b.getType();
+
+    if (typeA != typeB)
+        return typeA - typeB;
+    else
+        return compare(b, ec);
+}
+
 
 /**
  * Compares two values.
@@ -193,28 +210,27 @@ double ASValue::compare(const ASValue& b, ExecutionContext* ec)const
 {
     auto typeA = this->getType();
     auto typeB = b.getType();
-
-    if (typeA != typeB)
-        return typeA - typeB;
-    else
+    auto minType = min (typeA, typeB);
+    
+    switch (minType)
     {
-        switch (typeA)
-        {
-        case VT_NULL:
-            return 0;
-        case VT_NUMBER:
-            return this->m_content.number - b.m_content.number;
-        case VT_BOOL:
-            return int(this->m_content.boolean) - int(b.m_content.boolean);
-        case VT_STRING:
-            return toString(ec).compare(b.toString(ec));
-            
-        //TODO: Make script - overridable?
+    case VT_NULL:
+        return typeA - typeB;
         
-        default:
-            return this->m_content.ptr - b.m_content.ptr;
-        }
+    case VT_BOOL:
+        return int(this->toBoolean(ec)) - int(b.toBoolean(ec));
+        
+    case VT_NUMBER:
+        return this->toDouble(ec) - b.toDouble(ec);
+        
+    default:
+        break;
     }
+
+    if (typeA == VT_OBJECT || typeB == VT_STRING)
+        return this->staticCast<JSObject>()->compare(b, ec);
+    else
+        return double(this->m_content.ptr - b.m_content.ptr);
 }
 
 /**
@@ -956,5 +972,5 @@ std::string ASValue::getJSON(int indent)const
 
 bool ASValue::operator < (const ASValue& b)const
 {
-    return compare (b, NULL) < 0;
+    return typedCompare (b, NULL) < 0;
 }
