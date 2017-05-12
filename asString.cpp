@@ -65,7 +65,7 @@ std::string JSString::getJSON(int indent)
 }
 
 /**
- * String comparision function.
+ * String comparison function.
  * @param b
  * @param ec
  * @return 

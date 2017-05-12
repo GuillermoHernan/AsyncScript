@@ -247,7 +247,7 @@ ASValue mvmRshiftu (ExecutionContext* ec)
 }
 
 /**
- * '<' comparision operation
+ * '<' comparison operation
  * @param pScope
  * @return 
  */
@@ -263,7 +263,7 @@ ASValue mvmLess (ExecutionContext* ec)
 }
 
 /**
- * '>' comparision operation
+ * '>' comparison operation
  * @param pScope
  * @return 
  */
@@ -279,7 +279,7 @@ ASValue mvmGreater (ExecutionContext* ec)
 }
 
 /**
- * '<=' comparision operation
+ * '<=' comparison operation
  * @param pScope
  * @return 
  */
@@ -295,7 +295,7 @@ ASValue mvmLequal (ExecutionContext* ec)
 }
 
 /**
- * '<=' comparision operation
+ * '<=' comparison operation
  * @param pScope
  * @return 
  */
