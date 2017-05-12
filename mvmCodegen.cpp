@@ -466,6 +466,8 @@ void ifCodegen (Ref<AstNode> statement, CodegenState* pState)
     const int thenInitialBlock = curBlockId(pState)+1;
     endBlock (thenInitialBlock, -1, pState);
     
+    const int postConditionStack = pState->stackSize;
+    
     //Generate code for 'then' block
     childCodegen(statement, 1, pState);
     if (conditional)
@@ -475,9 +477,13 @@ void ifCodegen (Ref<AstNode> statement, CodegenState* pState)
     const int elseBlock = nextBlock;
     endBlock (nextBlock, nextBlock, pState);
     
+    const int postThenStack = pState->stackSize;
+    
     //Try to generate 'else'
-    if (childCodegen(statement, 2, pState))
+    if (statement->childExists(2))
     {
+        pState->stackSize = postConditionStack;
+        childCodegen(statement, 2, pState);
         if (conditional)
             copyInstruction(0, pState);
         
@@ -489,6 +495,8 @@ void ifCodegen (Ref<AstNode> statement, CodegenState* pState)
         setTrueJump (thenFinalBlock, nextBlock, pState);
         setFalseJump (thenFinalBlock, nextBlock, pState);
     }
+    
+    ASSERT (pState->stackSize == postThenStack);
 
     //Fix else jump
     setFalseJump (thenInitialBlock-1, elseBlock, pState);
