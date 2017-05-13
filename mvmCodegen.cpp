@@ -562,48 +562,58 @@ void forCodegen (Ref<AstNode> statement, CodegenState* pState)
  */
 void forEachCodegen (Ref<AstNode> node, CodegenState* pState)
 {
-    errorAt (node->position(), "For each code generation temporarily disabled");
-//    const ScriptPosition    pos = node->position();
-//    
-//    //Loop initialization
-//    childCodegen (node, 1, pState);             //[sequence]
-//    
-//    //Generate code for condition
-//    const int conditionBlock = curBlockId(pState)+1;
-//    endBlock (conditionBlock, conditionBlock, pState);
-//    instruction8(OC_CP, pState);                    //[sequence, sequence]
-//    pushNull(pState);                               //[sequence, sequence, null]
-//    callCodegen("@notTypeEqual", 2, pState, pos);   //[sequence, bool]
-//    endBlock (conditionBlock+1, -1, pState);
-//    
-//    //Generate code for body
-//    instruction8(OC_PUSH_SCOPE, pState);
-//    pState->pushScope(node, true);
-//
-//    string itemVarName = node->children().front()->getName();
-//    pState->declare(itemVarName);
-//    pushConstant(itemVarName, pState);          //[sequence, itemVarName]
-//    instruction8(OC_CP+1, pState);              //[sequence, itemVarName, sequence]
-//    callCodegen("@head", 1, pState, pos);       //[sequence, itemVarName, head]
-//    instruction8(OC_NEW_VAR, pState);           //[sequence]
-//
-//    callCodegen("@tail", 1, pState, pos);       //[sequence+1]
-//    childCodegen(node, 2, pState);              //[sequence+1, body_result]
-//    instruction8(OC_POP, pState);               //[sequence+1]
-//
-//    instruction8(OC_POP_SCOPE, pState);
-//    pState->popScope();
-//    
-//    endBlock (conditionBlock, conditionBlock, pState);
-//    
-//    const int nextBlock = curBlockId(pState);
-//    
-//    //Fix condition jump destination
-//    setFalseJump(conditionBlock, nextBlock, pState);    
+    const ScriptPosition    pos = node->position();
     
-    //Non-expression statements leave a 'null' on the stack.
-    //The content of the stack at this point is a 'null', because the last returned
-    //value of 'tail' has been a 'null'.
+    //Loop initialization
+    childCodegen (node, 1, pState);             //[sequence]
+    
+    //Get iterator.
+    callCodegen ("@iterator",1, pState, pos);  //[iterator]
+        
+    //Generate code for condition
+    pushConstant(jsNull(), pState);                         //[null, iterator]
+    const int conditionBlock = curBlockId(pState)+1;
+    endBlock (conditionBlock, conditionBlock, pState);      //[iterator]
+ 
+    instruction8(OC_CP, pState);                    //[iterator, iterator]
+    pushNull(pState);                               //[null, iterator, iterator]
+    callCodegen("@notTypeEqual", 2, pState, pos);   //[bool, iterator]
+    endBlock (conditionBlock+1, -1, pState);        //[iterator]
+    
+    //Generate code for body
+    pState->pushScope(node, true, false);
+
+    //Declare item variable name, and read its content
+    string itemVarName = node->children().front()->getName();
+    pState->declare(itemVarName);
+    copyInstruction(0, pState);                 //[iterator, iterator]
+    instruction8(OC_WR_THISP, pState);
+    pushConstant("head", pState);               //["head", iterator, iterator]
+    instruction8(OC_RD_FIELD, pState);          //[headFn, iterator]
+    callInstruction(0, pState, node->children().front()->position());   //[item, iterator]
+    
+    childCodegen(node, 2, pState);              //[body_result, item, iterator]
+    instruction8(OC_POP, pState);               //[item, iterator]
+    instruction8(OC_POP, pState);               //[iterator]
+    
+    pState->popScope();
+    
+    //Next iterator.
+    instruction8(OC_WR_THISP, pState);
+    pushConstant("tail", pState);               //["tail", iterator]
+    instruction8(OC_RD_FIELD, pState);          //[tailFn]
+    callInstruction(0, pState, pos);            //[nextIterator]
+    pushConstant(jsNull(), pState);             //[null, nextIterator]
+    
+    endBlock(conditionBlock, conditionBlock, pState);   //[nextIterator]
+    
+    //Block after the loop
+    const int nextBlock = curBlockId(pState);
+    
+    //Fix condition jump destination
+    setFalseJump(conditionBlock, nextBlock, pState);    
+
+    //[iterator] is left on the stack, which should be null at the end of the loop.
 }
 
 /**

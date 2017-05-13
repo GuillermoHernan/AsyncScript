@@ -409,6 +409,18 @@ ASValue mvmMakeClosure (ExecutionContext* ec)
     return JSClosure::create(fn.staticCast<JSFunction>(), paramsBegin, nParams-1)->value();
 }
 
+/**
+ * Gets the iterator of a given object
+ * @param ec
+ * @return 
+ */
+ASValue mvmIterator (ExecutionContext* ec)
+{
+    auto sequence = ec->getParam(0);
+    
+    return sequence.iterator(ec);
+}
+
 
 //ASValue mvmCall (ExecutionContext* ec)
 //{
@@ -463,4 +475,6 @@ void registerMvmFunctions(Ref<JSObject> scope)
     //addNative0("@call", mvmCall, scope);
     
     addNative2("@makeClosure", "env", "fn", mvmMakeClosure, scope);
+    
+    addNative1("@iterator", "obj", mvmIterator, scope);
 }
