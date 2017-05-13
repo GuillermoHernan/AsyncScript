@@ -19,4 +19,8 @@ var b = Foo(2,3);
 
 var result1 = a.value();
 var result2 = b.value();
-result = result1==3 && result2==5;
+
+assert (result1 == 3, "result1 = " + result1);
+assert (result2 == 5, "result2 = " + result2);
+
+result = 1;
