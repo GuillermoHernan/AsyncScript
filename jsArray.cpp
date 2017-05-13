@@ -177,14 +177,6 @@ ASValue JSArray::getAt(ASValue index, ExecutionContext* ec)
         return getAt( index.toSizeT () );
 }
 
-/**
- * Returns an iterator which skips the first element
- * @return 
- */
-//ASValue JSArray::iterator()
-//{
-//    return JSArrayIterator::create(ref(this), 0);
-//}
 
 /**
  * Writes an array element
@@ -208,6 +200,16 @@ ASValue JSArray::setAt(ASValue index, ASValue value, ExecutionContext* ec)
 
         return m_content[i] = value;
     }
+}
+
+/**
+ * Returns an iterator to walk the array
+ * @param ec
+ * @return 
+ */
+ASValue JSArray::iterator(ExecutionContext* ec)const
+{
+    return JSArrayIterator::create(ref(const_cast<JSArray*>(this)), 0);
 }
 
 /**
@@ -347,29 +349,92 @@ void JSArray::setLength(ASValue value)
     m_content.resize(value.toSizeT(), jsNull());
 }
 
+// JSArrayIterator
+//
+////////////////////////////////////
+
 /**
  * Creates an array iterator. If the iterator is beyond the end, returns 'null'
  * @param arr
  * @param index
  * @return 
  */
-//ASValue JSArrayIterator::create(Ref<JSArray> arr, size_t index)
-//{
-//    if (index < arr->length())
-//        return refFromNew(new JSArrayIterator(arr, index));
-//    else
-//        return jsNull();
-//}
-//
-//ASValue JSArrayIterator::head()
-//{
-//    return m_array->getAt(m_index);
-//}
-//
-//ASValue JSArrayIterator::tail()
-//{
-//    return create (m_array, m_index+1);
-//}
+ASValue JSArrayIterator::create(Ref<JSArray> arr, size_t index)
+{
+    if (index < arr->length())
+        return refFromNew(new JSArrayIterator(arr, index))->value();
+    else
+        return jsNull();
+}
+
+/**
+ * Creates the class for the iterator
+ * @return 
+ */
+Ref<JSClass> JSArrayIterator::getClass()
+{
+    static Ref<JSClass>     cls;
+    
+    if (cls.isNull())
+    {
+        VarMap  members;
+
+        addNative("function head()", head, members);
+        addNative("function tail()", tail, members);
+
+        cls = JSClass::createNative("ArrayIterator", 
+                                     JSObject::DefaultClass, 
+                                     members, 
+                                     StringVector(),
+                                     scConstructor);
+    }
+
+    return cls;
+}
+
+/**
+ * Javascript constructor of the array iterator
+ * @param ec
+ * @return 
+ */
+ASValue JSArrayIterator::scConstructor(ExecutionContext* ec)
+{
+    //TODO: Missing mechanism to ensure that the first parameter is an array
+    auto arr = ec->getParam(0);
+    auto index = ec->getParam(1);
+    
+    if (arr.getType() != VT_OBJECT)
+        return jsNull();
+    
+    if (!index.isUint())
+        index = jsSizeT(0);
+    
+    return JSArrayIterator::create(arr.staticCast<JSArray>(), index.toSizeT());
+}
+
+ASValue JSArrayIterator::head(ExecutionContext* ec)
+{
+    ASValue thisPtr = ec->getThis();
+    
+    if (thisPtr.getType() != VT_OBJECT)
+        return jsNull();
+    
+    auto obj = thisPtr.staticCast<JSArrayIterator>();
+    
+    return obj->m_array->getAt(obj->m_index);
+}
+
+ASValue JSArrayIterator::tail(ExecutionContext* ec)
+{
+    ASValue thisPtr = ec->getThis();
+    
+    if (thisPtr.getType() != VT_OBJECT)
+        return jsNull();
+    
+    auto obj = thisPtr.staticCast<JSArrayIterator>();
+    
+    return create (obj->m_array, obj->m_index+1);
+}
 
 ASValue scArrayPush(ExecutionContext* ec)
 {

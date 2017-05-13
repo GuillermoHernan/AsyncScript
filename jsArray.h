@@ -58,6 +58,8 @@ public:
     virtual ASValue getAt(ASValue index, ExecutionContext* ec);
     virtual ASValue setAt(ASValue index, ASValue value, ExecutionContext* ec);
 
+    virtual ASValue iterator(ExecutionContext* ec)const;
+
     /////////////////////////////////////////
 
     static Ref<JSClass> ArrayClass;
@@ -80,30 +82,27 @@ private:
  * Object to iterate over an array
  * @return 
  */
-//class JSArrayIterator : public JSObject
-//{
-//public:
-//    static ASValue create(Ref<JSArray> arr, size_t index);
-//
-//    virtual ASValue iterator()override
-//    {
-//        //TODO: temporary function
-//        return jsNull();
-//    }
-//
-//private:
-//    //TODO: Should it has its own class?
-//
-//    JSArrayIterator(Ref<JSArray> arr, size_t index) :
-//    JSObject(DefaultClass, arr->getMutability() == MT_DEEPFROZEN ? MT_DEEPFROZEN : MT_FROZEN),
-//    m_array(arr),
-//    m_index(index)
-//    {
-//    }
-//
-//    Ref<JSArray> m_array;
-//    size_t m_index;
-//};
+class JSArrayIterator : public JSObject
+{
+public:
+    static ASValue create(Ref<JSArray> arr, size_t index);
+
+    const Ref<JSArray>  m_array;
+    const size_t        m_index;
+
+private:
+    JSArrayIterator(Ref<JSArray> arr, size_t index) :
+        JSObject(getClass(), arr->getMutability() == MT_DEEPFROZEN ? MT_DEEPFROZEN : MT_FROZEN),
+        m_array(arr),
+        m_index(index)
+    {
+    }
+    
+    static Ref<JSClass>     getClass();
+    static ASValue scConstructor(ExecutionContext* ec);
+    static ASValue head(ExecutionContext* ec);
+    static ASValue tail(ExecutionContext* ec);
+};
 
 
 #endif	/* JSARRAY_H */
