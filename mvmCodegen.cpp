@@ -1329,33 +1329,32 @@ void clearLocals (int targetStackSize, CodegenState* pState)
  */
 void classCodegen (Ref<AstNode> node, CodegenState* pState)
 {
-    errorAt (node->position(), "Classes code generation disabled temporarily");
-//    auto    constructorFn = classConstructorCodegen(node, pState);
-//    auto    children = node->children();
-//    VarMap  members;
-//    
-//    for (auto it = children.begin(); it != children.end(); ++it)
-//    {
-//        auto child = *it;
-//        
-//        if (child.notNull() && child->getType() == AST_FUNCTION)
-//        {
-//            auto function = createFunction(child, pState);
-//            checkedVarWrite (members, function->getName(), function, true);
-//        }
-//    }
-//    
-//    auto parentClass = getParentClass (node, pState);
-//    auto cls = JSClass::create(node->getName(), parentClass, members, constructorFn);
-//    
-//    //Register class
-//    pState->symbols[node->getName()] = cls;
-//    
-//    //Create a new constant, and yield class reference
-//    pushConstant( cls, pState);
-//    pushConstant(node->getName(), pState);
-//    instruction8(OC_CP+1, pState);
-//    instruction8(OC_NEW_CONST, pState);
+    auto    constructorFn = classConstructorCodegen(node, pState);
+    auto    children = node->children();
+    VarMap  members;
+    
+    for (auto it = children.begin(); it != children.end(); ++it)
+    {
+        auto child = *it;
+        
+        if (child.notNull() && child->getType() == AST_FUNCTION)
+        {
+            auto function = createFunction(child, pState);
+            checkedVarWrite (members, function->getName(), function->value(), true);
+        }
+    }
+    
+    auto parentClass = getParentClass (node, pState);
+    auto cls = JSClass::create(node->getName(), parentClass, members, constructorFn);
+    
+    //Register class
+    pState->symbols[node->getName()] = cls->value();
+    
+    //Create a new constant, and yield class reference
+    getEnvCodegen(pState);                  //[env]
+    pushConstant(node->getName(), pState);  //[name, env]
+    pushConstant( cls->value(), pState);    //[class, name, env]
+    instruction8(OC_NEW_CONST_FIELD, pState);//[class]
 }
 
 /**
@@ -1366,65 +1365,60 @@ void classCodegen (Ref<AstNode> node, CodegenState* pState)
  */
 Ref<JSFunction> classConstructorCodegen (Ref<AstNode> node, CodegenState* pState)
 {
-    errorAt (node->position(), "Classes code generation disabled temporarily");
     auto            params = classConstructorParams(node, pState);
     CodegenState    fnState = initFunctionState(node, params, pState->pCodeMap);
 
-    auto            function = JSFunction::createJS("@constructor", params, fnState.curRoutine);
-//    auto            children = node->children();
-//    set<string>     vars;
-//    
-//    pState = &fnState;
-//    baseConstructorCallCodegen (node, pState);      //Stack:[newObj]
-//    
-//    for (auto it = children.begin(); it != children.end(); ++it)
-//    {
-//        auto child = *it;
-//        
-//        if (child.notNull())
-//        {
-//            auto type = child->getType();
-//            
-//            if (type == AST_VAR || type == AST_CONST)
-//            {
-//                instruction8(OC_CP, pState);
-//                pushConstant (child->getName(), pState);//Stack:[newObj, newObj, name]
-//                if (!childCodegen(child, 0, pState))
-//                    pushConstant (jsNull(), pState);
-//                
-//                //Stack:[newObj, newObj, name, value]
-//                instruction8 (type == AST_CONST ? OC_NEW_CONST_FIELD : OC_WR_FIELD, pState);
-//                //Stack:[newObj]
-//                
-//                vars.insert(child->getName());
-//            }
-//        }
-//    }//class members
-//
-//    //Stack:[newObj]
-//
-//    //Parameters as class variables
-//    for (auto itParam = params.begin(); itParam != params.end(); ++itParam)
-//    {
-//        if (vars.count(*itParam) == 0)
-//        {
-//            instruction8(OC_CP, pState);
-//            //Stack:[newObj, newObj]
-//            
-//            pushConstant (*itParam, pState);
-//            instruction8(OC_CP, pState);
-//            //Stack:[newObj, newObj, paramName, paramName]
-//            
-//            instruction8 (OC_RD_LOCAL, pState);
-//            //Stack:[newObj, newObj, paramName, paramValue]
-//            
-//            instruction8 (OC_WR_FIELD, pState);
-//            //Stack:[newObj]
-//        }
-//    }
-//    
-//    //Stack:[newObj]
-//
+    auto            function = JSFunction::createJS("", params, fnState.curRoutine);
+    auto            children = node->children();
+    set<string>     vars;
+    
+    pState = &fnState;
+    baseConstructorCallCodegen (node, pState);      //[newObj]
+    
+    for (auto it = children.begin(); it != children.end(); ++it)
+    {
+        auto child = *it;
+        
+        if (child.notNull())
+        {
+            auto type = child->getType();
+            
+            if (type == AST_VAR || type == AST_CONST)
+            {
+                instruction8(OC_CP, pState);            //[newObj, newObj]
+                pushConstant (child->getName(), pState);//[name, newObj, newObj]
+                if (!childCodegen(child, 0, pState))    //[value, name, newObj, newObj]
+                    pushConstant (jsNull(), pState);
+
+                const int opCode = type == AST_CONST ? OC_NEW_CONST_FIELD : OC_WR_FIELD;
+                instruction8 (opCode, pState);          //[value, newObj]
+                instruction8 (OC_POP, pState);          //[newObj]
+                
+                vars.insert(child->getName());
+            }
+        }
+    }//class members
+
+    //Stack:[newObj]
+
+    //Parameters as class variables
+    for (auto itParam = params.begin(); itParam != params.end(); ++itParam)
+    {
+        //Check if already written.
+        if (vars.count(*itParam) == 0)
+        {
+            instruction8(OC_CP, pState);        //[newObj, newObj]
+            
+            pushConstant (*itParam, pState);    //[paramName, newObj, newObj]
+            varReadCodegen(*itParam, pState);   //[value, paramName, newObj, newObj]
+            
+            instruction8 (OC_WR_FIELD, pState); //[value, newObj]
+            instruction8 (OC_POP, pState);      //[newObj]
+        }
+    }
+    
+    //Stack:[newObj]
+
     return function;
 }
 
@@ -1435,34 +1429,30 @@ Ref<JSFunction> classConstructorCodegen (Ref<AstNode> node, CodegenState* pState
  */
 void baseConstructorCallCodegen (Ref<AstNode> node, CodegenState* pState)
 {
-    errorAt (node->position(), "Classes code generation disabled temporarily");
-//    auto    parentClass = getParentClass(node, pState);
-//    auto    extends = astGetExtends (node);
-//    
-//    int     nParams;
-//    
-//    pushNull(pState);      //No 'this' pointer
-//    
-//    if (extends.notNull() && extends->childExists(0))
-//    {
-//        //Non-inherited parameters
-//        auto paramsNode = extends->children().front();
-//        nParams = childrenCodegen(paramsNode, pState);
-//    }
-//    else
-//    {
-//        //inherited parameters
-//        StringVector    params = parentClass->getParams();
-//
-//        nParams = (int)params.size();
-//        for (int i=0; i<nParams; ++i)
-//        {
-//            pushConstant(params[i], pState);
-//            instruction8(OC_RD_LOCAL, pState);
-//        }
-//    }
-//
-//    callCodegen(parentClass->getName(), nParams+1, pState, node->position());
+    auto    parentClass = getParentClass(node, pState);
+    auto    extends = astGetExtends (node);
+    
+    int     nParams;
+    
+    if (extends.notNull() && extends->childExists(0))
+    {
+        //Non-inherited parameters
+        auto paramsNode = extends->children().front();
+        nParams = childrenCodegen(paramsNode, pState);
+    }
+    else
+    {
+        //inherited parameters
+        StringVector    params = parentClass->getParams();
+
+        nParams = (int)params.size();
+        for (int i=0; i<nParams; ++i)
+        {
+            varReadCodegen(params[i], pState);
+        }
+    }
+
+    callCodegen(parentClass->getName(), nParams, pState, node->position());
 }
 
 
