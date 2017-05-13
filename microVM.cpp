@@ -340,6 +340,7 @@ void mvmExecCall (int nArgs, ExecutionContext* ec)
     //Find function value.
     fnVal = fnVal.toFunction ();
     const size_t            initialStack = ec->stack.size() - nArgs;
+    ASValue                 thisParam = ec->getThisParam();
     
     if (!fnVal.isNull())
     {
@@ -363,7 +364,7 @@ void mvmExecCall (int nArgs, ExecutionContext* ec)
             ec->frames.push_back(CallFrame(NULL, 
                                            ec->stack.size()-nArgs, 
                                            nArgs,
-                                           ec->getThisParam()));
+                                           thisParam));
             result = function->nativePtr()(ec);
             ec->frames.pop_back();
         }
