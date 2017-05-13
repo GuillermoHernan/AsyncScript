@@ -444,7 +444,7 @@ ASValue JSObject::callMemberFn (ASValue function, ASValue p1, ASValue p2, Execut
     ec->push(p2);
     ec->push(me);
     ec->push(function);    
-    mvmExecCall(1, ec);
+    mvmExecCall(2, ec);
     
     return ec->pop();
 }
