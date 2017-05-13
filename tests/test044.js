@@ -17,11 +17,11 @@ c.x = 8;
 d.x = 2;
 e.x = 3;
 
-assert (a.x == 2, "a.x == 2");
-assert (b.x == 5, "b.x == 5");
-assert (c.x == 8, "c.x == 8");
-assert (d.x == 2, "d.x == 2");
-assert (e.x == 3, "e.x == 3");
+assert (a.x == 2, "a.x = " + a.x);
+assert (b.x == 5, "b.x = " + b.x);
+assert (c.x == 8, "c.x = " + c.x);
+assert (d.x == 2, "d.x = " + d.x);
+assert (e.x == 3, "e.x = " + e.x);
 
 var f = {a:a, b:b}
 
