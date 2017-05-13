@@ -203,7 +203,7 @@ ASValue JSObject::deepFreeze(ASValue::ValuesMap& transformed)
  */
 ASValue JSObject::unFreeze(bool forceClone)
 {
-    if (forceClone || getMutability() == MT_MUTABLE)
+    if (forceClone || getMutability() != MT_MUTABLE)
         return clone (true)->value();
     else
         return value();
