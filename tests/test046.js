@@ -6,7 +6,9 @@ const b = a * 4;
 assert (a==5, "a==5");
 assert (b==20, "b==20");
 
-expectError ("const c = 22; c *= 2;");
+//expectError ("const c = 22; c *= 2;");
+a *= 2;
+assert (a==5, "a=" + a);
 
 var obj = {
     a: "mutable",
