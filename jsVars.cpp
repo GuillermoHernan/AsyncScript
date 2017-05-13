@@ -534,7 +534,7 @@ JSClosure::JSClosure (Ref<JSFunction> fn, ASValue env)
 
 std::string JSClosure::toString()const
 {
-    return getFunction()->toString();
+    return "(clos) " + getFunction()->toString();
 }
 
 /**
@@ -810,7 +810,7 @@ ASValue ASValue::toFunction()const
     switch (result.m_type)
     {
     case VT_CLASS:
-        return result.staticCast<JSClass>()->getConstructor()->value();
+        return result.staticCast<JSClass>()->getConstructor();
         
     case VT_FUNCTION:
     case VT_CLOSURE:

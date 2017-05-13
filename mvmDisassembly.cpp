@@ -381,7 +381,7 @@ Ref<JSObject> disassemblyClass (Ref<JSClass> cls)
     result->writeField ("Class", jsString(cls->getName()), false);
     
     auto    parent = cls->getParent();
-    auto    constructor = constantToJS(cls->getConstructor()->value());
+    auto    constructor = constantToJS(cls->getConstructor());
     string  parentName;
     
     if (parent.notNull())

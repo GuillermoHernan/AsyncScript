@@ -668,7 +668,7 @@ void functionCodegen (Ref<AstNode> node, CodegenState* pState)
         {
             pState->declare(name);
 
-            //Functions are expressions, even names ones
+            //Functions are expressions, even named ones
             closureCodegen(function, pState);
             copyInstruction (0, pState);
             
@@ -1009,7 +1009,11 @@ void varReadCodegen (const string& name, CodegenState* pState)
 {
     ASSERT (!name.empty());
     
-    if (pState->isDeclared(name))
+    if (name == "this")
+    {
+        instruction8(OC_PUSH_THIS, pState);                 //[thisPtr]
+    }
+    else if (pState->isDeclared(name))
     {
         if (!pState->isParam(name))
         {
@@ -1352,9 +1356,13 @@ void classCodegen (Ref<AstNode> node, CodegenState* pState)
     
     //Create a new constant, and yield class reference
     getEnvCodegen(pState);                  //[env]
-    pushConstant(node->getName(), pState);  //[name, env]
-    pushConstant( cls->value(), pState);    //[class, name, env]
-    instruction8(OC_NEW_CONST_FIELD, pState);//[class]
+    copyInstruction(0, pState);             //[env, env]
+    pushConstant(node->getName(), pState);  //[name, env, env]
+    pushConstant( cls->value(), pState);    //[class, name, env, env]
+    instruction8(OC_NEW_CONST_FIELD, pState);//[class, env]
+    
+    //Set environment.
+    callCodegen("@setClassEnv", 2, pState, node->position());   //[class]
 }
 
 /**
@@ -1374,6 +1382,12 @@ Ref<JSFunction> classConstructorCodegen (Ref<AstNode> node, CodegenState* pState
     
     pState = &fnState;
     baseConstructorCallCodegen (node, pState);      //[newObj]
+    
+    //Set object class. First parameter of constructor closure.
+    getEnvCodegen(pState);                          //[env,newObj]
+    pushConstant(0, pState);                        //[0, env,newObj]
+    instruction8(OC_RD_INDEX, pState);              //[class, newObj]
+    callCodegen ("@setObjClass", 2, pState, node->position());  //[newObj]
     
     for (auto it = children.begin(); it != children.end(); ++it)
     {

@@ -37,7 +37,7 @@ JSClass::JSClass(const std::string& name,
                  Ref<JSClass> parent,
                  const VarMap& members,
                  Ref<JSFunction> constructorFn) :
-m_name(name), m_members(members), m_parent(parent), m_constructor(constructorFn)
+m_name(name), m_members(members), m_parent(parent), m_constructor(constructorFn->value())
 {
 }
 
@@ -96,6 +96,69 @@ ASValue JSClass::readField(const std::string& key)const
         return m_parent->readField (key);
     else
         return jsNull();
+}
+
+/**
+ * Gets the parameters of a class constructor
+ * @return 
+ */
+const StringVector& JSClass::getParams()const
+{
+    const static StringVector empty;
+    
+    Ref<JSFunction> fn;
+    
+    if (m_constructor.getType() == VT_CLOSURE)
+        fn = m_constructor.staticCast<JSClosure>()->getFunction();
+    else if (m_constructor.getType() == VT_FUNCTION)
+        fn = m_constructor.staticCast<JSFunction>();
+    else
+        return empty;
+    
+    return fn->getParams();
+}
+
+/**
+ * Sets the environment object which will be used in constructor.
+ * @param ec
+ * @return 
+ */
+ASValue JSClass::scSetEnv(ExecutionContext* ec)
+{
+    auto env = ec->getParam(0);
+    auto cls = ec->getParam(1);
+    
+    if (cls.getType() != VT_CLASS)
+        rtError ("@setClassEnv: Second parameter shall be a class");
+    
+    auto clsPtr = cls.staticCast<JSClass>();
+    auto fnVal = clsPtr->getConstructor();
+    Ref<JSFunction> fn;
+    
+    if (fnVal.getType() == VT_CLOSURE)
+        fn = fnVal.staticCast<JSClosure>()->getFunction();
+    else if (fnVal.getType() == VT_FUNCTION)
+        fn = fnVal.staticCast<JSFunction>();
+    else
+        rtError ("Constructor of class '%s' is not a function", clsPtr->getName().c_str());
+    
+    ASValue closureValues[2] = {env, cls};
+    
+    auto closure = JSClosure::create(fn, closureValues, 2);
+    clsPtr->m_constructor = closure->value();
+    
+    //Closures for member functions
+    for (auto &member: clsPtr->m_members)
+    {
+        ASValue val = member.second.value();
+        if (val.getType() == VT_FUNCTION)
+        {
+            closure = JSClosure::create(val.staticCast<JSFunction>(), &env, 1);
+            member.second = VarProperties (closure->value(), true);
+        }
+    }//for (m_members)
+    
+    return cls;
 }
 
 /**
@@ -374,6 +437,31 @@ Ref<JSObject> JSObject::clone (bool _mutable)
 {
     return refFromNew(new JSObject(*this, _mutable));
 }
+
+/**
+ * Changes the object class.
+ * Used by generated constructors.
+ * @param ec
+ * @return 
+ */
+ASValue JSObject::scSetObjClass(ExecutionContext* ec)
+{
+    ASValue objVal = ec->getParam(0);
+    ASValue clsVal = ec->getParam(1);
+    
+    if (objVal.getType() != VT_OBJECT)
+        rtError ("@setObjClass: Not an object");
+
+    if (clsVal.getType() != VT_CLASS)
+        rtError ("@setObjClass: Parameter is not a class");
+    
+    auto objPtr = objVal.staticCast<JSObject>();
+    auto clsPtr = clsVal.staticCast<JSClass>();
+    
+    objPtr->m_cls = clsPtr;
+    return objVal;
+}
+
 
 /**
  * Chooses the appropriate mutability state for the new object on a clone operation

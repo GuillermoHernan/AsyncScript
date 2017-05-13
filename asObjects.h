@@ -14,6 +14,7 @@
 #pragma once
 
 #include "jsVars.h"
+#include "microVM.h"
 
 
 /**
@@ -53,10 +54,7 @@ public:
 
     virtual ASValue readField(const std::string& key)const;
     
-    virtual const StringVector& getParams()const
-    {
-        return m_constructor->getParams();
-    }
+    virtual const StringVector& getParams()const;
     
     virtual const std::string& getName()const
     {
@@ -68,7 +66,7 @@ public:
         return m_parent;
     }
     
-    Ref<JSFunction> getConstructor()const
+    ASValue getConstructor()const
     {
         return m_constructor;
     }
@@ -77,6 +75,8 @@ public:
     {
         return ASValue(this, VT_CLASS);
     }
+    
+    static ASValue scSetEnv(ExecutionContext* ec);
     
 protected:
     JSClass(const std::string& name,
@@ -88,7 +88,7 @@ private:
     const std::string   m_name;
     VarMap              m_members;
     Ref<JSClass>        m_parent;
-    Ref<JSFunction>     m_constructor;
+    ASValue             m_constructor;
 };
 
 
@@ -175,6 +175,8 @@ public:
     
     ///'JSObject' default class
     static Ref<JSClass> DefaultClass;
+
+    static ASValue scSetObjClass(ExecutionContext* ec);
 
 protected:
 

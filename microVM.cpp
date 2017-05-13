@@ -341,7 +341,6 @@ void mvmExecCall (int nArgs, ExecutionContext* ec)
     //Find function value.
     fnVal = fnVal.toFunction ();
     const size_t            initialStack = ec->stack.size() - nArgs;
-    ASValue                 thisParam = ec->getThisParam();
     
     if (!fnVal.isNull())
     {
@@ -365,7 +364,7 @@ void mvmExecCall (int nArgs, ExecutionContext* ec)
             ec->frames.push_back(CallFrame(NULL, 
                                            ec->stack.size()-nArgs, 
                                            nArgs,
-                                           thisParam));
+                                           ec->getThisParam()));
             result = function->nativePtr()(ec);
             ec->frames.pop_back();
         }
@@ -375,6 +374,8 @@ void mvmExecCall (int nArgs, ExecutionContext* ec)
             result = mvmExecRoutine(code, ec, nArgs);
         }
     }
+    else
+        ec->getThisParam();     //Discard 'this' parameter if no function is going to be called.
     
     //Remove function parameters from the stack
     ec->stack.resize(ec->stack.size() - nArgs);
@@ -921,9 +922,7 @@ void execNumParams (const int opCode, ExecutionContext* ec)
  */
 void execPushThis (const int opCode, ExecutionContext* ec)
 {
-    const CallFrame&    curFrame = ec->frames.back();
-
-    ec->push(curFrame.thisValue);
+    ec->push(ec->getThis());
 }
 
 /**

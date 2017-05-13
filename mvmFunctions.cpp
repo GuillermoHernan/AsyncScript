@@ -477,4 +477,7 @@ void registerMvmFunctions(Ref<JSObject> scope)
     addNative2("@makeClosure", "env", "fn", mvmMakeClosure, scope);
     
     addNative1("@iterator", "obj", mvmIterator, scope);
+    
+    addNative2("@setClassEnv", "env", "cls", JSClass::scSetEnv, scope);
+    addNative2("@setObjClass", "obj", "cls", JSObject::scSetObjClass, scope);
 }
