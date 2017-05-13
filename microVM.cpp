@@ -239,6 +239,9 @@ int execBlock (const MvmBlock& block, ExecutionContext* ec)
 void execInstruction16 (const int opCode, ExecutionContext* ec)
 {
     const int decoded = opCode & 0x3FFF;
+
+    if (ec->trace != NULL)
+        ec->trace (opCode, ec);
     
     if (decoded >= OC16_PUSHC)
         execPushC16 (decoded, ec);
@@ -251,8 +254,6 @@ void execInstruction16 (const int opCode, ExecutionContext* ec)
     else
         rtError ("Invalid 16 bit opCode: %04X", opCode);
     
-    if (ec->trace != NULL)
-        ec->trace (opCode, ec);
 }
 
 /**
@@ -262,6 +263,9 @@ void execInstruction16 (const int opCode, ExecutionContext* ec)
  */
 void execInstruction8 (const int opCode, ExecutionContext* ec)
 {
+    if (ec->trace != NULL)
+        ec->trace (opCode, ec);
+
     if (opCode >= OC_PUSHC)
         execPushC8 (opCode, ec);
     else
@@ -269,9 +273,6 @@ void execInstruction8 (const int opCode, ExecutionContext* ec)
         //The remaining op codes are decoded with a table (there are only 64)
         s_instructions[opCode](opCode, ec);
     }
-    
-    if (ec->trace != NULL)
-        ec->trace (opCode, ec);
 }
 
 /**
