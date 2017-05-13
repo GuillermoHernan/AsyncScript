@@ -7,5 +7,7 @@ class Person(name) {
 
 var a = Person("Kenny");
 a.kill();
-result = a.name == "Kenny is dead";
+
+assert (a.name == "Kenny is dead", "a.name=" + a.name);
+result = 1;
 
