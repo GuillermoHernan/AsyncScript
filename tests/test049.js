@@ -4,8 +4,6 @@
 const a = [4,9,11,3];
 var i = 0;
 
-enableCallLog();
-
 for (x in a)
 {
     assert (x == a[i], "x=" + x + " i=" + i);
@@ -16,15 +14,13 @@ assert (i == a.length, "'i' value: " + i);
 
 class list (h,t)
 {
+    function iterator() {return this;}
     function head() {return this.h;}
     function tail() {return this.t;}
 }
 
 function reverse (sequence)
 {
-    if (sequence.tail() == null)
-        return sequence;
-    
     var result = null;
     
     for (x in sequence)
