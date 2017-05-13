@@ -327,7 +327,7 @@ void execCall16 (const int opCode, ExecutionContext* ec)
 
 /**
  * Executes call instruction.
- * @param nArgs     Argument count (including 'this' pointer)
+ * @param nArgs     Argument count
  * @param ec
  */
 void mvmExecCall (int nArgs, ExecutionContext* ec)
