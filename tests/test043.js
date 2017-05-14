@@ -17,4 +17,6 @@ var code =
 
 var parseResult = asParse (code);
 
+assert (parseResult != null, "Input not parsed!");
+
 result = true;
