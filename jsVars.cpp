@@ -794,33 +794,6 @@ double ASValue::toDouble(ExecutionContext* ec)const
     }
 }
 
-
-/**
- * Converts the value into a callable function (or NULL if cannot be converted)
- * @param ec
- * @return 
- */
-ASValue ASValue::toFunction()const
-{
-    ASValue result = *this;
-    
-    while (result.m_type == VT_OBJECT)
-        result = result.readField("call");
-    
-    switch (result.m_type)
-    {
-    case VT_CLASS:
-        return result.staticCast<JSClass>()->getConstructor();
-        
-    case VT_FUNCTION:
-    case VT_CLOSURE:
-        return result;
-        
-    default:
-        return jsNull();
-    }
-}
-
 /**
  * Reads a field ('.' operator)
  * @param key

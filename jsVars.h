@@ -98,7 +98,6 @@ public:
     std::string     toString(ExecutionContext* ec = NULL)const;
     bool            toBoolean(ExecutionContext* ec = NULL)const;
     double          toDouble(ExecutionContext* ec = NULL)const;
-    ASValue         toFunction()const;
 
     ASValue         readField(const std::string& key)const;
     ASValue         writeField(const std::string& key, ASValue value, bool isConst);

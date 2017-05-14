@@ -12,6 +12,7 @@
 #include "ascript_pch.hpp"
 #include "microVM.h"
 #include "ScriptException.h"
+#include "asObjects.h"
 
 #include <vector>
 
@@ -62,6 +63,8 @@ void execWrThisP (const int opCode, ExecutionContext* ec);
 void execNop (const int opCode, ExecutionContext* ec);
 
 void invalidOp (const int opCode, ExecutionContext* ec);
+
+ASValue getFunction (ASValue inValue, ASValue* thisPtr);
 
 // 8 bit instruction dispatch table.
 ///////////////////////////////////////
@@ -335,12 +338,16 @@ void mvmExecCall (int nArgs, ExecutionContext* ec)
     if (nArgs + 1 > (int)ec->stack.size())
         rtError ("Stack underflow executing function call");
     
-    ASValue    fnVal = ec->pop();
-    ASValue    result = jsNull();
+    ASValue     thisPtr = jsNull();
+    ASValue     fnVal = ec->pop();
+    ASValue     result = jsNull();
     
     //Find function value.
-    fnVal = fnVal.toFunction ();
+    fnVal = getFunction(fnVal, &thisPtr);
     const size_t            initialStack = ec->stack.size() - nArgs;
+    
+    if (!thisPtr.isNull())
+        ec->setThisParam(thisPtr);
     
     if (!fnVal.isNull())
     {
@@ -1028,4 +1035,37 @@ size_t ExecutionContext::getNumParams ()const
     
     const CallFrame&    curFrame = frames.back();
     return curFrame.numParams > 0;
+}
+
+/**
+ * Gets the function to call in place of the input value.
+ * @param inValue
+ * @param thisPtr
+ * @return 
+ */
+ASValue getFunction (ASValue inValue, ASValue* thisPtr)
+{
+    ASValue result = inValue;
+    
+    *thisPtr = jsNull();
+    
+    while (result.getType() == VT_OBJECT)
+    {
+        *thisPtr = result;
+        result = result.readField("call");
+    }
+    
+    switch (result.getType())
+    {
+    case VT_CLASS:
+        *thisPtr = result;
+        return result.staticCast<JSClass>()->getConstructor();
+        
+    case VT_FUNCTION:
+    case VT_CLOSURE:
+        return result;
+        
+    default:
+        return jsNull();
+    }
 }
