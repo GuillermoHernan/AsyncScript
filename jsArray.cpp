@@ -229,45 +229,45 @@ StringSet JSArray::getFields(bool inherited)const
  * String representation of the array
  * @return 
  */
-//std::string JSArray::toString()const
-//{
-//    return join(Ref<JSArray>(const_cast<JSArray*>(this)), jsString(","));
-//}
+std::string JSArray::toString(ExecutionContext* ec)const
+{
+    return join(ref(const_cast<JSArray*>(this)), jsString(","), ec);
+}
 
 /**
  * Writes a JSON representation of the array to the output
  * @param output
  */
-//std::string JSArray::getJSON(int indent)
-//{
-//    std::ostringstream output;
-//    const size_t    n = m_content.size();
-//    const bool      multiLine = n > 4;
-//
-//    output << '[';
-//
-//    for (size_t i = 0; i < n; ++i)
-//    {
-//        if (multiLine)
-//            output << "\n" << indentText(indent + 1);
-//        
-//        if (i > 0)
-//            output << ',';
-//
-//        const std::string childJSON = this->getAt(i)->getJSON(indent);
-//
-//        if (childJSON.empty())
-//            output << "null";
-//        else
-//            output << childJSON;
-//    }
-//    
-//    if (multiLine)
-//            output << "\n" << indentText(indent);
-//    output << ']';
-//
-//    return output.str();
-//}
+std::string JSArray::getJSON(int indent)
+{
+    std::ostringstream output;
+    const size_t    n = m_content.size();
+    const bool      multiLine = n > 4;
+
+    output << '[';
+
+    for (size_t i = 0; i < n; ++i)
+    {
+        if (multiLine)
+            output << "\n" << indentText(indent + 1);
+        
+        if (i > 0)
+            output << ',';
+
+        const std::string childJSON = this->getAt(i).getJSON(indent);
+
+        if (childJSON.empty())
+            output << "null";
+        else
+            output << childJSON;
+    }
+    
+    if (multiLine)
+            output << "\n" << indentText(indent);
+    output << ']';
+
+    return output.str();
+}
 
 /**
  * Creates an immutable copy of the array

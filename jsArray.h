@@ -35,13 +35,11 @@ public:
 
     ASValue getAt(size_t index)const;
     ASValue setAt(size_t index, ASValue value);
-//
-//    // JSValue
-//    /////////////////////////////////////////
-//    virtual std::string toString()const;
-//
-//    virtual std::string getJSON(int indent);
-//    
+
+    virtual std::string toString(ExecutionContext* ec)const override;
+
+    virtual std::string getJSON(int indent)override;
+    
 //    virtual JSMutability getMutability()const
 //    {
 //        return m_mutability;
