@@ -232,24 +232,24 @@ ASValue enableCallLog(ExecutionContext* ec)
  * @param pScope
  * @return 
  */
-//ASValue asParse(ExecutionContext* ec)
-//{
-//    string          code =  ec->getParam(0).toString(ec);
-//    CScriptToken    token (code.c_str());
-//    auto            result = JSArray::create();
-//
-//    //Parsing loop
-//    token = token.next();
-//    while (!token.eof())
-//    {
-//        const ParseResult   parseRes = parseStatement (token);
-//
-//        result->push(parseRes.ast->toJS());
-//        token = parseRes.nextToken;
-//    }
-//    
-//    return result;
-//}
+ASValue asParse(ExecutionContext* ec)
+{
+    string          code =  ec->getParam(0).toString(ec);
+    CScriptToken    token (code.c_str());
+    auto            result = JSArray::create();
+
+    //Parsing loop
+    token = token.next();
+    while (!token.eof())
+    {
+        const ParseResult   parseRes = parseStatement (token);
+
+        result->push(parseRes.ast->toJS());
+        token = parseRes.nextToken;
+    }
+    
+    return result->value();
+}
 
 /**
  * Funs a test script loaded from a file.
@@ -280,7 +280,7 @@ bool run_test(const std::string& szFile, const string &testDir, const string& re
     addNative("function assert(value, text)", assertFunction, globals);
     addNative("function printLn(text)", printLn, globals);
     addNative("function expectError(code)", expectError, globals);
-    //addNative("function asParse(code)", asParse, globals);
+    addNative("function asParse(code)", asParse, globals);
     addNative("function enableCallLog()", enableCallLog, globals);
     addNative("function enableTraceLog()", enableTraceLog, globals);
     try
