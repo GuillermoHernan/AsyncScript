@@ -101,7 +101,7 @@ void registerDefaultClasses(Ref<JSObject> scope)
 {
     scope->writeField("Object", JSObject::DefaultClass->value(), true);
     scope->writeField("String", JSString::StringClass->value(), true);
-    //scope->writeField("Array", JSArray::ArrayClass, true);
+    scope->writeField("Array", JSArray::ArrayClass->value(), true);
 }
 
 // ----------------------------------------------- Register Functions
