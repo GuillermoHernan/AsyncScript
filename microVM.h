@@ -2,7 +2,7 @@
  * File:   microVM.h
  * Author: ghernan
  *
- * Minimalist Virtual Machine for Javascript
+ * Minimalist Virtual Machine for AsyncScript
  * 
  * A virtual machine with a very small instruction set.
  * Created on December 2, 2016, 9:18 PM
@@ -21,9 +21,6 @@ struct ExecutionContext;
 
 typedef std::vector<unsigned char>      ByteVector;
 
-/*ASValue    mvmExecute (Ref<MvmRoutine> code, 
-                            Ref<IScope> globals,
-                            Ref<IScope> locals);*/
 ASValue         mvmExecRoutine (Ref<MvmRoutine> code, ExecutionContext* ec, int nParams);
 void            mvmExecCall (int nArgs, ExecutionContext* ec);
 std::string     mvmDisassembly (Ref<MvmRoutine> code);
@@ -44,22 +41,12 @@ enum OpCodes8
     OC_SWAP = 24,
     OC_POP = 25,
 
-    //OC_PUSH_SCOPE = 14,
-    //OC_POP_SCOPE = 15,
-    
-    //OC_RD_LOCAL = 16,
-    //OC_WR_LOCAL = 17,
-    //OC_RD_GLOBAL = 18,
-    //OC_WR_GLOBAL = 19,
     OC_RD_FIELD = 26,
     OC_WR_FIELD = 27,
     OC_RD_INDEX = 28,
     OC_WR_INDEX = 29,
-    //OC_NEW_VAR = 24,
-    //OC_NEW_CONST = 25,
     OC_NEW_CONST_FIELD = 30,
-    //OC_CP_AUX = 32,
-    //OC_PUSH_AUX = 33,
+
     OC_RD_PARAM = 32,
     OC_WR_PARAM = 33,
     OC_NUM_PARAMS = 34,
@@ -125,8 +112,7 @@ protected:
 };
 
 /**
- * A stack frame
- * TODO: A better description
+ * Structure which contains the information needed for an executed function.
  */
 struct CallFrame
 {
@@ -143,6 +129,7 @@ struct CallFrame
 typedef std::vector <CallFrame> FrameVector;
 
 typedef void (*TraceFN)(int opCode, const ExecutionContext* ec);
+
 /**
  * MVM execution context
  */
@@ -154,9 +141,6 @@ struct ExecutionContext
 private:
     ASValue         thisParam;
 public:
-//    ValueVector*    constants;
-//    ScopeStack      scopes;
-//    ASValue    auxRegister;
     
     ASValue pop()
     {

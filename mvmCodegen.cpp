@@ -53,18 +53,7 @@ private:
     std::map < std::string, int>    m_symbols;
 };
 
-/**
- * Value comparer function class, to be able to use 'JSValue' objects as map keys.
- */
-//struct JsValueLessComp
-//{
-//    bool operator ()(ASValue a, ASValue b)const
-//    {
-//        return jsValuesCompare(a, b) < 0;
-//    }
-//};
-
-typedef map<ASValue, int/*, JsValueLessComp*/> ConstantsMap;
+typedef map<ASValue, int> ConstantsMap;
 
 /**
  * State of a codegen operation
@@ -167,7 +156,6 @@ private:
 
 //Forward declarations
 
-//typedef void (*CodegenFN)(CodegenState* pState);
 typedef void (*NodeCodegenFN)(Ref<AstNode> node, CodegenState* pState);
 
 void codegen (Ref<AstNode> statement, CodegenState* pState);
@@ -720,19 +708,6 @@ Ref<JSFunction> createFunction (Ref<AstNode> node, CodegenState* pState)
     return function;
 }
 
-//Leer una variable         r = read(index);
-//Escribir una variable     r = write(index, value);  (y la variable se modifica)
-//Leer un array             r = readArray(array, index);
-//Escribir un array         r = writeArray(array, index, value);
-//Leer un campo             r = readField(object, field);
-//Escribir un campo         r = writeArray(object, field, value);
-
-//Todas las funciones de escribir tiene un parámetro más (el valor)
-// * Se podría evaluar antes el r-value.
-//      + Simplificaría más todavía el caso simple (sin operación)
-// * Lo que tenía hecho hasta ahora era un 'hack'.
-
-
 /**
  * Generates code for assignments
  * @param node
@@ -762,59 +737,6 @@ void assignmentCodegen (Ref<AstNode> node, CodegenState* pState)
     default:
         ASSERT (!"Unexpected lvalue node in assignment");
     }
-//    Ref<AstOperator>  assign = statement.staticCast<AstOperator>();
-//    const int         op = assign->code;
-//    
-//    childCodegen(statement, 0, pState);
-//    const int           rdInst = removeLastInstruction (pState);
-//    int                 wrInst;
-//    
-//    //TODO: Move this block to a separate function
-//    if (isCopyInstruction(rdInst))
-//    {
-//        if (rdInst & OC16_16BIT_FLAG)
-//            wrInst = rdInst + (OC16_WR - OC16_CP);
-//        else
-//            wrInst = rdInst + (OC_WR - OC_CP);
-//    }
-//    else
-//    {
-//        ASSERT (rdInst == OC_RD_FIELD || rdInst == OC_RD_INDEX);
-//        wrInst = rdInst +1;        
-//    }    
-//    
-//    if (op == '=')
-//    {
-//        //Simple assignment
-//        childCodegen(statement, 1, pState);     //[r-value]
-//
-//        instruction8(wrInst, pState);           //[r-value]
-//    }
-//    else
-//    {
-//        //Duplicate the values used to read the variable, to write it later.
-//        if (!isCopyInstruction(rdInst))
-//        {
-//                                                //[object, field]
-//            instruction8 (OC_CP+1, pState);
-//            instruction8 (OC_CP+1, pState);     //[object, field, object, field]
-//        }
-//        
-//        //Add again the read instruction.
-//        instruction8 (rdInst, pState);          //[object, field, l-value] OR
-//                                                //[l-value]
-//        
-//        //execute right side
-//        childCodegen(statement, 1, pState);     //[object, field, l-value, r-value] OR
-//                                                //[l-value, r-value]
-//        
-//        //execute operation
-//        binaryOperatorCode (op - LEX_ASSIGN_BASE, pState, statement->position());
-//                                                //[object, field, result] OR
-//                                                //[result]
-//        //Execute write.
-//        instruction8(wrInst, pState);           //[result]
-//    }
 }
 
 /**
@@ -1793,24 +1715,6 @@ int  getLastInstruction (CodegenState* pState)
 }
 
 /**
- * Removes last instruction from the current block.
- * @param pState
- * @return 
- */
-//int removeLastInstruction (CodegenState* pState)
-//{
-//    ByteVector& block = pState->curRoutine->blocks.rbegin()->instructions;
-//    const int   lastInstruction = getLastInstruction(pState);
-//    
-//    if (lastInstruction & 0x8000)
-//        block.resize(block.size()-2);
-//    else if (lastInstruction >= 0)
-//        block.resize(block.size()-1);
-//    
-//    return lastInstruction;
-//}
-
-/**
  * Generates the instruction or call for a binary operator
  * @param tokenCode
  * @param pState
@@ -2008,7 +1912,7 @@ CodegenState initFunctionState (Ref<AstNode> node, const StringVector& params, C
     fnState.pushScope(node, false, true);
 
     //Declare function reserved symbols.
-//    fnState.declare("this");
+    fnState.declare("this");
 //    fnState.declare("arguments");
 
     for (size_t i = 0; i < params.size(); ++i)

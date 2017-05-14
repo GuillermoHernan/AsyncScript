@@ -792,35 +792,6 @@ ExprResult parseIdentifier (CScriptToken token)
     return r.final();
 }
 
-
-/**
- * Parses an operator 'new' expression
- * @param token
- * @return 
- */
-//ExprResult parseNewExpr (CScriptToken token)
-//{
-//    ExprResult     r = parseMemberExpr (token);
-//    
-//    if (r.ok())
-//        return r;
-//    else
-//    {
-//        ScriptPosition  newPos = r.token.getPosition();
-//        
-//        r = r.require(LEX_R_NEW).then(parseNewExpr);
-//        
-//        if (r.ok())
-//        {
-//            auto    call = astCreateFnCall(newPos, r.result, true);
-//            
-//            r.result = call;
-//        }
-//
-//        return r.final();
-//    }
-//}
-
 /**
  * Parses a function call expression
  * @param token
@@ -857,34 +828,22 @@ ExprResult parseCallExpr (CScriptToken token)
  */
 ExprResult parseMemberExpr (CScriptToken token)
 {
-//    if (token.type() == LEX_R_NEW)
-//    {
-//        ExprResult r(token);
-//        r = r.require(LEX_R_NEW).then(parseMemberExpr).then(parseCallArguments);
-//        
-//        if (!r.error())
-//            r.result = astToNewCall(r.result);
-//        return r.final();
-//    }
-//    else
-//    {
-        ExprResult r = parsePrimaryExpr(token).orElse(parseFunctionExpr);
-        
-        while (!r.error() && oneOf (r.token, "[."))
+    ExprResult r = parsePrimaryExpr(token).orElse(parseFunctionExpr);
+
+    while (!r.error() && oneOf (r.token, "[."))
+    {
+        const LEX_TYPES t = r.token.type();
+
+        if (t == '[')
+            r = r.then(parseArrayAccess);
+        else
         {
-            const LEX_TYPES t = r.token.type();
+            ASSERT (t == '.');
+            r = r.then (parseMemberAccess);
+        }
+    }//while
 
-            if (t == '[')
-                r = r.then(parseArrayAccess);
-            else
-            {
-                ASSERT (t == '.');
-                r = r.then (parseMemberAccess);
-            }
-        }//while
-
-        return r.final();
-//    }
+    return r.final();
 }
 
 /**

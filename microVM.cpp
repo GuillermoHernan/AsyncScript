@@ -18,8 +18,6 @@
 
 using namespace std;
 
-//typedef vector < Ref<IScope> >  ScopeStack;
-
 
 //Forward declarations
 ////////////////////////////////////////
@@ -43,7 +41,6 @@ void execWr16 (const int opCode, ExecutionContext* ec);
 void execSwap (const int opCode, ExecutionContext* ec);
 void execPop (const int opCode, ExecutionContext* ec);
 void execPushScope (const int opCode, ExecutionContext* ec);
-void execPopScope (const int opCode, ExecutionContext* ec);
 void execRdLocal (const int opCode, ExecutionContext* ec);
 void execWrLocal (const int opCode, ExecutionContext* ec);
 void execRdGlobal (const int opCode, ExecutionContext* ec);
@@ -103,29 +100,6 @@ static const OpFunction s_instructions[64] =
     invalidOp,      invalidOp,      invalidOp,      execNop
 };
 
-
-/**
- * Executes MVM code.
- * @param code
- * @param globals
- * @param locals
- * @param callHook
- * @return 
- */
-//ASValue mvmExecute (Ref<MvmRoutine> code, 
-//                         Ref<IScope> globals, 
-//                         Ref<IScope> locals)
-//{
-//    ExecutionContext    ec;
-//    GlobalsSetter       g(globals);
-//    
-//    ec.scopes.push_back(globals);
-//    if (locals.notNull())
-//        ec.scopes.push_back(locals);
-//    
-//    return mvmExecRoutine (code, &ec);
-//}
-
 /**
  * Executes a Micro VM routine
  *
@@ -169,10 +143,6 @@ ASValue mvmExecRoutine (Ref<MvmRoutine> code, ExecutionContext* ec, int nParams)
     //Scope stack unwind.
     ec->frames.pop_back();
     ASSERT (ec->frames.size() == stackSize);
-    
-    //'AUX' register is cleared when finishing a script, to prevent memory leaks
-    //(and may be also a good security measure)
-//    ec->auxRegister = jsNull();
     
     ASSERT (!ec->stack.empty());
     return ec->pop();
@@ -394,35 +364,6 @@ void mvmExecCall (int nArgs, ExecutionContext* ec)
     //returnLog(fnScope, result, ec);
 }
 
-/**
- * This is the default function for handling function calls. It can be overriden 
- * by client code using 'callHook' parameter of 'mvmExecute'
- * @param function      Function reference.
- * @param scope         Function scope object
- * @param ec            Execution context object
- * @return 
- */
-//ASValue defaultCallHook (  ASValue fnVal, 
-//                                Ref<FunctionScope> scope, 
-//                                ExecutionContext* ec, 
-//                                void* defaultHook)
-//{
-//    if (fnVal->getType() != VT_FUNCTION)
-//        error ("Micro VM default call handler only supports functions. Received: %s", 
-//               fnVal->toString().c_str());
-//    
-//    auto function = fnVal.staticCast<JSFunction>();
-//    
-//    if (function->isNative())
-//        return function->nativePtr()(scope.getPointer());
-//    else
-//    {
-//        const Ref<MvmRoutine>    code = function->getCodeMVM().staticCast<MvmRoutine>();
-//        
-//        return mvmExecRoutine(code, ec);
-//    }
-//}
-
 //static const char *CALL_LOG_DEPTH = "@callLogDepth";
 
 /**
@@ -628,123 +569,6 @@ void execPop (const int opCode, ExecutionContext* ec)
 }
 
 /**
- * Creates a new 'Block scope'
- * @param opCode
- * @param ec
- */
-//void execPushScope (const int opCode, ExecutionContext* ec)
-//{
-//    if (ec->frames.empty())
-//        rtError("Empty frame stack executing 'PUSH SCOPE");
-//
-//    Ref<StackFrame> frame = refFromNew (new StackFrame);
-//    
-//    frame->constants = ec->frames.back()->constants;
-//    frame->parent = ec->frames.back();
-//    
-//    ec->frames.push_back(frame);
-////    auto scope = BlockScope::create(ec->scopes.back());
-////    ec->scopes.push_back(scope);
-//}
-
-/**
- * Removes current scope from the scope stack
- * @param opCode
- * @param ec
- */
-void execPopScope (const int opCode, ExecutionContext* ec)
-{
-    if (ec->frames.empty())
-        rtError("Empty frame stack executing 'POP SCOPE'");
-
-    if (ec->frames.size() == 1)
-        rtError("'POP SCOPE' should not remove last scope (globals)");
-    
-//    if (!ec->scopes.back()->isBlockScope())
-//        rtError("'POP SCOPE' trying to remove a non-block scope");
-    
-    ec->frames.pop_back();
-}
-
-/**
- * Reads a local variable.
- * @param opCode
- * @param ec
- */
-//void execRdLocal (const int opCode, ExecutionContext* ec)
-//{
-//    const ASValue  name = ec->pop();
-//    auto                nameStr = name->toString();
-//    Ref<StackFrame>     frame = ec->frames.back();
-//    
-//    while (frame.notNull())
-//    {
-//        auto it = frame->variables.find(nameStr);
-//        if (it != frame->variables.end())
-//        {
-//            ec->push(it->second.value());
-//            return;            
-//        }
-//        else
-//            frame = frame->parent;
-//    }
-//}
-
-/**
- * Writes a local variable
- * @param opCode
- * @param ec
- */
-//void execWrLocal (const int opCode, ExecutionContext* ec)
-//{
-//    const ASValue  val = ec->pop();
-//    const ASValue  name = ec->pop();
-//    auto                nameStr = name->toString();
-//    Ref<StackFrame>     frame = ec->frames.back();
-//    
-//    while (frame.notNull())
-//    {
-//        auto it = frame->variables.find(nameStr);
-//        if (it != frame->variables.end())
-//            checkedVarWrite(frame->variables, nameStr, val, false);
-//        else
-//            frame = frame->parent;
-//    }
-//    
-//    rtError ("Trying to write to unknown variable: %s", nameStr.c_str());
-//}
-
-///**
-// * Reads a global variable.
-// * @param opCode
-// * @param ec
-// */
-//void execRdGlobal (const int opCode, ExecutionContext* ec)
-//{
-//    //auto globals = ec->scopes.front();
-//    
-//    const ASValue  name = ec->pop();
-//    const ASValue  val = getGlobals()->get(name->toString());
-//    
-//    ec->push(val);
-//}
-//
-///**
-// * Writes a global variable
-// * @param opCode
-// * @param ec
-// */
-//void execWrGlobal (const int opCode, ExecutionContext* ec)
-//{
-//    //auto globals = ec->scopes.front();
-//    const ASValue  val = ec->pop();
-//    const ASValue  name = ec->pop();
-//    
-//    getGlobals()->set(name->toString(), val);
-//}
-
-
-/**
  * Reads an object field.
  * @param opCode
  * @param ec
@@ -801,41 +625,6 @@ void execWrIndex (const int opCode, ExecutionContext* ec)
     container.setAt(key, val, ec); 
     ec->push(val);
 }
-
-/**
- * Variable creation instruction
- * @param opCode
- * @param ec
- */
-//void execNewVar (const int opCode, ExecutionContext* ec)
-//{
-//    if (ec->frames.empty())
-//        rtError("Empty frame stack executing 'NEW_VAR'");
-//
-//    const auto              val = ec->pop();
-//    const auto              name = ec->pop();
-//    const Ref<StackFrame>   frame = ec->frames.back();
-//    
-//    checkedVarWrite(frame->variables, name->toString(), val, false);
-//}
-
-/**
- * Constant creation instruction
- * @param opCode
- * @param ec
- */
-//void execNewConst (const int opCode, ExecutionContext* ec)
-//{
-//    if (ec->frames.empty())
-//        rtError("Empty frame stack executing 'NEW_CONST'");
-//
-//    const auto              val = ec->pop();
-//    const auto              name = ec->pop();
-//    const Ref<StackFrame>   frame = ec->frames.back();
-//    
-//    checkedVarWrite(frame->variables, name->toString(), val, true);
-//}
-
 
 /**
  * Creates a new constant field in an object. Very similar to 'WR_FIELD', but the
@@ -958,36 +747,6 @@ void execNop (const int opCode, ExecutionContext* ec)
 {
     //This one is easy
 }
-
-/**
- * Copies current value on the top of the stack to the 'AUX' register.
- * It does not remove it from the stack, it is a copy
- * @param opCode
- * @param ec
- */
-//void execCpAux (const int opCode, ExecutionContext* ec)
-//{
-//    if (ec->stack.empty())
-//        rtError ("Empty stack executing OC_CP_AUX");
-//    
-//    ec->auxRegister = ec->stack.back();
-//}
-
-/**
- * Pushes the current value of the 'AUX' register to the top of the stack
- * @param opCode
- * @param ec
- */
-//void execPushAux (const int opCode, ExecutionContext* ec)
-//{
-//    //TODO: Review if this check is really necessary.
-//    if (ec->auxRegister.notNull())
-//        ec->stack.push_back(ec->auxRegister);
-//    else
-//        ec->stack.push_back(jsNull());
-//}
-
-
 
 void invalidOp (const int opCode, ExecutionContext* ec)
 {

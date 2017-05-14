@@ -39,16 +39,6 @@ public:
     {
         return std::string("class ") + getName();
     }
-//    virtual bool toBoolean()const
-//    {
-//        return true;
-//    }
-//    
-//    virtual ASValue toFunction()override
-//    {
-//        return m_constructor;
-//    }
-    
     
     virtual StringSet getFields(bool inherited = true)const;
 
@@ -93,7 +83,7 @@ private:
 
 
 /**
- * AsynScript object class
+ * AsyncScript object class
  */
 class JSObject : public RefCountObj
 {
@@ -123,12 +113,6 @@ public:
     bool                toBoolean(ExecutionContext* ec)const;
     double              toDouble(ExecutionContext* ec)const;
     
-//    virtual std::string toString()const;
-//    virtual bool        toBoolean()const;
-//    virtual double      toDouble()const;
-//    
-//    virtual ASValue toFunction()override;
-
     virtual ASValue readField(const std::string& key)const;
     virtual ASValue writeField(const std::string& key, ASValue value, bool isConst);
     virtual ASValue deleteField(const std::string& key);
@@ -141,21 +125,8 @@ public:
 
     virtual double compare (const ASValue& b, ExecutionContext* ec)const;
     
-    //virtual ASValue call (Ref<FunctionScope> scope);
-    
     virtual std::string getJSON(int indent);
 
-
-//    virtual JSValueTypes getType()const
-//    {
-//        return VT_OBJECT;
-//    }
-//    
-//    virtual const std::string& getName()const
-//    {
-//        static std::string empty;
-//        return empty;
-//    }
     /////////////////////////////////////////
     
     Ref<JSClass> getClass()const
@@ -167,11 +138,6 @@ public:
     {
         return ASValue(this, VT_OBJECT);
     }
-    
-//    void setClass(Ref<JSClass> cls)
-//    {
-//        m_cls = cls;
-//    }
     
     ///'JSObject' default class
     static Ref<JSClass> DefaultClass;

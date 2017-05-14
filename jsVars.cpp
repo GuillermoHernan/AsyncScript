@@ -19,12 +19,6 @@
 
 using namespace std;
 
-//ASValue JSValue::call (Ref<FunctionScope> scope)
-//{
-//    rtError ("Not a callable object: %s", toString().c_str());
-//    return jsNull();
-//}
-
 /**
  * Gives an string representation of the type name
  * @return 
@@ -39,19 +33,11 @@ std::string getTypeName(JSValueTypes vType)
         types[VT_NULL] = "null";
         types[VT_NUMBER] = "Number";
         types[VT_BOOL] = "Boolean";
-//        types[VT_ACTOR_REF] = "Actor reference";
-//        types[VT_INPUT_EP_REF] = "Input EP reference";
-//        types[VT_OUTPUT_EP_REF] = "Output EP reference";
         types[VT_CLASS] = "Class";
         types[VT_OBJECT] = "Object";
         types[VT_STRING] = "String";
-//        types[VT_ARRAY] = "Array";
-//        types[VT_ACTOR] = "Actor";
         types[VT_FUNCTION] = "Function";
         types[VT_CLOSURE] = "Closure";
-//        types[VT_ACTOR_CLASS] = "Actor class";
-//        types[VT_INPUT_EP] = "Input EP";
-//        types[VT_OUTPUT_EP] = "Output EP";
     }
 
     ASSERT(types.find(vType) != types.end());
@@ -106,46 +92,6 @@ ASValue jsString(const std::string& value)
     
     return ASValue(str.getPointer(), VT_STRING);
 }
-
-/**
- * Class for numeric constants. 
- * It also stores the original string representation, to have an accurate string 
- * representation
- */
-//class JSNumberConstant : public JSNumber
-//{
-//public:
-//
-//    static Ref<JSNumberConstant> create(const std::string& text)
-//    {
-//        if (text.size() > 0 && text[0] == '0' && isOctal(text))
-//        {
-//            const unsigned value = strtoul(text.c_str() + 1, NULL, 8);
-//
-//            return refFromNew(new JSNumberConstant(value, text));
-//        }
-//        else
-//        {
-//            const double value = strtod(text.c_str(), NULL);
-//
-//            return refFromNew(new JSNumberConstant(value, text));
-//        }
-//    }
-//
-//    virtual std::string toString()const
-//    {
-//        return m_text;
-//    }
-//
-//private:
-//
-//    JSNumberConstant(double value, const std::string& text)
-//    : JSNumber(value), m_text(text)
-//    {
-//    }
-//
-//    string m_text;
-//};//class JSNumberConstant
 
 ASValue createConstant(CScriptToken token)
 {
@@ -337,72 +283,6 @@ ASValue checkedVarDelete(VarMap& map, const std::string& name)
     return value;
 }
 
-/**
- * Default implementation of 'readField'. Tries to read it from class members.
- * @param key
- * @return 
- */
-//ASValue JSValue::readField(const std::string& key)const
-//{
-//    //TODO: Review. I believe that this function is no longer necessary.
-//    typedef set<string>  FnSet;
-//    static FnSet functions;
-//    
-//    if (functions.empty())
-//    {
-//        functions.insert("toString");
-//        functions.insert("toBoolean");
-//        functions.insert("toNumber");
-//        functions.insert("getAt");
-//        functions.insert("setAt");
-//        functions.insert("head");
-//        functions.insert("tail");
-//        functions.insert("call");
-//    }
-//    
-//    /*if (functions.count(key) > 0)
-//        return getGlobals()->get("@" + key);
-//    else*/
-//        return jsNull();
-//}
-
-
-// JSNumber
-//
-//////////////////////////////////////////////////
-
-///**
-// * Construction function
-// * @param value
-// * @return 
-// */
-//Ref<JSNumber> JSNumber::create(double value)
-//{
-//    return refFromNew(new JSNumber(value));
-//}
-//
-//std::string JSNumber::toString()const
-//{
-//    //TODO: Review the standard. Find about number to string conversion formats.
-//    return double_to_string(m_value);
-//}
-//
-//std::string JSNumber::getJSON(int indent)
-//{
-//    return double_to_string(m_value);
-//}
-
-// JSBool
-//
-//////////////////////////////////////////////////
-
-
-//std::string JSBool::getJSON(int indent)
-//{
-//    return toString();
-//}
-
-
 // JSFunction
 //
 //////////////////////////////////////////////////
@@ -455,24 +335,6 @@ JSFunction::~JSFunction()
 {
     //    printf ("Destroying function: %s\n", m_name.c_str());
 }
-
-/**
- * Executes a function call (invoked by MicroVM)
- * @param scope
- * @param ec
- * @return 
- */
-//ASValue JSFunction::call (Ref<FunctionScope> scope)
-//{
-//    if (isNative())
-//        return nativePtr()(scope.getPointer());
-//    else
-//    {
-//        auto    code = getCodeMVM().staticCast<MvmRoutine>();
-//        
-//        return mvmExecute(code, getGlobals(), scope);
-//    }
-//}
 
 /**
  * String representation of the function.
@@ -611,6 +473,9 @@ JSMutability JSClosure::selectMutability (const ASValue* first, size_t count)
     return MT_DEEPFROZEN;
 }
 
+// ASValue
+//
+//////////////////////////////////////////////////
 
 ASValue::ASValue () : m_type(VT_NULL)
 {

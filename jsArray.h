@@ -40,11 +40,6 @@ public:
 
     virtual std::string getJSON(int indent)override;
     
-//    virtual JSMutability getMutability()const
-//    {
-//        return m_mutability;
-//    }
-//
     virtual ASValue freeze();
     virtual ASValue deepFreeze(ASValue::ValuesMap& transformed);
     virtual ASValue unFreeze(bool forceClone=false);

@@ -161,24 +161,6 @@ ASValue JSClass::scSetEnv(ExecutionContext* ec)
     return cls;
 }
 
-/**
- * Call to a class object. Creates a new instance, and calls the constructor.
- * @param scope
- * @return 
- */
-//ASValue JSClass::call (Ref<FunctionScope> scope)
-//{
-//    auto result = m_constructor->call(scope);
-//    
-//    if (result.isNull() || !result->isObject())
-//        rtError ("Constructor must return an object");
-//    
-//    auto newObj = result.staticCast<JSObject>();
-//    
-//    newObj->setClass (ref(this));
-//    
-//    return result;
-//}
 
 // JSObject
 //
@@ -393,27 +375,6 @@ double JSObject::compare(const ASValue& b, ExecutionContext* ec)const
 }
 
 /**
- * Handles function calls, which allows to use objects as functions.
- * Default implementation just returns 'null'
- * @param scope
- * @return 
- */
-//ASValue JSObject::call (Ref<FunctionScope> scope)
-//{
-//    auto fn = readField("call");
-//    
-//    if (!fn->isNull())
-//    {
-//        //Create a new scope, to map argument names to the new function.
-//        auto newScope = FunctionScope::create(fn, ref(this), scope->getParams());
-//        
-//        return fn->call(newScope);
-//    }
-//    else
-//        return jsNull();
-//}
-
-/**
  * Copy constructor.
  * @param src       Reference to the source object
  * @param _mutable  
@@ -600,11 +561,6 @@ double JSObject::toDouble(ExecutionContext* ec)const
     else        
         return getNaN();
 }
-
-//ASValue JSObject::toFunction()
-//{
-//    return jsNull();
-//}
 
 /**
  * Reads a field of the object. If it does not exist, it returns 'null'

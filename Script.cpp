@@ -95,10 +95,6 @@ int main(int argc, char **argv)
             printf("ERROR: %s\n", e.what());
         }
     }
-#ifdef _WIN32
-#ifdef _DEBUG
-    _CrtDumpMemoryLeaks();
-#endif
-#endif
+
     return 0;
 }

@@ -315,10 +315,6 @@ ASValue mvmGequal (ExecutionContext* ec)
  * @param pScope
  * @return 
  */
-//bool mvmAreEqual (ASValue opA, ASValue opB)
-//{
-//    return opA.compare(opB, ec) == 0;
-//}
 ASValue mvmAreEqual (ExecutionContext* ec)
 {
     ASValue opA = ec->getParam(0);
@@ -421,19 +417,12 @@ ASValue mvmIterator (ExecutionContext* ec)
     return sequence.iterator(ec);
 }
 
-
-//ASValue mvmCall (ExecutionContext* ec)
-//{
-//    return ec->getThis()->call(pScope);
-//}
-
 /**
  * Registers MVM primitive operations to the given scope.
  * @param scope
  */
 void registerMvmFunctions(Ref<JSObject> scope)
 {
-    //addNative0("@newObj", mvmNewObj, scope);
     addNative0("@newArray", mvmNewArray, scope);
 
     addNative0("@inc", mvmInc, scope);
@@ -472,7 +461,6 @@ void registerMvmFunctions(Ref<JSObject> scope)
     addNative0("@toNumber", mvmToNumber, scope);
     addNative1("@getAt", "index", mvmIndexedRead, scope);
     addNative2("@setAt", "index", "value", mvmIndexedWrite, scope);
-    //addNative0("@call", mvmCall, scope);
     
     addNative2("@makeClosure", "env", "fn", mvmMakeClosure, scope);
     

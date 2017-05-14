@@ -151,24 +151,6 @@ Ref<AstNode> astCreateFnCall(ScriptPosition pos, Ref<AstNode> fnExpr)
 }
 
 /**
- * Transforms a regular function call into a 'new' operator call.
- * @param callExpr
- * @return 
- */
-//Ref<AstNode> astToNewCall(Ref<AstNode> callExpr)
-//{
-//    auto result = astCreateFnCall(callExpr->position(), 
-//                                  callExpr->children()[0], true);
-//    
-//    auto children = callExpr->children();
-//    
-//    for (size_t i = 1; i < children.size(); ++i)
-//        result->addChild(children[i]);
-//    
-//    return result;
-//}
-
-/**
  * Creates an array literal AST node.
  * @param pos
  * @return 
@@ -476,16 +458,6 @@ Ref<JSArray> toJSArray (const AstNodeList& statements)
 }
 
 /**
- * Generates a JSON file from a statements list
- * @param statements
- * @return 
- */
-//std::string toJSON (const AstNodeList& statements)
-//{
-//    return toJSArray(statements)->getJSON(0);
-//}
-
-/**
  * Gets the string representation of an AST type
  * @param type
  * @return 
@@ -508,7 +480,6 @@ std::string astTypeToString(AstNodeTypes type)
         types[AST_FUNCTION] = "AST_FUNCTION";
         types[AST_ASSIGNMENT] = "AST_ASSIGNMENT";
         types[AST_FNCALL] = "AST_FNCALL";
-//        types[AST_NEWCALL] = "AST_NEWCALL";
         types[AST_LITERAL] = "AST_LITERAL";
         types[AST_IDENTIFIER] = "AST_IDENTIFIER";
         types[AST_ARRAY] = "AST_ARRAY";

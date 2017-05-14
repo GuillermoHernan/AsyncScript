@@ -541,10 +541,6 @@ Ref<JSClass> createArrayClass()
 {
     VarMap  members;
     
-//    addNative("getAt(index)", scArrayGetAt, members);
-//    addNative("setAt(index, value)", scArraySetAt, members);
-//    addNative("iterator()", scArrayIterator, members);
-
     addNative("function slice(begin, end)", scArraySlice, members);
     addNative("function join(separator)", scArrayJoin, members);
     addNative("function push(x)", scArrayPush, members);
