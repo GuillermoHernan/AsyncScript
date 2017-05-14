@@ -119,9 +119,9 @@ public:
     // JSValue
     /////////////////////////////////////////
 
-    std::string     toString(ExecutionContext* ec)const;
-    bool            toBoolean(ExecutionContext* ec)const;
-    double          toDouble(ExecutionContext* ec)const;
+    virtual std::string toString(ExecutionContext* ec)const;
+    bool                toBoolean(ExecutionContext* ec)const;
+    double              toDouble(ExecutionContext* ec)const;
     
 //    virtual std::string toString()const;
 //    virtual bool        toBoolean()const;
