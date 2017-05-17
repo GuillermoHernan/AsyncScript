@@ -76,6 +76,7 @@ void semanticCheck(Ref<AstNode> script)
     
     SemCheckState   state;
     
+    state.nodeStack.push_back(script);
     childrenSemCheck(script, &state);
 }
 
