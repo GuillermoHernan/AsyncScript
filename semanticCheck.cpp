@@ -283,6 +283,9 @@ void exportSemCheck (Ref<AstNode> node, SemCheckState* pState)
  */
 void importSemCheck (Ref<AstNode> node, SemCheckState* pState)
 {
+    if (getParentType(pState) != AST_SCRIPT)
+        errorAt(node->position(), "Import statements must be top-level elements");
+
     auto prev = getPrevSibling(node, pState);
     
     if (prev.notNull() && prev->getType() != AST_IMPORT)
