@@ -167,7 +167,7 @@ ParseResult parseStatement (CScriptToken token)
     case LEX_R_ACTOR:   return parseActorExpr (token).toParseResult();
     case LEX_R_CLASS:   return parseClassExpr (token).toParseResult();
     case LEX_R_EXPORT:  return parseExport (token).toParseResult();
-    case LEX_R_IMPORT:  return parseExport (token).toParseResult();
+    case LEX_R_IMPORT:  return parseImport (token).toParseResult();
     
     default:
         return parseSimpleStatement(token);
