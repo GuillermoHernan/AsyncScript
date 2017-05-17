@@ -446,7 +446,7 @@ std::string normalizePath (const std::string& path)
         first = false;
     }
     
-    return join(components, "/");
+    return join(filteredComp, "/");
 }
 
 /**
