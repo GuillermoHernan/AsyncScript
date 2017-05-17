@@ -12,6 +12,9 @@
 
 #include "jsLexer.h"
 
+typedef std::vector<std::string> StringVector;
+
+
 struct ScriptPosition;
 
 bool isWhitespace(char ch);
@@ -25,6 +28,10 @@ bool isAlpha(char ch);
 bool isAlphaNum(const std::string &str);
 bool isIDString(const char *s);
 void replace(std::string &str, char textFrom, const char *textTo);
+
+bool startsWith (const std::string& str, const std::string& prefix);
+StringVector split (const std::string& str, const std::string& separator);
+std::string join (const StringVector& strings, const std::string& separator);
 
 int copyWhile(char* dest, const char* src, bool (*conditionFN)(char), int maxLen);
 
@@ -45,7 +52,13 @@ std::string readTextFile (const std::string& szPath);
 bool writeTextFile (const std::string& szPath, const std::string& szContent);
 bool createDirIfNotExist (const std::string& szPath);
 
+std::string dirFromPath (const std::string& szPath);
 std::string parentPath (const std::string& szPath);
 std::string removeExt (const std::string& szPath);
 std::string fileFromPath (const std::string& szPath);
+std::string normalizePath (const std::string& path);
+std::string joinPaths (const std::string& base, const std::string& relative);
+bool isPathRelative (const std::string& path);
+
+std::string getCurrentDirectory();
 

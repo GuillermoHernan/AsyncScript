@@ -18,6 +18,8 @@
 #include "semanticCheck.h"
 #include "asObjects.h"
 #include "ScriptException.h"
+#include "utils.h"
+#include "modules.h"
 
 using namespace std;
 
@@ -34,9 +36,25 @@ StringVector parseArgumentList(CScriptToken token);
  */
 ASValue evaluate (const char* script, Ref<JSObject> globals)
 {
+    return evaluate (script, globals, "", NULL);
+}
+
+/**
+ * Script evaluation function. Runs a script, and returns its result.
+ *
+ * @param script    Script code, in a C string.
+ * @param globals   Global symbols
+ * @param scriptPath
+ * @param parentEC
+ * @return 
+ */
+ASValue evaluate (const char* script, 
+                  Ref<JSObject> globals, 
+                  const std::string& scriptPath, 
+                  ExecutionContext* parentEC)
+{
     CScriptToken    token (script);
     
-
     //Parse
     auto parseResult = parseScript(token.next());
     auto ast = parseResult.ast;
@@ -49,7 +67,7 @@ ASValue evaluate (const char* script, Ref<JSObject> globals)
     const Ref<MvmRoutine>   code = scriptCodegen(ast, &cMap);
     
     //Execution
-    return evaluate (code, &cMap, globals);
+    return evaluate (code, &cMap, globals, scriptPath, parentEC);
 }
 
 /**
@@ -62,17 +80,34 @@ ASValue evaluate (const char* script, Ref<JSObject> globals)
 ASValue evaluate (Ref<MvmRoutine> code, 
                   const CodeMap* codeMap, 
                   Ref<JSObject> globals,
-                  TraceFN tracer)
+                  const std::string& scriptPath,
+                  ExecutionContext* parentEC)
 {
     try
     {
-        ExecutionContext    ec;
+        string path;
         
-        ec.trace = tracer;
+        if (scriptPath.empty())
+            path = getCurrentDirectory();
+        else
+            path = normalizePath(scriptPath);
         
-        ec.stack.push_back(globals->value());
-        return mvmExecRoutine(code, &ec, 1);
-        //return mvmExecute(code, globals, Ref<IScope>());
+        if (parentEC == NULL)
+        {
+            Modules             mods;
+            ExecutionContext    newEC (path, &mods);
+            
+            mods.modules[path] = globals->value();
+            newEC.stack.push_back(globals->value());
+            return mvmExecRoutine(code, &newEC, 1);
+        }
+        else
+        {
+            ExecutionContext    newEC (path, parentEC->modules);
+            
+            newEC.stack.push_back(globals->value());
+            return mvmExecRoutine(code, &newEC, 1);
+        }
     }
     catch (const RuntimeError& e)
     {
@@ -175,7 +210,7 @@ Ref<JSFunction> addNative (const std::string& szFunctionHeader,
                                                         parseArgumentList(token),
                                                         pFn);
 
-    varMap[funcName] = VarProperties(function->value(), true);
+    varMap.checkedVarWrite(funcName, function->value(), true);
     
     return function;
 }

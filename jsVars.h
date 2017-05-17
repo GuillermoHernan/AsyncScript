@@ -159,41 +159,39 @@ ASValue    createConstant(CScriptToken token);
 ASValue    singleItemIterator(ASValue v);
 
 /**
- * Stores a variable value along its properties.
- * By the moment, the only property is if is a constant or a variable.
+ * Stores values and properties of variables.
  */
-class VarProperties
+class VarMap
 {
 public:
-    ASValue value()const
-    {
-        return m_value;
-    }
+    typedef const std::string   CSTR;
     
-    bool isConst()const
-    {
-        return m_isConst;
-    }
+    bool    isConst (CSTR& name)const;
+    ASValue getValue (CSTR& name)const;
+    bool    tryGetValue (CSTR& name, ASValue* val)const;
+
+    void    checkedVarWrite (CSTR& name, ASValue value, bool isConst);
+    ASValue varWrite (CSTR& name, ASValue value, bool isConst);
+    ASValue varDelete (CSTR& name);
     
-    VarProperties (ASValue value, bool isConst) 
-    : m_value(value), m_isConst(isConst)
-    {        
-    }
+    ASValue getProperty (CSTR& name, CSTR& propName)const;
+    ASValue setProperty (CSTR& name, CSTR& propName, ASValue propValue);
     
-    VarProperties () 
-    : m_value(jsNull()), m_isConst(false)
-    {        
-    }
+    typedef std::function<ASValue (CSTR&, ASValue)>    ItemFn;
+    typedef std::function<void (CSTR&, ASValue)>       VoidItemFn;
+    typedef std::function<bool (CSTR&, ASValue)>       BoolItemFn;
+    
+    VarMap  map (ItemFn fn)const;
+    void    forEach (VoidItemFn fn)const;
+    bool    any (BoolItemFn fn)const;
+
+    void    forEachProperty (CSTR& varName, VoidItemFn fn)const;
     
 private:
-    ASValue    m_value;
-    bool            m_isConst;
+    typedef std::map<std::string, ASValue>  ContentMap;
+    ContentMap    m_content;
 };
 
-typedef std::map<std::string, VarProperties> VarMap;
-
-void       checkedVarWrite (VarMap& map, const std::string& name, ASValue value, bool isConst);
-ASValue    checkedVarDelete (VarMap& map, const std::string& name);
 
 /// Pointer to native function type. 
 /// Native functions must have this signature

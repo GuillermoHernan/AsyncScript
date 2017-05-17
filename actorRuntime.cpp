@@ -43,7 +43,7 @@ public:
                                                                routineActorExec);
         VarMap          members;
 
-        members[constructor->getName()] = VarProperties(constructor, true);
+        members.varWrite(constructor->getName(), constructor, true);
 
         auto            ownClass = AsActorClass::create("", members, StringVector());
         RoutineActor*   newActor = new RoutineActor (ownClass, globals, parent);

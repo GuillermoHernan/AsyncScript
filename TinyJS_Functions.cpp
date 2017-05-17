@@ -34,6 +34,7 @@
 #include "mvmFunctions.h"
 #include "jsArray.h"
 #include "asString.h"
+#include "utils.h"
 
 #include <math.h>
 #include <cstdlib>
@@ -93,8 +94,9 @@ ASValue scJSONStringify(ExecutionContext* ec)
 ASValue scEval(ExecutionContext* ec)
 {
     std::string str = ec->getParam(0).toString(ec);
+    std::string dir = dirFromPath(ec->modulePath);
 
-    return evaluate (str.c_str(), createDefaultGlobals());
+    return evaluate (str.c_str(), createDefaultGlobals(), dir, ec);
 }
 
 void registerDefaultClasses(Ref<JSObject> scope)

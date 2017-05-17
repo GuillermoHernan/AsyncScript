@@ -137,7 +137,7 @@ ASValue expectError(ExecutionContext* ec)
     
     try
     {
-        evaluate (code.c_str(), createDefaultGlobals());
+        evaluate (code.c_str(), createDefaultGlobals(), ec->modulePath, ec);
     }
     catch (CScriptException& error)
     {
@@ -289,7 +289,7 @@ bool run_test(const std::string& szFile, const string &testDir, const string& re
         resetFile (s_traceLoggerPath.c_str());
 
         //Execution
-        evaluate (code, &cMap, globals);
+        evaluate (code, &cMap, globals, szFile, NULL);
 
         auto result = globals->readField("result");
         if (result.toString() != "exception")

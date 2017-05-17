@@ -480,6 +480,7 @@ ASValue scArrayIndexOf(ExecutionContext* ec)
 
 std::string JSArray::join(Ref<JSArray> arr, ASValue sep, ExecutionContext* ec)
 {
+    //TODO: reuse 'join' at 'utils.h'?
     string          sepStr = ",";
 
     if (!sep.isNull())

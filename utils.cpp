@@ -89,6 +89,71 @@ void replace(string &str, char textFrom, const char *textTo)
     }
 }
 
+/**
+ * Checks if 'str' starts with the given prefix.
+ * @param str
+ * @param prefix
+ * @return 
+ */
+bool startsWith (const std::string& str, const std::string& prefix)
+{
+    if (prefix.length() > str.length())
+        return false;
+    
+    int i = int(prefix.length())-1;
+    
+    for (; i>=0 && str[i] == prefix[i]; --i);
+    
+    return i < 0;    
+}
+
+/**
+ * Splits a string in several parts, at the occurrences of the separator string
+ * @param inputStr
+ * @param separator
+ * @return 
+ */
+StringVector split (const std::string& str, const std::string& separator)
+{
+    StringVector result;
+
+    size_t begin = 0;
+    size_t end = str.find(separator);
+    while (end != string::npos)
+    {
+        result.push_back(str.substr(begin, end - begin));
+        begin = end + separator.length();
+        end = str.find(separator, begin);
+    }
+
+    result.push_back(str.substr(begin));
+
+    return result;
+}
+
+/**
+ * Joins a vector of strings into a single string separated by the separator
+ * string.
+ * @param strings
+ * @param separator
+ * @return 
+ */
+std::string join (const StringVector& strings, const std::string& separator)
+{
+    ostringstream output;
+    const size_t n = strings.size();
+    for (size_t i = 0; i < n; i++)
+    {
+        if (i > 0) 
+            output << separator;
+        output << strings[i];
+    }
+
+    return output.str();
+}
+
+
+
 int copyWhile(char* dest, const char* src, bool (*conditionFN)(char), int maxLen)
 {
     int i = 0;
@@ -278,6 +343,28 @@ bool createDirIfNotExist (const std::string& szPath)
     }
 }
 
+#ifdef _WIN32
+    const char* DIR_SEPARATORS = "\\/";
+#else
+    const char* DIR_SEPARATORS = "/";
+#endif
+
+/**
+ * Gets the directory of a file. If the path is already a directory, it returns
+ * the input path.
+ * @param szPath
+ * @return 
+ */
+std::string dirFromPath (const std::string& szPath)
+{
+    const size_t  len = szPath.size();
+    
+    if (len == 0 || szPath.find_last_of(DIR_SEPARATORS) == len-1)
+        return szPath;
+    else
+        return parentPath(szPath);
+}
+
 
 /**
  * Gets the parent path (parent directory) of a given path.
@@ -286,15 +373,10 @@ bool createDirIfNotExist (const std::string& szPath)
  */
 std::string parentPath (const std::string& szPath)
 {
-#ifdef _WIN32
-    const char* separators = "\\/";
-#else
-    const char* separators = "/";
-#endif
-    size_t index = szPath.find_last_of (separators);
+    size_t index = szPath.find_last_of (DIR_SEPARATORS);
     
     if (index == szPath.size()-1 && szPath.size() > 0)
-        index = szPath.find_last_of (separators, index-1);
+        index = szPath.find_last_of (DIR_SEPARATORS, index-1);
     
     if (index != string::npos)
         return szPath.substr(0, index+1);
@@ -324,17 +406,100 @@ std::string removeExt (const std::string& szPath)
  */
 std::string fileFromPath (const std::string& szPath)
 {
-#ifdef _WIN32
-    const size_t index = szPath.find_last_of ("\\/");
-#else
-    const size_t index = szPath.rfind ('/');
-#endif
+    const size_t index = szPath.find_last_of (DIR_SEPARATORS);
     
     if (index != string::npos)
         return szPath.substr(index+1);
     else
         return szPath;
 }
+
+/**
+ * Transforms the path into a normalized form, in order to avoid two equivalent
+ * paths having different representations.
+ * 
+ * @param path
+ * @return 
+ */
+std::string normalizePath (const std::string& path)
+{
+    string temp = path;
+    
+#ifdef _WIN32
+    replace(temp, "\\", "/");
+#endif
+    
+    StringVector components = split(temp, "/");
+    StringVector filteredComp;
+    bool first = true;
+    
+    for (const string& comp : components)
+    {
+        if (first || (comp != "" && comp == "."))
+        {
+            if (comp == ".." && !filteredComp.empty() && filteredComp.back() != "..")
+                filteredComp.pop_back();
+            else
+                filteredComp.push_back(comp);
+        }
+        
+        first = false;
+    }
+    
+    return join(components, "/");
+}
+
+/**
+ * Joins two paths
+ * 
+ * @param base
+ * @param relative
+ * @return 
+ */
+std::string joinPaths (const std::string& base, const std::string& relative)
+{
+    if (base.size() > 0 && *base.rbegin() != '/')
+        return base + "/" + relative;
+    else
+        return base + relative;
+}
+
+/**
+ * Checks if a path is relative
+ * @param path
+ * @return 
+ */
+bool isPathRelative (const std::string& path)
+{
+#ifdef _WIN32
+    if (path.size() >= 3 && path[1] == ':')
+        return isPathRelative(path.substr(2));
+    else if (path.empty())
+        return true;
+    else
+        return path[0] != '/' && path[0] != '\\';
+#else
+    if (path.empty())
+        return true;
+    else 
+        return path[0] != '/';
+#endif
+}
+
+/**
+ * Gets the current working directory of the process
+ * @return 
+ */
+std::string getCurrentDirectory()
+{
+    char * dir = getcwd(NULL, 0);
+    string result = dir;
+    
+    free (dir);
+    return result;
+}
+
+
 
 /**
  * Indents a text in two space increments.

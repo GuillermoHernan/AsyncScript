@@ -19,6 +19,8 @@
 
 #include <math.h>
 
+#include <unistd.h>
+
 //STL
 #include <string>
 #include <cstdlib>
@@ -26,6 +28,7 @@
 #include <set>
 #include <map>
 #include <deque>
+#include <functional>
 
 //STL streams
 #include <sstream>

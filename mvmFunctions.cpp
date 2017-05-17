@@ -12,6 +12,7 @@
 #include "jsArray.h"
 #include "scriptMain.h"
 #include "ScriptException.h"
+#include "modules.h"
 
 #include <math.h>
 #include <string>
@@ -418,6 +419,67 @@ ASValue mvmIterator (ExecutionContext* ec)
 }
 
 /**
+ * Symbol export implementation
+ * @param ec
+ * @return 
+ */
+ASValue mvmExportSymbol (ExecutionContext* ec)
+{
+    auto name = ec->getParam(0);
+    auto env = ec->getParam(1);
+    
+    if (name.isNull())
+        rtError ("'export': 'name' parameter cannot be null");
+
+    string nameStr = name.toString(ec);
+    
+    if (nameStr.empty())
+        rtError ("'export': empty 'name' parameter");
+    
+    if (env.getType() != VT_OBJECT)
+        rtError ("'export': Missing 'env' (environment) parameter or it is not an object");
+    
+    auto envObj = env.staticCast<JSObject>();
+    
+    envObj->setFieldProperty (nameStr, "export", jsTrue());
+    
+    return env;
+}
+
+/**
+ * Implements module 'import' 
+ * @param ec
+ * @return 
+ */
+ASValue mvmImportModule (ExecutionContext* ec)
+{
+    auto path = ec->getParam(0);
+    auto env = ec->getParam(1);
+    
+    if (path.isNull())
+        rtError ("'import': 'path' parameter cannot be null");
+
+    string pathStr = path.toString(ec);
+    
+    if (pathStr.empty())
+        rtError ("'import': empty path");
+    
+    if (env.getType() != VT_OBJECT)
+        rtError ("'import': Missing 'env' (environment) parameter or it is not an object");
+    
+    //auto envObj = env.staticCast<JSObject>();
+    
+    pathStr = normalizeModulePath (pathStr, ec);
+    auto module = findModule (pathStr, ec);
+    if (module.isNull())
+        module = loadModule (pathStr, ec);
+    mixModule (env, module, ec);
+    
+    
+    return env;
+}
+
+/**
  * Registers MVM primitive operations to the given scope.
  * @param scope
  */
@@ -468,4 +530,7 @@ void registerMvmFunctions(Ref<JSObject> scope)
     
     addNative2("@setClassEnv", "env", "cls", JSClass::scSetEnv, scope);
     addNative2("@setObjClass", "obj", "cls", JSObject::scSetObjClass, scope);
+    
+    addNative2("@exportSymbol", "name", "env", mvmExportSymbol, scope);
+    addNative2("@importModule", "path", "env", mvmImportModule, scope);
 }

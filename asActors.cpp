@@ -59,7 +59,7 @@ VarMap AsActorClass::createDefaultEndPoints (const VarMap& members)
                                                             params,
                                                             actorChildStoppedDefaultHandler);
         
-        newMembers[childStopped] = VarProperties(endPoint, true);
+        newMembers.varWrite(childStopped, endPoint, true);
         
         return newMembers;
     }

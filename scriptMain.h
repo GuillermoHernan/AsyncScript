@@ -20,12 +20,18 @@ class MvmRoutine;
 struct ExecutionContext;
 typedef void (*TraceFN)(int opCode, const ExecutionContext* ec);
 
-
 ASValue    evaluate (const char* script, Ref<JSObject> globals);
+
+ASValue    evaluate (const char* script, 
+                     Ref<JSObject> globals, 
+                     const std::string& scriptPath, 
+                     ExecutionContext *ec);
+
 ASValue    evaluate (Ref<MvmRoutine> code, 
                      const CodeMap* codeMap, 
                      Ref<JSObject> globals,
-                     TraceFN tracer = NULL);
+                     const std::string& scriptPath,
+                     ExecutionContext* parentEC);
 
 Ref<JSObject> createDefaultGlobals();
 

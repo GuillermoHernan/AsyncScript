@@ -152,6 +152,7 @@ ASValue scStringCharCodeAt(ExecutionContext* ec)
 
 ASValue scStringSplit(ExecutionContext* ec)
 {
+    //TODO: reuse 'split' at 'utils.h' (this is older)
     string str = ec->getThis().toString(ec);
     string sep = ec->getParam(0).toString(ec);
     Ref<JSArray> result = JSArray::create();

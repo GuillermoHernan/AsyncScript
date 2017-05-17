@@ -129,18 +129,27 @@ struct CallFrame
 typedef std::vector <CallFrame> FrameVector;
 
 typedef void (*TraceFN)(int opCode, const ExecutionContext* ec);
+struct Modules;
 
 /**
  * MVM execution context
  */
 struct ExecutionContext
 {
-    ValueVector     stack;
-    FrameVector     frames;
-    TraceFN         trace = NULL;
+    ValueVector         stack;
+    FrameVector         frames;
+    const std::string   modulePath;
+    TraceFN             trace = NULL;
+    Modules* const      modules;
+
 private:
-    ASValue         thisParam;
+    ASValue             thisParam;
 public:
+    
+    ExecutionContext (const std::string& _modulePath, Modules* pModules)
+        : modulePath(_modulePath), modules(pModules)
+    {
+    }
     
     ASValue pop()
     {

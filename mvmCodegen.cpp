@@ -1266,7 +1266,7 @@ void classCodegen (Ref<AstNode> node, CodegenState* pState)
         if (child.notNull() && child->getType() == AST_FUNCTION)
         {
             auto function = createFunction(child, pState);
-            checkedVarWrite (members, function->getName(), function->value(), true);
+            members.checkedVarWrite (function->getName(), function->value(), true);
         }
     }
     
@@ -1447,14 +1447,40 @@ Ref<JSClass> getParentClass (Ref<AstNode> node, CodegenState* pState)
     return parentClass.staticCast<JSClass>();
 }
 
+/**
+ * Generates the code for an 'export' modifier.
+ * @param node
+ * @param pState
+ */
 void exportCodegen (Ref<AstNode> node, CodegenState* pState)
 {
-    errorAt (node->position(), "'export' is not yet implemented");
+    //It just generates the code for the child node, and exports the value which
+    //it yields.
+    auto child = node->children().front();
+    string name = child->getName();
+    
+    if (name.empty ())
+        errorAt (child->position(), "Cannot export an unnamed symbol");
+    
+    childCodegen(node, 0, pState);      //[value]
+    pushConstant(name, pState);         //[name, value]
+    getEnvCodegen(pState);              //[env, name, value]
+    
+    callCodegen("@exportSymbol", 2, pState, node->position());  //[env, value]
+    instruction8(OC_POP, pState);       //[value]
 }
 
+/**
+ * Generates code for an import module statement.
+ * @param node
+ * @param pState
+ */
 void importCodegen (Ref<AstNode> node, CodegenState* pState)
 {
-    errorAt (node->position(), "'import' is not yet implemented");
+    childCodegen (node, 0, pState);         //[importPath]
+    getEnvCodegen(pState);                  //[env, importPath]
+    
+    callCodegen("@importModule", 2, pState, node->position());  //[null]
 }
 
 

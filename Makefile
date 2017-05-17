@@ -21,7 +21,8 @@ asString.cpp \
 jsArray.cpp \
 ScriptPosition.cpp \
 ScriptException.cpp \
-mvmCodegen.cpp 
+mvmCodegen.cpp \
+modules.cpp
 #executionScope.cpp \
 #actorRuntime.cpp \
 #asActors.cpp \

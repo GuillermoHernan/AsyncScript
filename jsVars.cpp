@@ -240,49 +240,6 @@ bool ASValue::isUint()const
     return isInteger() && m_content.number >= 0;
 }
 
-/**
- * Writes to a variable in a variable map. If the variable already exist, and
- * is a constant, it throws a runtime exception.
- * @param map
- * @param name
- * @param value
- * @param isConst   If true, it creates a new constant
- */
-void checkedVarWrite(VarMap& map, const std::string& name, ASValue value, bool isConst)
-{
-    auto it = map.find(name);
-
-    if (it != map.end() && it->second.isConst())
-        rtError("Trying to write to constant '%s'", name.c_str());
-
-    map[name] = VarProperties(value, isConst);
-}
-
-/**
- * Deletes a variable form a variable map. Throws exceptions if the variable 
- * does not exist or if it is a constant.
- * @param map
- * @param name
- * @return 
- */
-ASValue checkedVarDelete(VarMap& map, const std::string& name)
-{
-    auto it = map.find(name);
-    ASValue value;
-
-    if (it == map.end())
-        rtError("'%s' is not defined", name.c_str());
-    else if (it->second.isConst())
-        rtError("Trying to delete constant '%s'", name.c_str());
-    else
-    {
-        value = it->second.value();
-        map.erase(it);
-    }
-
-    return value;
-}
-
 // JSFunction
 //
 //////////////////////////////////////////////////
@@ -811,4 +768,254 @@ std::string ASValue::getJSON(int indent)const
 bool ASValue::operator < (const ASValue& b)const
 {
     return typedCompare (b, NULL) < 0;
+}
+
+// VarMap
+//
+//////////////////////////////////////////////////
+
+
+/**
+ * Checks if a given variable is constant by checking its 'const' property.
+ * If the map does not contain a variable with the given name, it returns 'false'
+ * (the variable can be written)
+ * @param name
+ * @return 
+ */
+bool VarMap::isConst (CSTR& name)const
+{
+    auto it = m_content.find(name + ".const");
+    
+    if (it == m_content.end())
+        return false;
+    else
+        return it->second.toBoolean(NULL);
+}
+
+/**
+ * Gets a value from the map.
+ * Returns 'null' if the variable does not exist.
+ * @param name
+ * @return 
+ */
+ASValue VarMap::getValue (CSTR& name)const
+{
+    ASValue val;
+    
+    if (tryGetValue(name, &val))
+        return val;
+    else
+        return jsNull();
+}
+
+/**
+ * Tries to get a value from the map, which is returned by the second
+ * (output) parameter.
+ * 
+ * @param name  Variable name
+ * @param val   Pointer to an 'ASValue' which will receive the value. Cannot be null.
+ * @return  'true' if the variable has been found, 'false' if it does not exist.
+ */
+bool VarMap::tryGetValue (CSTR& name, ASValue* val)const
+{
+    auto it = m_content.find(name);
+    
+    if (it != m_content.end())
+    {
+        *val = it->second;
+        return true;
+    }
+    else
+        return false;
+}
+
+/**
+ * Writes to a variable in a variable map. If the variable already exist, and
+ * is a constant, it throws a runtime exception.
+ * @param name
+ * @param value
+ * @param isConst   If true, it creates a new constant
+ */
+void VarMap::checkedVarWrite(const std::string& name, ASValue value, bool isConst)
+{
+    if (this->isConst(name))
+        rtError("Trying to write to constant '%s'", name.c_str());
+
+    m_content[name] = value;
+    
+    if (isConst)
+        m_content[name + ".const"] = jsTrue();
+}
+
+/**
+ * Writes to a variable, and returns back the value.
+ * 
+ * If the variable is constant, it does not modify it and returns the
+ * constant value.
+ * 
+ * @param name
+ * @param value
+ * @param isConst
+ * @return 
+ */
+ASValue VarMap::varWrite(const std::string& name, ASValue value, bool isConst)
+{
+    if (this->isConst(name))
+        return getValue (name);
+    else
+    {
+        m_content[name] = value;
+
+        if (isConst)
+            m_content[name + ".const"] = jsTrue();
+
+        return value;
+    }
+}
+
+/**
+ * Tries to delete a variable. 
+ * 
+ * If the variable is constant, the operation will have no effect.
+ * It will also delete any properties associated to the variable.
+ * 
+ * @param name
+ * @return Value of the deleted (or not deleted) variable. If the variable
+ * does not exist, it returns null.
+ */
+ASValue VarMap::varDelete (CSTR& name)
+{
+    if (isConst(name))
+        return getValue(name);
+    
+    auto itBegin = m_content.find(name);
+    if (itBegin == m_content.end())
+        return jsNull();
+    
+    ASValue result = itBegin->second;
+    auto    itEnd = itBegin;
+    string  propPrefix = name + ".";
+    
+    //Find all properties.
+    for (++itEnd; itEnd != m_content.end() && startsWith(itEnd->first, propPrefix); ++itEnd);
+    
+    //delete variable and its properties.
+    m_content.erase(itBegin, itEnd);
+    
+    return result;
+}
+
+/**
+ * Gets a field property. 
+ * If the field has not this property, or does not exist at all, it returns null.
+ * 
+ * @param name
+ * @param propName
+ * @return 
+ */
+ASValue VarMap::getProperty (CSTR& name, CSTR& propName)const
+{
+    string  key = name + "." + propName;
+    auto    it = m_content.find(key);
+    
+    if (it != m_content.end())
+        return it->second;
+    else
+        return jsNull();
+}
+
+/**
+ * Sets a property for a variable.
+ * Properties can only be written once. The next attempts to write them
+ * will be ignored.
+ * 
+ * @param name      Variable name
+ * @param propName  Property name
+ * @param propValue Property value
+ * @return new property value ('propValue' parameter) or the previous value if the
+ *      property already existed.
+ */
+ASValue VarMap::setProperty (CSTR& name, CSTR& propName, ASValue propValue)
+{
+    string  key = name + "." + propName;
+    auto    it = m_content.find(key);
+    
+    if (it != m_content.end())
+        return it->second;
+    else
+        return m_content[key] = propValue;
+}
+
+/**
+ * Applies a transformation to each variable value in the map, an generates a new map
+ * with the new values.
+ * It also copies associated properties (but does not transform them)
+ * @param fn    Variable transform function
+ * @return A new map with the transformed variables.
+ */
+VarMap VarMap::map (ItemFn fn)const
+{
+    VarMap  result;
+    
+    forEach ([&](CSTR& name, ASValue val){
+        ASValue newVal = fn(name, val);
+        result.varWrite(name, newVal, false);
+        
+        this->forEachProperty(name, [&result, &name](CSTR& propName, ASValue propVal){
+           result.setProperty(name, propName, propVal); 
+        });
+    });
+    
+    return result;    
+}
+
+/**
+ * Calls the parameter function for each variable - value pair in the map.
+ * @param fn
+ */
+void VarMap::forEach (VoidItemFn fn)const
+{
+    for (auto it = m_content.begin(); it != m_content.end(); ++it)
+    {
+        if (it->first.find('.') == string::npos)
+            fn (it->first, it->second);
+    }
+}
+
+/**
+ * Checks if any given variable within the map fulfills the given predicate
+ * (the function passed as parameter which returns a boolean value for each 
+ * variable - value pair)
+ * @param fn
+ */
+bool VarMap::any (BoolItemFn fn)const
+{
+    for (auto it = m_content.begin(); it != m_content.end(); ++it)
+    {
+        if (it->first.find('.') == string::npos)
+        {
+            if (fn (it->first, it->second))
+                return true;
+        }
+    }
+    
+    return false;
+}
+
+/**
+ * Calls the 'fn' function for each property of the given variable.
+ * @param varName
+ * @param fn
+ */
+void VarMap::forEachProperty (CSTR& varName, VoidItemFn fn)const
+{
+    auto it = m_content.find(varName);
+    
+    if (it == m_content.end())
+        return;
+    
+    string prefix = varName + ".";
+    
+    for (++it; it != m_content.end() && startsWith (it->first, prefix); ++it)
+        fn (it->first.substr(prefix.length()), it->second);
 }

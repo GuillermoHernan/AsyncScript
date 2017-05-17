@@ -129,6 +129,9 @@ public:
 
     /////////////////////////////////////////
     
+    ASValue setFieldProperty (const std::string& field, const std::string& propName, ASValue value);
+    ASValue getFieldProperty (const std::string& field, const std::string& propName)const;
+    
     Ref<JSClass> getClass()const
     {
         return m_cls;

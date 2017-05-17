@@ -74,8 +74,9 @@ StringSet JSClass::getFields(bool inherited)const
     if (inherited && m_parent.notNull())
         result = m_parent->getFields();
     
-    for (auto it = m_members.begin(); it != m_members.end(); ++it)
-        result.insert(it->first);
+    m_members.forEach ([&result](const string& name, ASValue){
+        result.insert(name);
+    });
     
     return result;
 }
@@ -88,10 +89,10 @@ StringSet JSClass::getFields(bool inherited)const
  */
 ASValue JSClass::readField(const std::string& key)const
 {
-    auto it = m_members.find(key);
-
-    if (it != m_members.end())
-        return it->second.value();
+    ASValue val;
+    
+    if (m_members.tryGetValue(key, &val))
+        return val;
     else if (m_parent.notNull())
         return m_parent->readField (key);
     else
@@ -148,15 +149,14 @@ ASValue JSClass::scSetEnv(ExecutionContext* ec)
     clsPtr->m_constructor = closure->value();
     
     //Closures for member functions
-    for (auto &member: clsPtr->m_members)
-    {
-        ASValue val = member.second.value();
-        if (val.getType() == VT_FUNCTION)
-        {
-            closure = JSClosure::create(val.staticCast<JSFunction>(), &env, 1);
-            member.second = VarProperties (closure->value(), true);
-        }
-    }//for (m_members)
+    auto newMembers = clsPtr->m_members.map ([&env](const string& name, ASValue value)->ASValue{
+        if (value.getType() == VT_FUNCTION)
+            return JSClosure::create(value.staticCast<JSFunction>(), &env, 1)->value();
+        else
+            return value;
+    });
+    
+    clsPtr->m_members = newMembers;
     
     return cls;
 }
@@ -229,11 +229,11 @@ ASValue JSObject::deepFreeze(ASValue::ValuesMap& transformed)
     auto newObject = JSObject::create(m_cls);
     transformed[me] = newObject->value();
     
-    for (auto it = m_members.begin(); it != m_members.end(); ++it)
-    {
-        auto value = it->second.value().deepFreeze(transformed);
-        newObject->writeField(it->first, value, it->second.isConst());
-    }
+    m_members.forEach([newObject, this, &transformed](const string& name, ASValue val){
+       auto newValue = val.deepFreeze(transformed);
+       bool isConst = m_members.isConst(name);
+       newObject->writeField(name, newValue, isConst);
+    });
 
     newObject->m_mutability = MT_DEEPFROZEN;
 
@@ -271,10 +271,10 @@ void JSObject::setFrozen()
 std::vector <ASValue > JSObject::getKeys()const
 {
     std::vector <ASValue >     result;
-    
-    result.reserve(m_members.size());
-    for (auto it = m_members.begin(); it != m_members.end(); ++it)
-        result.push_back(jsString(it->first));
+
+    m_members.forEach([&result](const string& name, ASValue){
+        result.push_back(jsString(name));
+    });
     
     return result;
 }
@@ -290,8 +290,9 @@ StringSet JSObject::getFields(bool inherited)const
     if (inherited)
         result = m_cls->getFields(true);
 
-    for (auto it = m_members.begin(); it != m_members.end(); ++it)
-        result.insert(it->first);
+    m_members.forEach([&result](const string& name, ASValue){
+        result.insert(name);
+    });
     
     return result;
 }
@@ -436,14 +437,11 @@ JSMutability JSObject::selectMutability(const JSObject& src, bool _mutable)
         return MT_MUTABLE;
     else
     {
-        //Check if all children are 'deepfrozen'
-        auto items = src.m_members;
-        for (auto it = items.begin(); it != items.end(); ++it)
-        {
-            if (it->second.value().getMutability() != MT_DEEPFROZEN)
-                return MT_FROZEN;
-        }
-        return MT_DEEPFROZEN;
+        bool onlyFrozen = src.m_members.any([](const string&, ASValue val){
+            return val.getMutability() != MT_DEEPFROZEN;
+        });
+
+        return onlyFrozen ? MT_FROZEN : MT_DEEPFROZEN;
     }
 }
 
@@ -503,12 +501,8 @@ bool JSObject::isWritable(const std::string& key)const
     //TODO: Check class fields
     if (getMutability() != MT_MUTABLE)
         return false;
-    
-    auto it = m_members.find(key);
-    if (it == m_members.end())
-        return true;
     else
-        return !it->second.isConst();
+        return !m_members.isConst(key);
 }
 
 /**
@@ -569,10 +563,10 @@ double JSObject::toDouble(ExecutionContext* ec)const
  */
 ASValue JSObject::readField(const std::string& key)const
 {
-    auto it = m_members.find(key);
+    ASValue val;
 
-    if (it != m_members.end())
-        return it->second.value();
+    if (m_members.tryGetValue(key, &val))
+        return val;
     else
         return m_cls->readField (key);
 }
@@ -591,9 +585,7 @@ ASValue JSObject::writeField(const std::string& key,
     if (!isWritable(key))
         return readField(key);
     
-    m_members[key] = VarProperties(value, isConst);
-
-    return value;
+    return m_members.varWrite (key, value, isConst);
 }
 
 /**
@@ -606,16 +598,7 @@ ASValue JSObject::deleteField(const std::string& key)
     if (!isWritable(key))
         return readField(key);
 
-    auto it = m_members.find(key);
-    
-    if (it == m_members.end())
-        return jsNull();
-    else
-    {
-        auto result = it->second.value();
-        m_members.erase(it);
-        return result;
-    }
+    return m_members.varDelete(key);
 }
 
 /**
@@ -629,10 +612,9 @@ std::string JSObject::getJSON(int indent)
 
     //{"x":2}
     output << "{";
-
-    for (auto it = m_members.begin(); it != m_members.end(); ++it)
-    {
-        string childJSON = it->second.value().getJSON(indent+1);
+    
+    m_members.forEach ([&](const string& name, ASValue val){
+        string childJSON = val.getJSON(indent+1);
 
         if (!childJSON.empty())
         {
@@ -641,10 +623,10 @@ std::string JSObject::getJSON(int indent)
             else
                 first = false;
 
-            output << "\n" << indentText(indent+1) << "\"" << it->first << "\":";
+            output << "\n" << indentText(indent+1) << "\"" << name << "\":";
             output << childJSON;
         }
-    }
+    });
 
     if (!first)
         output << "\n" << indentText(indent) << "}";
@@ -653,6 +635,32 @@ std::string JSObject::getJSON(int indent)
 
     return output.str();
 }
+
+/**
+ * Sets a property of a field.
+ * @param field
+ * @param propName
+ * @param value
+ * @return 
+ */
+ASValue JSObject::setFieldProperty (const std::string& field, const std::string& propName, ASValue value)
+{
+    return m_members.setProperty (field, propName, value);
+}
+
+/**
+ * Gets a field property. 
+ * If the field has not this property, or does not exist at all, it returns null.
+ * @param field
+ * @param propName
+ * @return 
+ */
+ASValue JSObject::getFieldProperty (const std::string& field, const std::string& propName)const
+{
+    return m_members.getProperty (field, propName);
+}
+
+
 
 ASValue scObjectFreeze(ExecutionContext* ec)
 {
