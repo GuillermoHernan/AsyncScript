@@ -435,7 +435,7 @@ std::string normalizePath (const std::string& path)
     
     for (const string& comp : components)
     {
-        if (first || (comp != "" && comp == "."))
+        if (first || (comp != "" && comp != "."))
         {
             if (comp == ".." && !filteredComp.empty() && filteredComp.back() != "..")
                 filteredComp.pop_back();
