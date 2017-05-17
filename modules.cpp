@@ -28,7 +28,7 @@ std::string normalizeModulePath (const std::string& modulePath, ExecutionContext
     
     if (isPathRelative(modulePath))
     {
-        string base = ec->modulePath;
+        string base = dirFromPath( ec->modulePath );
         result = joinPaths (base, modulePath);
     }
     else
